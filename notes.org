@@ -1,0 +1,2 @@
+* install gotk3
+GOPATH=`pwd`:`pwd`/vendor go get -tags gtk_3_10 github.com/conformal/gotk3/gtk
