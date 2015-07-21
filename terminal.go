@@ -436,9 +436,11 @@ L:
 			t.TODOs.Add("application cursor keys mode")
 		case 7: // wraparound mode
 			t.TODOs.Add("wraparound mode")
-		case 12:
-			t.TODOs.Add("blinking cursor mode")
-		case 25: // show cursor
+		case 12: // blinking cursor; reset -> stop blinking
+			if reset {
+				t.TODOs.Add("stop blinking cursor")
+			}
+		case 25: // show cursor; reset -> hide cursor
 			t.Mu.Lock()
 			t.HideCursor = reset
 			t.Mu.Unlock()
