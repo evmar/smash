@@ -60,7 +60,7 @@ func (t *TermBuf) Draw(cr *cairo.Context) {
 	if t.cw == 0 {
 		ext := &cairo.FontExtents{}
 		cr.FontExtents(ext)
-		log.Printf("font extents %#v", ext)
+		// log.Printf("font extents %#v", ext)
 		t.cw = int(ext.MaxXAdvance)
 		t.ch = int(ext.Height)
 		t.descent = int(ext.Descent)
