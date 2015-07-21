@@ -358,6 +358,10 @@ L:
 		copy(l[t.Col:], l[t.Col+arg:])
 		t.Lines[t.Row] = l[:len(l)-arg]
 		t.Mu.Unlock()
+	case !gtflag && c == 'c': // send device attributes (primary)
+		log.Printf("TODO: send device attributes")
+	case gtflag && c == 'c': // send device attributes (secondary)
+		log.Printf("TODO: send device attributes")
 	case c == 'd': // line position
 		arg := 1
 		readArgs(args, &arg)

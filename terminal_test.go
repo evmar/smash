@@ -212,3 +212,15 @@ func TestCSIDisableModifiers(t *testing.T) {
 	assert.Equal(t, "", term.ToString())
 	// TODO: implement the disabling, whatever that is.
 }
+
+func TestSendDeviceAttributes(t *testing.T) {
+	term := NewTerminal()
+	buf := &bytes.Buffer{}
+	term.Input = buf
+	mustRun(t, term, "\x1b[c")
+	assert.Equal(t, "", term.ToString())
+	assert.Equal(t, "", buf.String())
+	mustRun(t, term, "\x1b[>c")
+	assert.Equal(t, "", term.ToString())
+	assert.Equal(t, "", buf.String())
+}
