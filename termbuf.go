@@ -130,10 +130,12 @@ func (t *TermBuf) Draw(cr *cairo.Context) {
 		}
 	}
 
-	cr.Rectangle(float64(t.term.Col*t.cw),
-		float64(t.term.Row*t.ch+3),
-		float64(t.cw), float64(t.ch))
-	cr.Fill()
+	if !t.term.HideCursor {
+		cr.Rectangle(float64(t.term.Col*t.cw),
+			float64(t.term.Row*t.ch+3),
+			float64(t.cw), float64(t.ch))
+		cr.Fill()
+	}
 }
 
 func (t *TermBuf) Key(key *base.Key) {

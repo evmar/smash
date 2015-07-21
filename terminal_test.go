@@ -224,3 +224,11 @@ func TestSendDeviceAttributes(t *testing.T) {
 	assert.Equal(t, "", term.ToString())
 	assert.Equal(t, "", buf.String())
 }
+
+func TestHideCursor(t *testing.T) {
+	term := NewTerminal()
+	mustRun(t, term, "\x1b[?25l")
+	assert.Equal(t, true, term.HideCursor)
+	mustRun(t, term, "\x1b[?25h")
+	assert.Equal(t, false, term.HideCursor)
+}

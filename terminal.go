@@ -65,13 +65,14 @@ type TerminalChar struct {
 }
 
 type Terminal struct {
-	Mu     sync.Mutex
-	Title  string
-	Lines  [][]TerminalChar
-	Width  int
-	Height int
-	Top    int
-	Input  io.Writer
+	Mu         sync.Mutex
+	Title      string
+	Lines      [][]TerminalChar
+	Width      int
+	Height     int
+	Top        int
+	Input      io.Writer
+	HideCursor bool
 
 	Row, Col int
 	Attr     Attr
@@ -369,7 +370,7 @@ L:
 		t.Row = arg - 1
 		t.fixPosition()
 		t.Mu.Unlock()
-	case (c == 'h' || c == 'l') && !qflag: // reset mode
+	case !qflag && (c == 'h' || c == 'l'): // reset mode
 		reset := c == 'l'
 		arg := 0
 		readArgs(args, &arg)
@@ -377,7 +378,7 @@ L:
 		default:
 			log.Printf("TODO: reset mode %d %v", arg, reset)
 		}
-	case (c == 'h' || c == 'l') && qflag: // DEC private mode set/reset
+	case qflag && (c == 'h' || c == 'l'): // DEC private mode set/reset
 		reset := c == 'l'
 		arg := 0
 		readArgs(args, &arg)
@@ -388,8 +389,10 @@ L:
 			log.Printf("TODO: wraparound mode")
 		case 12:
 			log.Printf("TODO: blinking cursor mode")
-		case 25:
-			log.Printf("TODO: show cursor mode")
+		case 25: // show cursor
+			t.Mu.Lock()
+			t.HideCursor = reset
+			t.Mu.Unlock()
 		case 1049: // alternate screen buffer
 			log.Printf("TODO: alternate screen buffer")
 		default:
