@@ -64,6 +64,15 @@ type TerminalChar struct {
 	Attr Attr
 }
 
+type FeatureLog map[string]int
+
+func (f FeatureLog) Add(text string, args ...interface{}) {
+	if _, known := f[text]; !known {
+		log.Printf("TODO: "+text, args...)
+	}
+	f[text]++
+}
+
 type Terminal struct {
 	Mu         sync.Mutex
 	Title      string
@@ -73,6 +82,7 @@ type Terminal struct {
 	Top        int
 	Input      io.Writer
 	HideCursor bool
+	TODOs      FeatureLog
 
 	Row, Col int
 	Attr     Attr
@@ -85,6 +95,7 @@ func NewTerminal() *Terminal {
 		Col:    0,
 		Width:  80,
 		Height: 24,
+		TODOs:  FeatureLog{},
 	}
 }
 
@@ -211,12 +222,12 @@ func (t *Terminal) readEscape(r io.ByteScanner) error {
 		case 'B': // US ASCII
 			// ignore
 		default:
-			log.Printf("TODO: g0 charset %s", showChar(c))
+			t.TODOs.Add("g0 charset %s", showChar(c))
 		}
 	case c == '=':
-		log.Printf("TODO: application keypad")
+		t.TODOs.Add("application keypad")
 	case c == '>':
-		log.Printf("TODO: normal keypad")
+		t.TODOs.Add("normal keypad")
 	case c == '[':
 		return t.readCSI(r)
 	case c == ']':
@@ -360,9 +371,9 @@ L:
 		t.Lines[t.Row] = l[:len(l)-arg]
 		t.Mu.Unlock()
 	case !gtflag && c == 'c': // send device attributes (primary)
-		log.Printf("TODO: send device attributes")
+		t.TODOs.Add("send device attributes")
 	case gtflag && c == 'c': // send device attributes (secondary)
-		log.Printf("TODO: send device attributes")
+		t.TODOs.Add("send device attributes")
 	case c == 'd': // line position
 		arg := 1
 		readArgs(args, &arg)
@@ -376,7 +387,7 @@ L:
 		readArgs(args, &arg)
 		switch arg {
 		default:
-			log.Printf("TODO: reset mode %d %v", arg, reset)
+			t.TODOs.Add("reset mode %d %v", arg, reset)
 		}
 	case qflag && (c == 'h' || c == 'l'): // DEC private mode set/reset
 		reset := c == 'l'
@@ -384,17 +395,17 @@ L:
 		readArgs(args, &arg)
 		switch arg {
 		case 1:
-			log.Printf("TODO: application cursor keys mode")
+			t.TODOs.Add("application cursor keys mode")
 		case 7: // wraparound mode
-			log.Printf("TODO: wraparound mode")
+			t.TODOs.Add("wraparound mode")
 		case 12:
-			log.Printf("TODO: blinking cursor mode")
+			t.TODOs.Add("blinking cursor mode")
 		case 25: // show cursor
 			t.Mu.Lock()
 			t.HideCursor = reset
 			t.Mu.Unlock()
 		case 1049: // alternate screen buffer
-			log.Printf("TODO: alternate screen buffer")
+			t.TODOs.Add("alternate screen buffer")
 		default:
 			log.Printf("term: unknown dec private mode %v %v", args, reset)
 		}
@@ -437,13 +448,13 @@ L:
 		readArgs(args, &arg)
 		switch arg {
 		case 0:
-			log.Printf("TODO: disable modify keyboard")
+			t.TODOs.Add("disable modify keyboard")
 		case 1:
-			log.Printf("TODO: disable modify cursor keys")
+			t.TODOs.Add("disable modify cursor keys")
 		case 2:
-			log.Printf("TODO: disable modify function keys")
+			t.TODOs.Add("disable modify function keys")
 		case 4:
-			log.Printf("TODO: disable modify other keys")
+			t.TODOs.Add("disable modify other keys")
 		}
 	case c == 'n': // device status report
 		arg := 0
@@ -467,7 +478,7 @@ L:
 		if top == 1 && bot == t.Height {
 			// Just setting the current region as scroll.
 		} else {
-			log.Printf("TODO: set scrolling region %v", args)
+			t.TODOs.Add("set scrolling region %v", args)
 		}
 	default:
 		log.Printf("term: unknown CSI %v %s", args, showChar(c))
