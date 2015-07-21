@@ -317,6 +317,18 @@ L:
 	}
 
 	switch {
+	case c == '@': // insert blanks
+		n := 1
+		readArgs(args, &n)
+		t.Mu.Lock()
+		for i := 0; i < n; i++ {
+			t.Lines[t.Row] = append(t.Lines[t.Row], TerminalChar{})
+		}
+		copy(t.Lines[t.Row][t.Col+n:], t.Lines[t.Row][t.Col:])
+		for i := 0; i < n; i++ {
+			t.Lines[t.Row][t.Col+i] = TerminalChar{' ', 0}
+		}
+		t.Mu.Unlock()
 	case c == 'A': // cursor up
 		dy := 1
 		readArgs(args, &dy)

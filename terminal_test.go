@@ -240,3 +240,11 @@ func TestHideCursor(t *testing.T) {
 	mustRun(t, term, "\x1b[?25h")
 	assert.Equal(t, false, term.HideCursor)
 }
+
+func TestInsertBlanks(t *testing.T) {
+	term := NewTerminal()
+	mustRun(t, term, "ABC\b\b\x1b[@x")
+	assert.Equal(t, "AxBC", term.ToString())
+	mustRun(t, term, "\x1b[2@y")
+	assert.Equal(t, "Axy BC", term.ToString())
+}
