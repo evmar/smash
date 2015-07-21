@@ -94,16 +94,30 @@ func (t *TermBuf) Draw(cr *cairo.Context) {
 	}
 
 	buf := make([]byte, 0, 80)
+	drewCursor := false
 	for row := firstLine; row < lastLine; row++ {
 		line := t.term.Lines[row]
 
 		// Collect spans of text with the same attributes, to batch
-		// the drawing calls to cairo.
+		// the drawing calls to cairo.  The cursor is specially handled as
+		// a separate batch.
 		var x1, x2 int
 		for x1 = 0; x1 < len(line); x1 = x2 {
 			buf = buf[:0]
 			attr := line[x1].Attr
-			for x2 = x1; x2 < len(line) && line[x2].Attr == attr; x2++ {
+
+			inCursor := false
+			for x2 = x1; x2 < len(line) && line[x2].Attr == attr && !inCursor; x2++ {
+				if !t.term.HideCursor &&
+					row == t.term.Row {
+					if x1 == t.term.Col {
+						// This span is the cursor.
+						inCursor = true
+					} else if x2 == t.term.Col {
+						// Hit the cursor; let the next span handle it.
+						break
+					}
+				}
 				ch := line[x2].Ch
 				if ch < 0x7f {
 					buf = append(buf, byte(ch))
@@ -119,10 +133,16 @@ func (t *TermBuf) Draw(cr *cairo.Context) {
 				fg, bg = bg, fg
 			}
 
+			if inCursor {
+				fg = &white
+				bg = &black
+				drewCursor = true
+			}
+
 			if bg != &white {
+				setColor(cr, bg)
 				cr.Rectangle(float64(x1*t.cw), float64(row*t.ch),
 					float64(len(buf)*t.cw), float64(t.ch))
-				setColor(cr, bg)
 				cr.Fill()
 			}
 
@@ -132,7 +152,8 @@ func (t *TermBuf) Draw(cr *cairo.Context) {
 		}
 	}
 
-	if !t.term.HideCursor {
+	if !t.term.HideCursor && !drewCursor {
+		setColor(cr, &black)
 		cr.Rectangle(float64(t.term.Col*t.cw),
 			float64(t.term.Row*t.ch),
 			float64(t.cw), float64(t.ch))
