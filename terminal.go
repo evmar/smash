@@ -367,6 +367,9 @@ L:
 		readArgs(args, &arg)
 		t.Mu.Lock()
 		l := t.Lines[t.Row]
+		if t.Col+arg > len(l) {
+			arg = len(l) - t.Col
+		}
 		copy(l[t.Col:], l[t.Col+arg:])
 		t.Lines[t.Row] = l[:len(l)-arg]
 		t.Mu.Unlock()

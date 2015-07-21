@@ -104,6 +104,10 @@ func TestDelete(t *testing.T) {
 	term := NewTerminal()
 	mustRun(t, term, "abcdef\x08\x08\x08\x1b[1P")
 	assert.Equal(t, "abcef", term.ToString())
+
+	// Check deleting past the end of the line.
+	mustRun(t, term, "\x1b[5P")
+	assert.Equal(t, "abc", term.ToString())
 }
 
 func TestBell(t *testing.T) {
