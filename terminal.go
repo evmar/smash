@@ -317,6 +317,17 @@ L:
 	}
 
 	switch {
+	case c == 'A': // cursor up
+		dy := 1
+		readArgs(args, &dy)
+		t.Mu.Lock()
+		t.Row -= dy
+		if t.Row < 0 {
+			log.Printf("term: cursor up off top of screen?")
+			t.Row = 0
+		}
+		t.fixPosition()
+		t.Mu.Unlock()
 	case c == 'C': // cursor forward
 		dx := 1
 		readArgs(args, &dx)

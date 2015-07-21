@@ -165,10 +165,14 @@ func TestCursor(t *testing.T) {
 	assertPos(t, term, 1, 4)
 	mustRun(t, term, "\x1b[2C")
 	assertPos(t, term, 1, 6)
+	assert.Equal(t, "foo\nbar   ", term.ToString())
+
+	mustRun(t, term, "\x1b[A!")
+	assertPos(t, term, 0, 7)
+	assert.Equal(t, "foo   !\nbar   ", term.ToString())
 
 	mustRun(t, term, "\x1b[5D")
-	assertPos(t, term, 1, 1)
-	assert.Equal(t, "foo\nbar   ", term.ToString())
+	assertPos(t, term, 0, 2)
 }
 
 func TestScrollUp(t *testing.T) {
