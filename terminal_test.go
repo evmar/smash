@@ -2,6 +2,7 @@ package main
 
 import (
 	"bufio"
+	"bytes"
 	"io"
 	"strings"
 	"testing"
@@ -184,4 +185,25 @@ func TestWrap(t *testing.T) {
 	term.Width = 5
 	mustRun(t, term, "1234567890")
 	assert.Equal(t, "12345\n67890", term.ToString())
+}
+
+func TestUTF8(t *testing.T) {
+	term := NewTerminal()
+	mustRun(t, term, "\xe2\x96\xbd")
+	assert.Equal(t, rune(0x25bd), term.Lines[0][0].Ch)
+}
+
+func xTestStatusReport(t *testing.T) {
+	term := NewTerminal()
+	buf := &bytes.Buffer{}
+	term.Input = buf
+	mustRun(t, term, "\x1b[6n")
+	assert.Equal(t, "", term.ToString())
+	assert.Equal(t, "xxx", buf.String())
+}
+
+func xTestCSIGreaterThan(t *testing.T) {
+	term := NewTerminal()
+	mustRun(t, term, "\x1b>0n")
+	assert.Equal(t, "", term.ToString())
 }

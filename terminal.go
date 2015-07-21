@@ -71,6 +71,7 @@ type Terminal struct {
 	Width  int
 	Height int
 	Top    int
+	Input  io.Writer
 
 	Row, Col int
 	Attr     Attr
@@ -136,21 +137,60 @@ func (t *Terminal) Read(r io.ByteScanner) error {
 		t.Col += 8
 		t.fixPosition()
 		t.Mu.Unlock()
+	case c > '~':
+		r.UnreadByte()
+		return t.readUTF8(r)
+	case c >= ' ' && c <= '~':
+		t.writeRune(rune(c))
 	default:
-		if c < ' ' || c > '~' {
-			log.Printf("term: unhandled %#x", c)
-			c = '#'
-		}
-		t.Mu.Lock()
-		if t.Col == t.Width {
-			t.Row++
-			t.Col = 0
-		}
-		t.Col++
-		t.fixPosition()
-		t.Lines[t.Row][t.Col-1] = TerminalChar{rune(c), t.Attr}
-		t.Mu.Unlock()
+		log.Printf("term: unhandled %#x", c)
+		c = '#'
 	}
+	return nil
+}
+
+func (t *Terminal) writeRune(r rune) {
+	t.Mu.Lock()
+	if t.Col == t.Width {
+		t.Row++
+		t.Col = 0
+	}
+	t.Col++
+	t.fixPosition()
+	t.Lines[t.Row][t.Col-1] = TerminalChar{r, t.Attr}
+	t.Mu.Unlock()
+}
+
+func (t *Terminal) readUTF8(r io.ByteScanner) error {
+	c, err := r.ReadByte()
+	if err != nil {
+		return err
+	}
+
+	var uc rune
+	n := 0
+	switch {
+	case c&0xE0 == 0xB0:
+		uc = rune(c & 0x1F)
+		n = 2
+	case c&0xF0 == 0xE0:
+		uc = rune(c & 0x0F)
+		n = 3
+	default:
+		return fmt.Errorf("term: unhandled utf8 start %#v", c)
+	}
+
+	for i := 1; i < n; i++ {
+		c, err := r.ReadByte()
+		if err != nil {
+			return err
+		}
+		if c&0xC0 != 0x80 {
+			return fmt.Errorf("term: unhandled utf8 continuation %#v", c)
+		}
+		uc = uc<<6 | rune(c&0x3F)
+	}
+	t.writeRune(uc)
 	return nil
 }
 
