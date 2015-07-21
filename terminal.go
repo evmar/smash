@@ -421,6 +421,22 @@ L:
 			}
 		}
 		t.Mu.Unlock()
+	case c == 'n': // device status report
+		arg := -1
+		readArgs(args, &arg)
+		switch arg {
+		case 5:
+			_, err := t.Input.Write([]byte("\x1b[0n"))
+			return err
+		case 6:
+			t.Mu.Lock()
+			pos := fmt.Sprintf("\x1b[%d;%dn", t.Row+1, t.Col+1)
+			t.Mu.Unlock()
+			_, err := t.Input.Write([]byte(pos))
+			return err
+		default:
+			log.Printf("term: unknown status report arg %v", args)
+		}
 	case c == 'r': // set scrolling region
 		top, bot := 1, 1
 		readArgs(args, &top, &bot)

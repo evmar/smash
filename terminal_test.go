@@ -193,13 +193,17 @@ func TestUTF8(t *testing.T) {
 	assert.Equal(t, rune(0x25bd), term.Lines[0][0].Ch)
 }
 
-func xTestStatusReport(t *testing.T) {
+func TestStatusReport(t *testing.T) {
 	term := NewTerminal()
 	buf := &bytes.Buffer{}
 	term.Input = buf
-	mustRun(t, term, "\x1b[6n")
+	mustRun(t, term, "\x1b[5n")
 	assert.Equal(t, "", term.ToString())
-	assert.Equal(t, "xxx", buf.String())
+	assert.Equal(t, "\x1b[0n", buf.String())
+
+	buf.Reset()
+	mustRun(t, term, "\x1b[6n")
+	assert.Equal(t, "\x1b[1;1n", buf.String())
 }
 
 func xTestCSIGreaterThan(t *testing.T) {
