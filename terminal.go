@@ -385,6 +385,18 @@ L:
 		default:
 			log.Printf("term: unknown erase in line %v", args)
 		}
+	case c == 'L': // insert lines
+		n := 1
+		readArgs(args, &n)
+		t.Mu.Lock()
+		for i := 0; i < n; i++ {
+			t.Lines = append(t.Lines, nil)
+		}
+		copy(t.Lines[t.Row+n:], t.Lines[t.Row:])
+		for i := 0; i < n; i++ {
+			t.Lines[t.Row+i] = make([]TerminalChar, 0)
+		}
+		t.Mu.Unlock()
 	case c == 'P': // erase in line
 		arg := 1
 		readArgs(args, &arg)

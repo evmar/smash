@@ -248,3 +248,11 @@ func TestInsertBlanks(t *testing.T) {
 	mustRun(t, term, "\x1b[2@y")
 	assert.Equal(t, "Axy BC", term.ToString())
 }
+
+func TestInsertLine(t *testing.T) {
+	term := NewTerminal()
+	mustRun(t, term, "foo\nbar\nbaz\n")
+	mustRun(t, term, "\x1b[2A\x1b[L") // two lines up, insert line
+	mustRun(t, term, "\nX")
+	assert.Equal(t, "foo\n\nXar\nbaz\n", term.ToString())
+}
