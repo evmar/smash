@@ -428,7 +428,7 @@ L:
 			t.TODOs.Add("reset mode %d %v", arg, reset)
 		}
 	case qflag && (c == 'h' || c == 'l'): // DEC private mode set/reset
-		reset := c == 'l'
+		set := c == 'h'
 		arg := 0
 		readArgs(args, &arg)
 		switch arg {
@@ -436,18 +436,17 @@ L:
 			t.TODOs.Add("application cursor keys mode")
 		case 7: // wraparound mode
 			t.TODOs.Add("wraparound mode")
-		case 12: // blinking cursor; reset -> stop blinking
-			if reset {
-				t.TODOs.Add("stop blinking cursor")
-			}
-		case 25: // show cursor; reset -> hide cursor
+		case 12: // blinking cursor
+			// Ignore; this appears in cnorm/cvvis as a way to adjust the
+			// "very visible cursor" state.
+		case 25: // show cursor
 			t.Mu.Lock()
-			t.HideCursor = reset
+			t.HideCursor = !set
 			t.Mu.Unlock()
 		case 1049: // alternate screen buffer
-			t.TODOs.Add("alternate screen buffer")
+			t.TODOs.Add("alternate screen buffer %v", set)
 		default:
-			log.Printf("term: unknown dec private mode %v %v", args, reset)
+			log.Printf("term: unknown dec private mode %v %v", args, set)
 		}
 	case c == 'm': // reset
 		if len(args) == 0 {
