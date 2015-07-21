@@ -230,7 +230,7 @@ func TestSendDeviceAttributes(t *testing.T) {
 	assert.Equal(t, "", buf.String())
 	mustRun(t, term, "\x1b[>c")
 	assert.Equal(t, "", term.ToString())
-	assert.Equal(t, "", buf.String())
+	assert.Equal(t, "\x1b[0;0;0c", buf.String())
 }
 
 func TestHideCursor(t *testing.T) {
