@@ -1,4 +1,4 @@
-.PHONY: all vendor test godoc cover
+.PHONY: all vendor test godoc cov
 
 all:
 	go install -race smash
@@ -12,6 +12,6 @@ test:
 godoc:
 	godoc -http=:6060 &
 
-cover:
+cov:
 	go test -coverprofile=cov
 	go tool cover -html=cov
