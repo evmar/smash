@@ -20,8 +20,9 @@ type TermBuf struct {
 
 	keys io.Writer
 
-	// Character size, in pixels.
-	cw, ch int
+	// Character metrics, in pixels.
+	cw, ch  int
+	descent int
 
 	offset     int
 	scrollRows int
@@ -62,6 +63,7 @@ func (t *TermBuf) Draw(cr *cairo.Context) {
 		log.Printf("font extents %#v", ext)
 		t.cw = int(ext.MaxXAdvance)
 		t.ch = int(ext.Height)
+		t.descent = int(ext.Descent)
 	}
 
 	t.term.Mu.Lock()
@@ -124,7 +126,7 @@ func (t *TermBuf) Draw(cr *cairo.Context) {
 				cr.Fill()
 			}
 
-			cr.MoveTo(float64(x1*t.cw), float64((row+1)*t.ch))
+			cr.MoveTo(float64(x1*t.cw), float64((row+1)*t.ch-t.descent+1))
 			setColor(cr, fg)
 			cr.ShowText(string(buf))
 		}
@@ -132,7 +134,7 @@ func (t *TermBuf) Draw(cr *cairo.Context) {
 
 	if !t.term.HideCursor {
 		cr.Rectangle(float64(t.term.Col*t.cw),
-			float64(t.term.Row*t.ch+3),
+			float64(t.term.Row*t.ch),
 			float64(t.cw), float64(t.ch))
 		cr.Fill()
 	}
