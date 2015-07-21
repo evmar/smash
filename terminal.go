@@ -397,9 +397,21 @@ L:
 		t.Lines[t.Row] = l[:len(l)-arg]
 		t.Mu.Unlock()
 	case !gtflag && c == 'c': // send device attributes (primary)
-		t.TODOs.Add("send device attributes")
+		t.TODOs.Add("send device attributes (primary) %v", args)
 	case gtflag && c == 'c': // send device attributes (secondary)
-		t.TODOs.Add("send device attributes")
+		arg := 0
+		readArgs(args, &arg)
+		switch arg {
+		case 0: // terminal id
+			// ID is
+			//   0 -> VT100
+			//   0 -> firmware version 0
+			//   0 -> always-zero param
+			_, err := t.Input.Write([]byte("\x1b[0;0;0c"))
+			return err
+		default:
+			t.TODOs.Add("send device attributes (secondary) %v", args)
+		}
 	case c == 'd': // line position
 		arg := 1
 		readArgs(args, &arg)
