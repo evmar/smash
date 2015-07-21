@@ -203,7 +203,7 @@ func TestStatusReport(t *testing.T) {
 
 	buf.Reset()
 	mustRun(t, term, "\x1b[6n")
-	assert.Equal(t, "\x1b[1;1n", buf.String())
+	assert.Equal(t, "\x1b[1;1R", buf.String())
 }
 
 func TestCSIDisableModifiers(t *testing.T) {

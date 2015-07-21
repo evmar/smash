@@ -447,7 +447,7 @@ L:
 			return err
 		case 6:
 			t.Mu.Lock()
-			pos := fmt.Sprintf("\x1b[%d;%dn", t.Row+1, t.Col+1)
+			pos := fmt.Sprintf("\x1b[%d;%dR", t.Row+1, t.Col+1)
 			t.Mu.Unlock()
 			_, err := t.Input.Write([]byte(pos))
 			return err

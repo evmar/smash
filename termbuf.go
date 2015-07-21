@@ -106,7 +106,8 @@ func (t *TermBuf) Draw(cr *cairo.Context) {
 				if ch < 0x7f {
 					buf = append(buf, byte(ch))
 				} else {
-					panic("unicode")
+					log.Printf("TODO: render unicode")
+					buf = append(buf, '#')
 				}
 			}
 
@@ -187,6 +188,7 @@ func (t *TermBuf) runBash() {
 	check(err)
 
 	t.term.Height = 24
+	t.term.Input = f
 
 	t.keys = f
 	lr := &logReader{f, logf}
