@@ -206,8 +206,9 @@ func TestStatusReport(t *testing.T) {
 	assert.Equal(t, "\x1b[1;1n", buf.String())
 }
 
-func xTestCSIGreaterThan(t *testing.T) {
+func TestCSIDisableModifiers(t *testing.T) {
 	term := NewTerminal()
-	mustRun(t, term, "\x1b>0n")
+	mustRun(t, term, "\x1b[>0n")
 	assert.Equal(t, "", term.ToString())
+	// TODO: implement the disabling, whatever that is.
 }

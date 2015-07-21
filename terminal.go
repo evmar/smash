@@ -273,6 +273,7 @@ func (t *Terminal) readCSI(r io.ByteScanner) error {
 	var args []int
 
 	qflag := false
+	gtflag := false
 L:
 	c, err := r.ReadByte()
 	if err != nil {
@@ -297,6 +298,9 @@ L:
 		}
 	case c == '?':
 		qflag = true
+		goto L
+	case c == '>':
+		gtflag = true
 		goto L
 	}
 
@@ -421,8 +425,21 @@ L:
 			}
 		}
 		t.Mu.Unlock()
+	case gtflag && c == 'n': // disable modifiers
+		arg := 2
+		readArgs(args, &arg)
+		switch arg {
+		case 0:
+			log.Printf("TODO: disable modify keyboard")
+		case 1:
+			log.Printf("TODO: disable modify cursor keys")
+		case 2:
+			log.Printf("TODO: disable modify function keys")
+		case 4:
+			log.Printf("TODO: disable modify other keys")
+		}
 	case c == 'n': // device status report
-		arg := -1
+		arg := 0
 		readArgs(args, &arg)
 		switch arg {
 		case 5:
