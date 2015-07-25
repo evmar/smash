@@ -32,3 +32,13 @@ func TestMove(t *testing.T) {
 	testType(rl, "C-f", "C-f", "Y")
 	assert.Equal(t, "XheYllo", rl.String())
 }
+
+func TestClear(t *testing.T) {
+	rl := NewConfig().NewReadLine()
+	testType(rl, "hello", "C-k")
+	assert.Equal(t, "hello", rl.String())
+	testType(rl, "C-b", "C-b", "C-k")
+	assert.Equal(t, "hel", rl.String())
+	testType(rl, "C-b", "C-u")
+	assert.Equal(t, "l", rl.String())
+}
