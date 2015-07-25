@@ -15,12 +15,9 @@ type Config struct {
 
 func NewConfig() *Config {
 	c := &Config{
-		Bindings: map[string]string{},
+		Bindings: DefaultBindings(),
 	}
-	for ch := ' '; ch <= '~'; ch++ {
-		c.Bindings[fmt.Sprintf("%c", ch)] = "self-insert"
-	}
-	c.Bindings["C-a"] = "beginning-of-line"
+
 	return c
 }
 

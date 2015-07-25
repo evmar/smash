@@ -27,6 +27,8 @@ func TestInsert(t *testing.T) {
 
 func TestMove(t *testing.T) {
 	rl := NewConfig().NewReadLine()
-	testType(rl, "hello", "C-a", "x")
-	assert.Equal(t, "xhello", rl.String())
+	testType(rl, "hello", "C-a", "X")
+	assert.Equal(t, "Xhello", rl.String())
+	testType(rl, "C-f", "C-f", "Y")
+	assert.Equal(t, "XheYllo", rl.String())
 }
