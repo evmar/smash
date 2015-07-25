@@ -3,20 +3,40 @@ package readline
 import (
 	"fmt"
 	"log"
-	"strings"
 )
 
 const (
 	Control = uint(1 << iota)
 )
 
-type ReadLine struct {
-	Text []byte
-	Pos  int
+type Config struct {
+	Bindings map[string]string
 }
 
-func NewReadLine() *ReadLine {
-	return &ReadLine{}
+func NewConfig() *Config {
+	c := &Config{
+		Bindings: map[string]string{},
+	}
+	for ch := ' '; ch <= '~'; ch++ {
+		c.Bindings[fmt.Sprintf("%c", ch)] = "self-insert"
+	}
+	c.Bindings["C-a"] = "beginning-of-line"
+	return c
+}
+
+type ReadLine struct {
+	Config *Config
+	Text   []byte
+	Pos    int
+}
+
+type Key struct {
+	Ch   rune
+	Mods uint
+}
+
+func (c *Config) NewReadLine() *ReadLine {
+	return &ReadLine{Config: c}
 }
 
 func (rl *ReadLine) String() string {
@@ -42,34 +62,32 @@ func showChar(ch rune) string {
 	if ch >= ' ' && ch <= '~' {
 		return fmt.Sprintf("%c", ch)
 	} else {
-		return fmt.Sprintf("%#x", ch)
+		return fmt.Sprintf("\\u%4x", ch)
 	}
 }
 
-func showMods(mods uint) string {
-	var out []string
-	if mods&Control != 0 {
-		out = append(out, "Control")
+func (k Key) Spec() string {
+	spec := ""
+	if k.Mods&Control != 0 {
+		spec += "C-"
 	}
-	return strings.Join(out, "-")
+	spec += showChar(k.Ch)
+	return spec
 }
 
-func showKey(key rune, mods uint) string {
-	m := showMods(mods)
-	if m != "" {
-		return m + "-" + showChar(key)
+func (rl *ReadLine) Key(key Key) bool {
+	bind := rl.Config.Bindings[key.Spec()]
+	if bind == "" {
+		log.Printf("readline: unhandled key %q", key.Spec())
+		return false
 	}
-	return showChar(key)
-}
 
-func (rl *ReadLine) Key(key rune, mods uint) bool {
-	switch {
-	case mods == Control && key == 'a':
-		rl.Home()
-	case mods == 0 && key >= ' ' && key <= '~':
-		rl.Insert(byte(key))
-	default:
-		log.Printf("readline: unhandled key %s", showKey(key, mods))
+	cmd := commands[bind]
+	if cmd == nil {
+		log.Printf("readline: unknown binding %q for key %q", bind, key.Spec())
+		return false
 	}
+
+	cmd(rl, key)
 	return false
 }

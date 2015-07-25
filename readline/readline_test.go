@@ -14,19 +14,19 @@ func testType(rl *ReadLine, inputs ...string) {
 			input = input[2:]
 		}
 		for _, k := range input {
-			rl.Key(k, mod)
+			rl.Key(Key{k, mod})
 		}
 	}
 }
 
 func TestInsert(t *testing.T) {
-	rl := NewReadLine()
+	rl := NewConfig().NewReadLine()
 	testType(rl, "hello, world")
 	assert.Equal(t, "hello, world", rl.String())
 }
 
 func TestMove(t *testing.T) {
-	rl := NewReadLine()
+	rl := NewConfig().NewReadLine()
 	testType(rl, "hello", "C-a", "x")
 	assert.Equal(t, "xhello", rl.String())
 }
