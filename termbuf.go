@@ -8,6 +8,7 @@ import (
 	"os"
 	"os/exec"
 	"smash/base"
+	"smash/keys"
 	"syscall"
 	"time"
 
@@ -162,34 +163,34 @@ func (t *TermBuf) Draw(cr *cairo.Context) {
 	}
 }
 
-func (t *TermBuf) Key(key base.Key) {
-	if key.Sym == base.KeyNone {
+func (t *TermBuf) Key(key keys.Key) {
+	if key.Sym == keys.KeyNone {
 		// Modifier-only keypress.
 		return
 	}
 
 	// log.Printf("key %#x %c", key, key)
 	var send string
-	if key.Sym < base.KeyFirstNonASCII {
+	if key.Sym < keys.KeyFirstNonASCII {
 		ch := byte(key.Sym)
-		if key.Mods&base.KeyModControl != 0 {
+		if key.Mods&keys.KeyModControl != 0 {
 			// Ctl: C-a means "send keycode 1".
 			ch = ch - 'a' + 1
 		}
-		if key.Mods&base.KeyModMeta != 0 {
+		if key.Mods&keys.KeyModMeta != 0 {
 			// Alt: send an escape before the next key.
 			send += "\x1b"
 		}
 		send += fmt.Sprintf("%c", ch)
-	} else if key.Sym != base.KeyNone {
+	} else if key.Sym != keys.KeyNone {
 		switch key.Sym {
-		case base.KeyUp:
+		case keys.KeyUp:
 			send = "\x1b[A"
-		case base.KeyDown:
+		case keys.KeyDown:
 			send = "\x1b[B"
-		case base.KeyRight:
+		case keys.KeyRight:
 			send = "\x1b[C"
-		case base.KeyLeft:
+		case keys.KeyLeft:
 			send = "\x1b[D"
 		default:
 			log.Printf("unhandled key %#v", key)

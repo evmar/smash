@@ -6,6 +6,7 @@ import (
 	"os"
 	"runtime/pprof"
 	"smash/base"
+	"smash/keys"
 	"smash/xlib"
 	"syscall"
 
@@ -34,7 +35,7 @@ type Window struct {
 
 type View interface {
 	Draw(cr *cairo.Context)
-	Key(key base.Key)
+	Key(key keys.Key)
 	Scroll(dy int)
 	Dirty()
 }
@@ -60,7 +61,7 @@ func (w *Window) Draw(cr *cairo.Context) {
 	w.view.Draw(cr)
 }
 
-func (w *Window) Key(key base.Key) {
+func (w *Window) Key(key keys.Key) {
 	w.view.Key(key)
 }
 

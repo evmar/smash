@@ -2,37 +2,37 @@ package readline
 
 import (
 	"fmt"
-	"smash/base"
+	"smash/keys"
 )
 
-type Command func(rl *ReadLine, key base.Key)
+type Command func(rl *ReadLine, key keys.Key)
 
 var commands = map[string]Command{
-	"beginning-of-line": func(rl *ReadLine, key base.Key) {
+	"beginning-of-line": func(rl *ReadLine, key keys.Key) {
 		rl.Pos = 0
 	},
-	"end-of-line": func(rl *ReadLine, key base.Key) {
+	"end-of-line": func(rl *ReadLine, key keys.Key) {
 		rl.Pos = len(rl.Text)
 	},
-	"forward-char": func(rl *ReadLine, key base.Key) {
+	"forward-char": func(rl *ReadLine, key keys.Key) {
 		if rl.Pos < len(rl.Text) {
 			rl.Pos++
 		}
 	},
-	"backward-char": func(rl *ReadLine, key base.Key) {
+	"backward-char": func(rl *ReadLine, key keys.Key) {
 		if rl.Pos > 0 {
 			rl.Pos--
 		}
 	},
 
-	"self-insert": func(rl *ReadLine, key base.Key) {
+	"self-insert": func(rl *ReadLine, key keys.Key) {
 		rl.Insert(byte(key.Sym))
 	},
 
-	"kill-line": func(rl *ReadLine, key base.Key) {
+	"kill-line": func(rl *ReadLine, key keys.Key) {
 		rl.Text = rl.Text[:rl.Pos]
 	},
-	"unix-line-discard": func(rl *ReadLine, key base.Key) {
+	"unix-line-discard": func(rl *ReadLine, key keys.Key) {
 		copy(rl.Text, rl.Text[rl.Pos:])
 		rl.Text = rl.Text[:len(rl.Text)-rl.Pos]
 		rl.Pos = 0

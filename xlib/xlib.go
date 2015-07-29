@@ -17,6 +17,7 @@ import (
 	"github.com/martine/gocairo/cairo"
 
 	"smash/base"
+	"smash/keys"
 )
 
 const EINTR syscall.Errno = 4
@@ -40,7 +41,7 @@ type WinDelegate interface {
 	// Draw draws the display content into the backing store.
 	Draw(cr *cairo.Context)
 	// Key is called when there's a keypress on the window.
-	Key(key base.Key)
+	Key(key keys.Key)
 	// Scrolled is called when there's a scroll event.
 	Scroll(dy int)
 }
@@ -127,12 +128,12 @@ func (dpy *Display) processXEvents(win *Window) {
 		case C.KeyPress:
 			e := (*C.XKeyEvent)(unsafe.Pointer(e))
 
-			key := base.Key{}
+			key := keys.Key{}
 			if e.state&C.ControlMask != 0 {
-				key.Mods |= base.KeyModControl
+				key.Mods |= keys.KeyModControl
 			}
 			if e.state&C.Mod1Mask != 0 {
-				key.Mods |= base.KeyModMeta
+				key.Mods |= keys.KeyModMeta
 			}
 
 			var buf [8]byte
@@ -143,21 +144,21 @@ func (dpy *Display) processXEvents(win *Window) {
 				if nulpos > 1 {
 					log.Printf("xlib: overlong key %q", buf[:nulpos])
 				}
-				key.Sym = base.KeySym(buf[0])
-				if key.Mods&base.KeyModControl != 0 {
+				key.Sym = keys.KeySym(buf[0])
+				if key.Mods&keys.KeyModControl != 0 {
 					// Undo Ctl-A => "ASCII control character" mapping.
 					key.Sym += 'a' - 1
 				}
 			} else {
 				switch keysym {
 				case C.XK_Left:
-					key.Sym = base.KeyLeft
+					key.Sym = keys.KeyLeft
 				case C.XK_Right:
-					key.Sym = base.KeyRight
+					key.Sym = keys.KeyRight
 				case C.XK_Up:
-					key.Sym = base.KeyUp
+					key.Sym = keys.KeyUp
 				case C.XK_Down:
-					key.Sym = base.KeyDown
+					key.Sym = keys.KeyDown
 				case C.XK_Shift_L, C.XK_Shift_R:
 				case C.XK_Control_L, C.XK_Control_R:
 				case C.XK_Meta_L, C.XK_Meta_R:

@@ -2,7 +2,8 @@ package readline
 
 import (
 	"log"
-	"smash/base"
+
+	"smash/keys"
 )
 
 type Config struct {
@@ -46,7 +47,7 @@ func (rl *ReadLine) Home() {
 	rl.Pos = 0
 }
 
-func (rl *ReadLine) Key(key base.Key) bool {
+func (rl *ReadLine) Key(key keys.Key) bool {
 	bind := rl.Config.Bindings[key.Spec()]
 	if bind == "" {
 		log.Printf("readline: unhandled key %q", key.Spec())

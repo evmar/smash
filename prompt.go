@@ -1,7 +1,7 @@
 package main
 
 import (
-	"smash/base"
+	"smash/keys"
 	"smash/readline"
 
 	"github.com/martine/gocairo/cairo"
@@ -46,7 +46,7 @@ func (pb *PromptBuf) Draw(cr *cairo.Context) {
 	pb.Dirty()
 }
 
-func (pb *PromptBuf) Key(key base.Key) {
+func (pb *PromptBuf) Key(key keys.Key) {
 	pb.readline.Key(key)
 }
 
