@@ -42,7 +42,12 @@ func (pb *PromptBuf) Draw(cr *cairo.Context) {
 	for _, c := range pb.readline.Text {
 		line = append(line, TerminalChar{Ch: rune(c)})
 	}
-	drawTerminalLine(cr, &pb.metrics, 0, line, pb.readline.Pos+2)
+	drawTerminalLine(cr, &pb.metrics, 0, line)
+	ch := rune(0)
+	if pb.readline.Pos < len(pb.readline.Text) {
+		ch = rune(pb.readline.Text[pb.readline.Pos])
+	}
+	drawCursor(cr, &pb.metrics, 0, pb.readline.Pos+2, ch)
 	pb.Dirty()
 }
 

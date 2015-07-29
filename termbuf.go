@@ -81,29 +81,18 @@ func drawText(cr *cairo.Context, metrics *Metrics, x, y int, fg, bg *Color, line
 // drawTerminalLine draws one line of a terminal buffer, handling
 // layout of text spans of multiple attributes as well as rendering
 // the cursor.
-func drawTerminalLine(cr *cairo.Context, metrics *Metrics, y int, line []TerminalChar, cursorCol int) bool {
-	drewCursor := false
-
+func drawTerminalLine(cr *cairo.Context, metrics *Metrics, y int, line []TerminalChar) {
 	// TODO: reuse buf across lines?
 	buf := make([]byte, 0, 100)
 
 	// Collect spans of text with the same attributes, to batch
-	// the drawing calls to cairo.  The cursor is specially handled as
-	// a separate span.
+	// the drawing calls to cairo.
 	var x1, x2 int
 	for x1 = 0; x1 < len(line); x1 = x2 {
 		buf = buf[:0]
 		attr := line[x1].Attr
 
-		inCursor := false
-		for x2 = x1; x2 < len(line) && line[x2].Attr == attr && !inCursor; x2++ {
-			if x1 == cursorCol {
-				// This span is the cursor.
-				inCursor = true
-			} else if x2 == cursorCol {
-				// Hit the cursor; let the next span handle it.
-				break
-			}
+		for x2 = x1; x2 < len(line) && line[x2].Attr == attr; x2++ {
 			ch := line[x2].Ch
 			if ch < 0x7f {
 				buf = append(buf, byte(ch))
@@ -119,20 +108,16 @@ func drawTerminalLine(cr *cairo.Context, metrics *Metrics, y int, line []Termina
 			fg, bg = bg, fg
 		}
 
-		if inCursor {
-			fg = &white
-			bg = &black
-			drewCursor = true
-		}
-
 		if bg == &white {
 			bg = nil
 		}
 
 		drawText(cr, metrics, x1*metrics.cw, y, fg, bg, string(buf))
 	}
+}
 
-	return drewCursor
+func drawCursor(cr *cairo.Context, metrics *Metrics, row, col int, ch rune) {
+	drawText(cr, metrics, col*metrics.cw, row*metrics.ch, &white, &black, string(ch))
 }
 
 func (t *TermBuf) Draw(cr *cairo.Context) {
@@ -173,23 +158,17 @@ func (t *TermBuf) Draw(cr *cairo.Context) {
 		lastLine = len(t.term.Lines)
 	}
 
-	drewCursor := false
 	for row := firstLine; row < lastLine; row++ {
-		cursorCol := -1
-		if row == t.term.Row {
-			cursorCol = t.term.Col
-		}
-		if drawTerminalLine(cr, &t.metrics, row*t.metrics.ch, t.term.Lines[row], cursorCol) {
-			drewCursor = true
-		}
+		drawTerminalLine(cr, &t.metrics, row*t.metrics.ch, t.term.Lines[row])
 	}
 
-	if !t.term.HideCursor && !drewCursor {
-		setColor(cr, &black)
-		cr.Rectangle(float64(t.term.Col*t.metrics.cw),
-			float64(t.term.Row*t.metrics.ch),
-			float64(t.metrics.cw), float64(t.metrics.ch))
-		cr.Fill()
+	if !t.term.HideCursor {
+		ch := rune(0)
+		if t.term.Row < len(t.term.Lines) &&
+			t.term.Col < len(t.term.Lines[t.term.Row]) {
+			ch = t.term.Lines[t.term.Row][t.term.Col].Ch
+		}
+		drawCursor(cr, &t.metrics, t.term.Row, t.term.Col, ch)
 	}
 }
 
