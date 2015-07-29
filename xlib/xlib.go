@@ -40,7 +40,7 @@ type WinDelegate interface {
 	// Draw draws the display content into the backing store.
 	Draw(cr *cairo.Context)
 	// Key is called when there's a keypress on the window.
-	Key(key *base.Key)
+	Key(key base.Key)
 	// Scrolled is called when there's a scroll event.
 	Scroll(dy int)
 }
@@ -127,27 +127,37 @@ func (dpy *Display) processXEvents(win *Window) {
 		case C.KeyPress:
 			e := (*C.XKeyEvent)(unsafe.Pointer(e))
 
-			key := &base.Key{}
+			key := base.Key{}
+			if e.state&C.ControlMask != 0 {
+				key.Mods |= base.KeyModControl
+			}
+			if e.state&C.Mod1Mask != 0 {
+				key.Mods |= base.KeyModMeta
+			}
+
 			var buf [8]byte
 			var keysym C.KeySym
 			C.XLookupString(e, (*C.char)(unsafe.Pointer(&buf)), 8, &keysym, nil)
 			nulpos := bytes.Index(buf[:], []byte{0})
 			if nulpos > 0 {
-				if e.state&C.Mod1Mask != 0 {
-					// Alt: send an escape before the next key.
-					key.Text += "\x1b"
+				if nulpos > 1 {
+					log.Printf("xlib: overlong key %q", buf[:nulpos])
 				}
-				key.Text += string(buf[:nulpos])
+				key.Sym = base.KeySym(buf[0])
+				if key.Mods&base.KeyModControl != 0 {
+					// Undo Ctl-A => "ASCII control character" mapping.
+					key.Sym += 'a' - 1
+				}
 			} else {
 				switch keysym {
 				case C.XK_Left:
-					key.Special = base.KeyLeft
+					key.Sym = base.KeyLeft
 				case C.XK_Right:
-					key.Special = base.KeyRight
+					key.Sym = base.KeyRight
 				case C.XK_Up:
-					key.Special = base.KeyUp
+					key.Sym = base.KeyUp
 				case C.XK_Down:
-					key.Special = base.KeyDown
+					key.Sym = base.KeyDown
 				case C.XK_Shift_L, C.XK_Shift_R:
 				case C.XK_Control_L, C.XK_Control_R:
 				case C.XK_Meta_L, C.XK_Meta_R:

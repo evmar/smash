@@ -34,7 +34,7 @@ type Window struct {
 
 type View interface {
 	Draw(cr *cairo.Context)
-	Key(key *base.Key)
+	Key(key base.Key)
 	Scroll(dy int)
 	Dirty()
 }
@@ -60,7 +60,7 @@ func (w *Window) Draw(cr *cairo.Context) {
 	w.view.Draw(cr)
 }
 
-func (w *Window) Key(key *base.Key) {
+func (w *Window) Key(key base.Key) {
 	w.view.Key(key)
 }
 
@@ -88,7 +88,7 @@ func main() {
 
 	win := &Window{dpy: dpy}
 	win.xwin = dpy.NewWindow(win)
-	if false {
+	if true {
 		win.term = NewTermBuf(win)
 		win.view = win.term
 	} else {

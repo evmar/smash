@@ -1,12 +1,8 @@
 package readline
 
 import (
-	"fmt"
 	"log"
-)
-
-const (
-	Control = uint(1 << iota)
+	"smash/base"
 )
 
 type Config struct {
@@ -25,11 +21,6 @@ type ReadLine struct {
 	Config *Config
 	Text   []byte
 	Pos    int
-}
-
-type Key struct {
-	Ch   rune
-	Mods uint
 }
 
 func (c *Config) NewReadLine() *ReadLine {
@@ -55,24 +46,7 @@ func (rl *ReadLine) Home() {
 	rl.Pos = 0
 }
 
-func showChar(ch rune) string {
-	if ch >= ' ' && ch <= '~' {
-		return fmt.Sprintf("%c", ch)
-	} else {
-		return fmt.Sprintf("\\u%4x", ch)
-	}
-}
-
-func (k Key) Spec() string {
-	spec := ""
-	if k.Mods&Control != 0 {
-		spec += "C-"
-	}
-	spec += showChar(k.Ch)
-	return spec
-}
-
-func (rl *ReadLine) Key(key Key) bool {
+func (rl *ReadLine) Key(key base.Key) bool {
 	bind := rl.Config.Bindings[key.Spec()]
 	if bind == "" {
 		log.Printf("readline: unhandled key %q", key.Spec())

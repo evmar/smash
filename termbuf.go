@@ -2,6 +2,7 @@ package main
 
 import (
 	"bufio"
+	"fmt"
 	"io"
 	"log"
 	"os"
@@ -161,13 +162,27 @@ func (t *TermBuf) Draw(cr *cairo.Context) {
 	}
 }
 
-func (t *TermBuf) Key(key *base.Key) {
+func (t *TermBuf) Key(key base.Key) {
+	if key.Sym == base.KeyNone {
+		// Modifier-only keypress.
+		return
+	}
+
 	// log.Printf("key %#x %c", key, key)
 	var send string
-	if key.Text != "" {
-		send = key.Text
-	} else if key.Special != base.KeyNone {
-		switch key.Special {
+	if key.Sym < base.KeyFirstNonASCII {
+		ch := byte(key.Sym)
+		if key.Mods&base.KeyModControl != 0 {
+			// Ctl: C-a means "send keycode 1".
+			ch = ch - 'a' + 1
+		}
+		if key.Mods&base.KeyModMeta != 0 {
+			// Alt: send an escape before the next key.
+			send += "\x1b"
+		}
+		send += fmt.Sprintf("%c", ch)
+	} else if key.Sym != base.KeyNone {
+		switch key.Sym {
 		case base.KeyUp:
 			send = "\x1b[A"
 		case base.KeyDown:
@@ -177,7 +192,7 @@ func (t *TermBuf) Key(key *base.Key) {
 		case base.KeyLeft:
 			send = "\x1b[D"
 		default:
-			log.Printf("key %#v", key)
+			log.Printf("unhandled key %#v", key)
 		}
 	}
 

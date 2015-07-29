@@ -46,8 +46,8 @@ func (pb *PromptBuf) Draw(cr *cairo.Context) {
 	pb.Dirty()
 }
 
-func (pb *PromptBuf) Key(key *base.Key) {
-	pb.readline.Key(readline.Key{Ch: rune(key.Text[0])})
+func (pb *PromptBuf) Key(key base.Key) {
+	pb.readline.Key(key)
 }
 
 func (pb *PromptBuf) Scroll(dy int) {
