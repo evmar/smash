@@ -43,10 +43,6 @@ func (rl *ReadLine) Insert(ch byte) {
 	rl.Pos++
 }
 
-func (rl *ReadLine) Home() {
-	rl.Pos = 0
-}
-
 func (rl *ReadLine) Key(key keys.Key) bool {
 	bind := rl.Config.Bindings[key.Spec()]
 	if bind == "" {
