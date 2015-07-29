@@ -16,15 +16,20 @@ import (
 	"github.com/martine/gocairo/cairo"
 )
 
+type Metrics struct {
+	// Character width and height.
+	cw, ch int
+	// Adjustment from drawing baseline to bottom of character.
+	descent int
+}
+
 type TermBuf struct {
 	ViewBase
 	term *Terminal
 
 	keys io.Writer
 
-	// Character metrics, in pixels.
-	cw, ch  int
-	descent int
+	metrics Metrics
 
 	offset     int
 	scrollRows int
@@ -52,6 +57,72 @@ func setColor(cr *cairo.Context, color *Color) {
 	cr.SetSourceRGB(float64(color.R)/0xff, float64(color.G)/0xff, float64(color.B)/0xff)
 }
 
+// drawTerminalLine draws one line of a terminal buffer, handling
+// layout of text spans of multiple attributes as well as rendering
+// the cursor.
+func drawTerminalLine(cr *cairo.Context, metrics *Metrics, y int, line []TerminalChar, cursorCol int) bool {
+	drewCursor := false
+
+	cw := metrics.cw
+	ch := metrics.ch
+	descent := metrics.descent
+
+	// TODO: reuse buf across lines?
+	buf := make([]byte, 0, 100)
+
+	// Collect spans of text with the same attributes, to batch
+	// the drawing calls to cairo.  The cursor is specially handled as
+	// a separate span.
+	var x1, x2 int
+	for x1 = 0; x1 < len(line); x1 = x2 {
+		buf = buf[:0]
+		attr := line[x1].Attr
+
+		inCursor := false
+		for x2 = x1; x2 < len(line) && line[x2].Attr == attr && !inCursor; x2++ {
+			if x1 == cursorCol {
+				// This span is the cursor.
+				inCursor = true
+			} else if x2 == cursorCol {
+				// Hit the cursor; let the next span handle it.
+				break
+			}
+			ch := line[x2].Ch
+			if ch < 0x7f {
+				buf = append(buf, byte(ch))
+			} else {
+				log.Printf("TODO: render unicode")
+				buf = append(buf, '#')
+			}
+		}
+
+		fg := ansiColor(attr.Color(), attr.Bold(), &black)
+		bg := ansiColor(attr.BackColor(), false, &white)
+		if attr.Inverse() {
+			fg, bg = bg, fg
+		}
+
+		if inCursor {
+			fg = &white
+			bg = &black
+			drewCursor = true
+		}
+
+		if bg != &white {
+			setColor(cr, bg)
+			cr.Rectangle(float64(x1*cw), float64(y),
+				float64(len(buf)*cw), float64(ch))
+			cr.Fill()
+		}
+
+		cr.MoveTo(float64(x1*cw), float64(y+ch-descent+1))
+		setColor(cr, fg)
+		cr.ShowText(string(buf))
+	}
+
+	return drewCursor
+}
+
 func (t *TermBuf) Draw(cr *cairo.Context) {
 	cr.SetSourceRGB(1, 1, 1)
 	cr.Paint()
@@ -59,19 +130,18 @@ func (t *TermBuf) Draw(cr *cairo.Context) {
 	cr.SetSourceRGB(0, 0, 0)
 	cr.SelectFontFace("monospace", cairo.FontSlantNormal, cairo.FontWeightNormal)
 	cr.SetFontSize(14)
-	if t.cw == 0 {
-		ext := &cairo.FontExtents{}
-		cr.FontExtents(ext)
-		// log.Printf("font extents %#v", ext)
-		t.cw = int(ext.MaxXAdvance)
-		t.ch = int(ext.Height)
-		t.descent = int(ext.Descent)
+	if t.metrics.cw == 0 {
+		ext := cairo.FontExtents{}
+		cr.FontExtents(&ext)
+		t.metrics.cw = int(ext.MaxXAdvance)
+		t.metrics.ch = int(ext.Height)
+		t.metrics.descent = int(ext.Descent)
 	}
 
 	t.term.Mu.Lock()
 	defer t.term.Mu.Unlock()
 
-	offset := (t.term.Top + t.scrollRows) * t.ch
+	offset := (t.term.Top + t.scrollRows) * t.metrics.ch
 
 	cr.IdentityMatrix()
 	cr.Translate(0, float64(-t.offset))
@@ -86,7 +156,7 @@ func (t *TermBuf) Draw(cr *cairo.Context) {
 			// TODO adjust existing anim
 		}
 	}
-	firstLine := t.offset / t.ch
+	firstLine := t.offset / t.metrics.ch
 	if firstLine < 0 {
 		firstLine = 0
 	}
@@ -95,70 +165,22 @@ func (t *TermBuf) Draw(cr *cairo.Context) {
 		lastLine = len(t.term.Lines)
 	}
 
-	buf := make([]byte, 0, 80)
 	drewCursor := false
 	for row := firstLine; row < lastLine; row++ {
-		line := t.term.Lines[row]
-
-		// Collect spans of text with the same attributes, to batch
-		// the drawing calls to cairo.  The cursor is specially handled as
-		// a separate batch.
-		var x1, x2 int
-		for x1 = 0; x1 < len(line); x1 = x2 {
-			buf = buf[:0]
-			attr := line[x1].Attr
-
-			inCursor := false
-			for x2 = x1; x2 < len(line) && line[x2].Attr == attr && !inCursor; x2++ {
-				if !t.term.HideCursor &&
-					row == t.term.Row {
-					if x1 == t.term.Col {
-						// This span is the cursor.
-						inCursor = true
-					} else if x2 == t.term.Col {
-						// Hit the cursor; let the next span handle it.
-						break
-					}
-				}
-				ch := line[x2].Ch
-				if ch < 0x7f {
-					buf = append(buf, byte(ch))
-				} else {
-					log.Printf("TODO: render unicode")
-					buf = append(buf, '#')
-				}
-			}
-
-			fg := ansiColor(attr.Color(), attr.Bold(), &black)
-			bg := ansiColor(attr.BackColor(), false, &white)
-			if attr.Inverse() {
-				fg, bg = bg, fg
-			}
-
-			if inCursor {
-				fg = &white
-				bg = &black
-				drewCursor = true
-			}
-
-			if bg != &white {
-				setColor(cr, bg)
-				cr.Rectangle(float64(x1*t.cw), float64(row*t.ch),
-					float64(len(buf)*t.cw), float64(t.ch))
-				cr.Fill()
-			}
-
-			cr.MoveTo(float64(x1*t.cw), float64((row+1)*t.ch-t.descent+1))
-			setColor(cr, fg)
-			cr.ShowText(string(buf))
+		cursorCol := -1
+		if row == t.term.Row {
+			cursorCol = t.term.Col
+		}
+		if drawTerminalLine(cr, &t.metrics, row*t.metrics.ch, t.term.Lines[row], cursorCol) {
+			drewCursor = true
 		}
 	}
 
 	if !t.term.HideCursor && !drewCursor {
 		setColor(cr, &black)
-		cr.Rectangle(float64(t.term.Col*t.cw),
-			float64(t.term.Row*t.ch),
-			float64(t.cw), float64(t.ch))
+		cr.Rectangle(float64(t.term.Col*t.metrics.cw),
+			float64(t.term.Row*t.metrics.ch),
+			float64(t.metrics.cw), float64(t.metrics.ch))
 		cr.Fill()
 	}
 }

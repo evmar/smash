@@ -89,7 +89,7 @@ func main() {
 
 	win := &Window{dpy: dpy}
 	win.xwin = dpy.NewWindow(win)
-	if false {
+	if true {
 		win.term = NewTermBuf(win)
 		win.view = win.term
 	} else {
