@@ -16,8 +16,7 @@ const (
 
 	Backspace Sym = 8
 	Tab       Sym = 9
-	NL        Sym = 10
-	CR        Sym = 13
+	Enter     Sym = 13
 
 	Left Sym = iota + 128
 	Right
