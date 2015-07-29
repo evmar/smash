@@ -23,6 +23,14 @@ type Metrics struct {
 	descent int
 }
 
+func (m *Metrics) FillFromCairo(cr *cairo.Context) {
+	ext := cairo.FontExtents{}
+	cr.FontExtents(&ext)
+	m.cw = int(ext.MaxXAdvance)
+	m.ch = int(ext.Height)
+	m.descent = int(ext.Descent)
+}
+
 type TermBuf struct {
 	ViewBase
 	term *Terminal
@@ -131,11 +139,7 @@ func (t *TermBuf) Draw(cr *cairo.Context) {
 	cr.SelectFontFace("monospace", cairo.FontSlantNormal, cairo.FontWeightNormal)
 	cr.SetFontSize(14)
 	if t.metrics.cw == 0 {
-		ext := cairo.FontExtents{}
-		cr.FontExtents(&ext)
-		t.metrics.cw = int(ext.MaxXAdvance)
-		t.metrics.ch = int(ext.Height)
-		t.metrics.descent = int(ext.Descent)
+		t.metrics.FillFromCairo(cr)
 	}
 
 	t.term.Mu.Lock()

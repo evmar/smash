@@ -9,7 +9,7 @@ import (
 
 type PromptBuf struct {
 	ViewBase
-	metrics cairo.FontExtents
+	metrics Metrics
 
 	rlconfig *readline.Config
 	readline *readline.ReadLine
@@ -31,18 +31,18 @@ func (pb *PromptBuf) Draw(cr *cairo.Context) {
 	cr.SetSourceRGB(0, 0, 0)
 	cr.SelectFontFace("monospace", cairo.FontSlantNormal, cairo.FontWeightNormal)
 	cr.SetFontSize(14)
-	if pb.metrics.MaxXAdvance == 0 {
-		cr.FontExtents(&pb.metrics)
+	if pb.metrics.cw == 0 {
+		pb.metrics.FillFromCairo(cr)
 	}
 
-	text := "$ "
-	if pb.readline != nil {
-		text += pb.readline.String()
+	cr.MoveTo(0, float64(pb.metrics.ch-pb.metrics.descent))
+	var line []TerminalChar
+	line = append(line, TerminalChar{Ch: '$'})
+	line = append(line, TerminalChar{Ch: ' '})
+	for _, c := range pb.readline.Text {
+		line = append(line, TerminalChar{Ch: rune(c)})
 	}
-
-	cr.Translate(100, 100)
-	cr.MoveTo(0, float64(pb.metrics.Height-pb.metrics.Descent))
-	cr.ShowText(text)
+	drawTerminalLine(cr, &pb.metrics, 0, line, pb.readline.Pos+2)
 	pb.Dirty()
 }
 
