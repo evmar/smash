@@ -15,7 +15,7 @@ import (
 )
 
 type TermBuf struct {
-	win  *Window
+	ViewBase
 	term *Terminal
 
 	keys io.Writer
@@ -29,10 +29,10 @@ type TermBuf struct {
 	anim       *base.Lerp
 }
 
-func NewTermBuf(win *Window) *TermBuf {
+func NewTermBuf(parent View) *TermBuf {
 	return &TermBuf{
-		win:  win,
-		term: NewTerminal(),
+		ViewBase: ViewBase{Parent: parent},
+		term:     NewTerminal(),
 	}
 }
 
@@ -183,13 +183,13 @@ func (t *TermBuf) Key(key *base.Key) {
 
 	if send != "" {
 		io.WriteString(t.keys, send)
-		t.win.xwin.Dirty()
+		t.Dirty()
 	}
 }
 
 func (t *TermBuf) Scroll(dy int) {
 	t.scrollRows -= dy
-	t.win.xwin.Dirty()
+	t.Dirty()
 }
 
 type logReader struct {
@@ -221,7 +221,7 @@ func (t *TermBuf) runBash() {
 
 	for err == nil {
 		err = t.term.Read(r)
-		t.win.xwin.Dirty()
+		t.Dirty()
 	}
 	logf.Close()
 

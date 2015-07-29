@@ -28,26 +28,48 @@ type Window struct {
 	dpy  *xlib.Display
 	xwin *xlib.Window
 
+	view View
 	term *TermBuf
 }
 
+type View interface {
+	Draw(cr *cairo.Context)
+	Key(key *base.Key)
+	Scroll(dy int)
+	Dirty()
+}
+
+type ViewBase struct {
+	Parent View
+}
+
+func (vb *ViewBase) Dirty() {
+	vb.Parent.Dirty()
+}
+
 func (win *Window) Mapped() {
-	go func() {
-		win.term.runBash()
-		win.dpy.Quit()
-	}()
+	if win.term != nil {
+		go func() {
+			win.term.runBash()
+			win.dpy.Quit()
+		}()
+	}
 }
 
 func (w *Window) Draw(cr *cairo.Context) {
-	w.term.Draw(cr)
+	w.view.Draw(cr)
 }
 
 func (w *Window) Key(key *base.Key) {
-	w.term.Key(key)
+	w.view.Key(key)
 }
 
 func (w *Window) Scroll(dy int) {
-	w.term.Scroll(dy)
+	w.view.Scroll(dy)
+}
+
+func (w *Window) Dirty() {
+	w.xwin.Dirty()
 }
 
 func main() {
@@ -66,7 +88,12 @@ func main() {
 
 	win := &Window{dpy: dpy}
 	win.xwin = dpy.NewWindow(win)
-	win.term = NewTermBuf(win)
+	if false {
+		win.term = NewTermBuf(win)
+		win.view = win.term
+	} else {
+		win.view = NewPromptBuf(win)
+	}
 
 	dpy.Loop(win.xwin)
 
