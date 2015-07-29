@@ -65,15 +65,24 @@ func setColor(cr *cairo.Context, color *Color) {
 	cr.SetSourceRGB(float64(color.R)/0xff, float64(color.G)/0xff, float64(color.B)/0xff)
 }
 
+func drawText(cr *cairo.Context, metrics *Metrics, x, y int, fg, bg *Color, line string) {
+	if bg != nil {
+		setColor(cr, bg)
+		cr.Rectangle(float64(x), float64(y),
+			float64(len(line)*metrics.cw), float64(metrics.ch))
+		cr.Fill()
+	}
+
+	cr.MoveTo(float64(x), float64(y+metrics.ch-metrics.descent+1))
+	setColor(cr, fg)
+	cr.ShowText(line)
+}
+
 // drawTerminalLine draws one line of a terminal buffer, handling
 // layout of text spans of multiple attributes as well as rendering
 // the cursor.
 func drawTerminalLine(cr *cairo.Context, metrics *Metrics, y int, line []TerminalChar, cursorCol int) bool {
 	drewCursor := false
-
-	cw := metrics.cw
-	ch := metrics.ch
-	descent := metrics.descent
 
 	// TODO: reuse buf across lines?
 	buf := make([]byte, 0, 100)
@@ -116,16 +125,11 @@ func drawTerminalLine(cr *cairo.Context, metrics *Metrics, y int, line []Termina
 			drewCursor = true
 		}
 
-		if bg != &white {
-			setColor(cr, bg)
-			cr.Rectangle(float64(x1*cw), float64(y),
-				float64(len(buf)*cw), float64(ch))
-			cr.Fill()
+		if bg == &white {
+			bg = nil
 		}
 
-		cr.MoveTo(float64(x1*cw), float64(y+ch-descent+1))
-		setColor(cr, fg)
-		cr.ShowText(string(buf))
+		drawText(cr, metrics, x1*metrics.cw, y, fg, bg, string(buf))
 	}
 
 	return drewCursor
