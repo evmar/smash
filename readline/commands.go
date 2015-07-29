@@ -25,6 +25,14 @@ var commands = map[string]Command{
 		}
 	},
 
+	"backward-delete-char": func(rl *ReadLine, key keys.Key) {
+		if rl.Pos == 0 {
+			return
+		}
+		copy(rl.Text[rl.Pos-1:], rl.Text[rl.Pos:])
+		rl.Text = rl.Text[:len(rl.Text)-1]
+		rl.Pos--
+	},
 	"self-insert": func(rl *ReadLine, key keys.Key) {
 		rl.Insert(byte(key.Sym))
 	},
@@ -48,8 +56,14 @@ func DefaultBindings() map[string]string {
 		"M-f": "forward-word",
 		"M-b": "backward-word",
 
+		"C-h":       "backward-delete-char",
+		"Backspace": "backward-delete-char",
+
 		"C-k": "kill-line",
 		"C-u": "unix-line-discard",
+
+		"Right": "forward-char",
+		"Left":  "backward-char",
 	}
 	for ch := ' '; ch <= '~'; ch++ {
 		b[fmt.Sprintf("%c", ch)] = "self-insert"
