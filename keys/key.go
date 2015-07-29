@@ -2,41 +2,41 @@ package keys
 
 import "fmt"
 
-//go:generate stringer -type=KeySym
-type KeySym int
+//go:generate stringer -type=Sym
+type Sym int
 
 const (
-	KeyNone KeySym = 0
+	SymNone Sym = 0
 
 	// 1 through 127 as in ASCII.
-	KeyBackspace KeySym = 8
-	KeyTab       KeySym = 9
-	KeyNL        KeySym = 10
-	KeyCR        KeySym = 13
+	Backspace Sym = 8
+	Tab       Sym = 9
+	NL        Sym = 10
+	CR        Sym = 13
 
-	KeyLeft KeySym = iota + 128
-	KeyRight
-	KeyUp
-	KeyDown
+	Left Sym = iota + 128
+	Right
+	Up
+	Down
 
-	KeyFirstNonASCII = KeyLeft
+	SymFirstNonASCII = Left
 )
 
 const (
-	KeyModControl uint = 1 << iota
-	KeyModMeta
+	ModControl uint = 1 << iota
+	ModMeta
 )
 
 type Key struct {
-	Sym  KeySym
+	Sym  Sym
 	Mods uint
 }
 
-func (sym KeySym) IsText() bool {
+func (sym Sym) IsText() bool {
 	return sym >= ' ' && sym <= '~'
 }
 
-func (sym KeySym) Name() string {
+func (sym Sym) Name() string {
 	if sym.IsText() {
 		return fmt.Sprintf("%c", sym)
 	}
@@ -45,10 +45,10 @@ func (sym KeySym) Name() string {
 
 func (k Key) Spec() string {
 	spec := ""
-	if k.Mods&KeyModControl != 0 {
+	if k.Mods&ModControl != 0 {
 		spec += "C-"
 	}
-	if k.Mods&KeyModMeta != 0 {
+	if k.Mods&ModMeta != 0 {
 		spec += "M-"
 	}
 	spec += k.Sym.Name()

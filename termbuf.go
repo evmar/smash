@@ -164,33 +164,33 @@ func (t *TermBuf) Draw(cr *cairo.Context) {
 }
 
 func (t *TermBuf) Key(key keys.Key) {
-	if key.Sym == keys.KeyNone {
+	if key.Sym == keys.SymNone {
 		// Modifier-only keypress.
 		return
 	}
 
 	// log.Printf("key %#x %c", key, key)
 	var send string
-	if key.Sym < keys.KeyFirstNonASCII {
+	if key.Sym < keys.SymFirstNonASCII {
 		ch := byte(key.Sym)
-		if key.Mods&keys.KeyModControl != 0 {
+		if key.Mods&keys.ModControl != 0 {
 			// Ctl: C-a means "send keycode 1".
 			ch = ch - 'a' + 1
 		}
-		if key.Mods&keys.KeyModMeta != 0 {
+		if key.Mods&keys.ModMeta != 0 {
 			// Alt: send an escape before the next key.
 			send += "\x1b"
 		}
 		send += fmt.Sprintf("%c", ch)
-	} else if key.Sym != keys.KeyNone {
+	} else {
 		switch key.Sym {
-		case keys.KeyUp:
+		case keys.Up:
 			send = "\x1b[A"
-		case keys.KeyDown:
+		case keys.Down:
 			send = "\x1b[B"
-		case keys.KeyRight:
+		case keys.Right:
 			send = "\x1b[C"
-		case keys.KeyLeft:
+		case keys.Left:
 			send = "\x1b[D"
 		default:
 			log.Printf("unhandled key %#v", key)

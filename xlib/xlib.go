@@ -130,10 +130,10 @@ func (dpy *Display) processXEvents(win *Window) {
 
 			key := keys.Key{}
 			if e.state&C.ControlMask != 0 {
-				key.Mods |= keys.KeyModControl
+				key.Mods |= keys.ModControl
 			}
 			if e.state&C.Mod1Mask != 0 {
-				key.Mods |= keys.KeyModMeta
+				key.Mods |= keys.ModMeta
 			}
 
 			var buf [8]byte
@@ -144,21 +144,21 @@ func (dpy *Display) processXEvents(win *Window) {
 				if nulpos > 1 {
 					log.Printf("xlib: overlong key %q", buf[:nulpos])
 				}
-				key.Sym = keys.KeySym(buf[0])
-				if key.Mods&keys.KeyModControl != 0 {
+				key.Sym = keys.Sym(buf[0])
+				if key.Mods&keys.ModControl != 0 {
 					// Undo Ctl-A => "ASCII control character" mapping.
 					key.Sym += 'a' - 1
 				}
 			} else {
 				switch keysym {
 				case C.XK_Left:
-					key.Sym = keys.KeyLeft
+					key.Sym = keys.Left
 				case C.XK_Right:
-					key.Sym = keys.KeyRight
+					key.Sym = keys.Right
 				case C.XK_Up:
-					key.Sym = keys.KeyUp
+					key.Sym = keys.Up
 				case C.XK_Down:
-					key.Sym = keys.KeyDown
+					key.Sym = keys.Down
 				case C.XK_Shift_L, C.XK_Shift_R:
 				case C.XK_Control_L, C.XK_Control_R:
 				case C.XK_Meta_L, C.XK_Meta_R:
