@@ -10,7 +10,7 @@ import "fmt"
 type Sym int
 
 const (
-	SymNone Sym = 0
+	NoSym Sym = 0
 
 	// 1 through 127 are the same as in ASCII.
 
@@ -23,7 +23,7 @@ const (
 	Up
 	Down
 
-	SymFirstNonASCII = Left
+	FirstNonASCIISym = Left
 )
 
 const (

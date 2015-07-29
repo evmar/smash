@@ -164,14 +164,14 @@ func (t *TermBuf) Draw(cr *cairo.Context) {
 }
 
 func (t *TermBuf) Key(key keys.Key) {
-	if key.Sym == keys.SymNone {
+	if key.Sym == keys.NoSym {
 		// Modifier-only keypress.
 		return
 	}
 
 	// log.Printf("key %#x %c", key, key)
 	var send string
-	if key.Sym < keys.SymFirstNonASCII {
+	if key.Sym < keys.FirstNonASCIISym {
 		ch := byte(key.Sym)
 		if key.Mods&keys.ModControl != 0 {
 			// Ctl: C-a means "send keycode 1".

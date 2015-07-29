@@ -47,7 +47,7 @@ func (pb *PromptBuf) Draw(cr *cairo.Context) {
 }
 
 func (pb *PromptBuf) Key(key keys.Key) {
-	if key.Sym == keys.SymNone {
+	if key.Sym == keys.NoSym {
 		return
 	}
 	pb.readline.Key(key)
