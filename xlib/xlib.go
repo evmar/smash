@@ -239,6 +239,7 @@ func (dpy *Display) Loop(win *Window) {
 	awaitEvent <- true
 	draw := false
 	for {
+		// log.Printf("draw %v", draw)
 		nextFrame := dpy.anims.NextFrame(draw)
 		select {
 		case <-dpy.eventReady:

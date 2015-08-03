@@ -3,6 +3,7 @@ package main
 import (
 	"smash/keys"
 	"smash/readline"
+	"time"
 
 	"github.com/martine/gocairo/cairo"
 )
@@ -62,7 +63,14 @@ func (pb *PromptBuf) Key(key keys.Key) {
 func (pb *PromptBuf) Scroll(dy int) {
 }
 
+func (pb *PromptBuf) Complete(text string, pos int) (string, int) {
+	time.Sleep(500 * time.Millisecond)
+	return "foo", 0
+}
+
 func (pb *PromptBuf) Reset() {
 	pb.readline = pb.rlconfig.NewReadLine()
 	pb.readline.Accept = pb.Reset
+	pb.readline.Enqueue = pb.Enqueue
+	pb.readline.Complete = pb.Complete
 }

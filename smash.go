@@ -38,6 +38,7 @@ type View interface {
 	Key(key keys.Key)
 	Scroll(dy int)
 	Dirty()
+	Enqueue(f func())
 }
 
 type ViewBase struct {
@@ -46,6 +47,10 @@ type ViewBase struct {
 
 func (vb *ViewBase) Dirty() {
 	vb.Parent.Dirty()
+}
+
+func (vb *ViewBase) Enqueue(f func()) {
+	vb.Parent.Enqueue(f)
 }
 
 func (win *Window) Mapped() {
@@ -71,6 +76,10 @@ func (w *Window) Scroll(dy int) {
 
 func (w *Window) Dirty() {
 	w.xwin.Dirty()
+}
+
+func (w *Window) Enqueue(f func()) {
+	w.dpy.Enqueue(f)
 }
 
 func main() {

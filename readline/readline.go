@@ -71,11 +71,13 @@ func (rl *ReadLine) Key(key keys.Key) {
 
 func (rl *ReadLine) startComplete() {
 	pc := &pendingComplete{}
+	rl.pendingComplete = pc
+	text, pos := rl.String(), rl.Pos
 	go func() {
-		newText, newPos := rl.Complete(rl.String(), rl.Pos)
+		text, pos := rl.Complete(text, pos)
 		rl.Enqueue(func() {
 			if rl.pendingComplete == pc {
-				rl.finishComplete(newText, newPos)
+				rl.finishComplete(text, pos)
 			}
 		})
 	}()
