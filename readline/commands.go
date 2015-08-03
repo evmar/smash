@@ -55,6 +55,11 @@ var commands = map[string]Command{
 		rl.Text = rl.Text[:len(rl.Text)-rl.Pos]
 		rl.Pos = 0
 	},
+
+	// Completion
+	"complete": func(rl *ReadLine, key keys.Key) {
+		rl.startComplete()
+	},
 }
 
 func DefaultBindings() map[string]string {
@@ -77,9 +82,12 @@ func DefaultBindings() map[string]string {
 		"C-h":       "backward-delete-char",
 		"Backspace": "backward-delete-char",
 
-		// Kiling
+		// Killing
 		"C-k": "kill-line",
 		"C-u": "unix-line-discard",
+
+		// Completion
+		"Tab": "complete",
 	}
 	for ch := ' '; ch <= '~'; ch++ {
 		b[fmt.Sprintf("%c", ch)] = "self-insert"

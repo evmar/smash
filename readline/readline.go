@@ -18,11 +18,18 @@ func NewConfig() *Config {
 	return c
 }
 
+type pendingComplete struct {
+	cancelled bool
+}
+
 type ReadLine struct {
-	Config *Config
-	Text   []byte
-	Pos    int
-	Accept func()
+	Config          *Config
+	Text            []byte
+	Pos             int
+	Accept          func()
+	Enqueue         func(func())
+	pendingComplete *pendingComplete
+	Complete        func(input string, pos int) (string, int)
 }
 
 func (c *Config) NewReadLine() *ReadLine {
@@ -45,6 +52,8 @@ func (rl *ReadLine) Insert(ch byte) {
 }
 
 func (rl *ReadLine) Key(key keys.Key) {
+	rl.pendingComplete = nil
+
 	bind := rl.Config.Bindings[key.Spec()]
 	if bind == "" {
 		log.Printf("readline: unhandled key %q", key.Spec())
@@ -58,4 +67,22 @@ func (rl *ReadLine) Key(key keys.Key) {
 	}
 
 	cmd(rl, key)
+}
+
+func (rl *ReadLine) startComplete() {
+	pc := &pendingComplete{}
+	go func() {
+		newText, newPos := rl.Complete(rl.String(), rl.Pos)
+		rl.Enqueue(func() {
+			if rl.pendingComplete == pc {
+				rl.finishComplete(newText, newPos)
+			}
+		})
+	}()
+}
+
+func (rl *ReadLine) finishComplete(text string, pos int) {
+	rl.Text = []byte(text)
+	rl.Pos = pos
+	rl.pendingComplete = nil
 }
