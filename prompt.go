@@ -50,7 +50,6 @@ func (pb *PromptBuf) Draw(cr *cairo.Context) {
 		ch = rune(pb.readline.Text[pb.readline.Pos])
 	}
 	drawCursor(cr, &pb.metrics, 0, pb.readline.Pos+2, ch)
-	pb.Dirty()
 }
 
 func (pb *PromptBuf) Key(key keys.Key) {
@@ -58,6 +57,7 @@ func (pb *PromptBuf) Key(key keys.Key) {
 		return
 	}
 	pb.readline.Key(key)
+	pb.Dirty()
 }
 
 func (pb *PromptBuf) Scroll(dy int) {
