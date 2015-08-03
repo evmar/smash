@@ -31,6 +31,8 @@ type Display struct {
 	drawReady chan bool
 	// quit has a token when it's time to shutdown.
 	quit chan bool
+	// funcs carries functions to run on the main thread.
+	funcs chan func()
 
 	anims *base.AnimSet
 }
@@ -253,10 +255,16 @@ func (dpy *Display) Loop(win *Window) {
 			win.repaint(0, 0, win.width, win.height)
 			C.XSync(dpy.dpy, 0)
 			draw = false
+		case f := <-dpy.funcs:
+			f()
 		case <-dpy.quit:
 			return
 		}
 	}
+}
+
+func (dpy *Display) Enqueue(f func()) {
+	dpy.funcs <- f
 }
 
 func (dpy *Display) Quit() {
@@ -272,6 +280,7 @@ func OpenDisplay(anims *base.AnimSet) *Display {
 		eventReady: make(chan bool),
 		drawReady:  make(chan bool, 1),
 		quit:       make(chan bool, 1),
+		funcs:      make(chan func(), 5),
 		anims:      anims,
 	}
 }
