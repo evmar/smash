@@ -44,19 +44,18 @@ func (rl *ReadLine) Insert(ch byte) {
 	rl.Pos++
 }
 
-func (rl *ReadLine) Key(key keys.Key) bool {
+func (rl *ReadLine) Key(key keys.Key) {
 	bind := rl.Config.Bindings[key.Spec()]
 	if bind == "" {
 		log.Printf("readline: unhandled key %q", key.Spec())
-		return false
+		return
 	}
 
 	cmd := commands[bind]
 	if cmd == nil {
 		log.Printf("readline: unknown binding %q for key %q", bind, key.Spec())
-		return false
+		return
 	}
 
 	cmd(rl, key)
-	return false
 }
