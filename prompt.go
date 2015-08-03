@@ -17,11 +17,12 @@ type PromptBuf struct {
 
 func NewPromptBuf(parent View) *PromptBuf {
 	config := readline.NewConfig()
-	return &PromptBuf{
+	pb := &PromptBuf{
 		ViewBase: ViewBase{Parent: parent},
 		rlconfig: config,
-		readline: config.NewReadLine(),
 	}
+	pb.Reset()
+	return pb
 }
 
 func (pb *PromptBuf) Draw(cr *cairo.Context) {
@@ -59,4 +60,9 @@ func (pb *PromptBuf) Key(key keys.Key) {
 }
 
 func (pb *PromptBuf) Scroll(dy int) {
+}
+
+func (pb *PromptBuf) Reset() {
+	pb.readline = pb.rlconfig.NewReadLine()
+	pb.readline.Accept = pb.Reset
 }
