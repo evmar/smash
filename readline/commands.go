@@ -8,6 +8,7 @@ import (
 type Command func(rl *ReadLine, key keys.Key)
 
 var commands = map[string]Command{
+	// Moving
 	"beginning-of-line": func(rl *ReadLine, key keys.Key) {
 		rl.Pos = 0
 	},
@@ -25,6 +26,14 @@ var commands = map[string]Command{
 		}
 	},
 
+	// History
+	"accept-line": func(rl *ReadLine, key keys.Key) {
+		if rl.Accept != nil {
+			rl.Accept()
+		}
+	},
+
+	// Text
 	"backward-delete-char": func(rl *ReadLine, key keys.Key) {
 		if rl.Pos == 0 {
 			return
@@ -37,6 +46,7 @@ var commands = map[string]Command{
 		rl.Insert(byte(key.Sym))
 	},
 
+	// Killing
 	"kill-line": func(rl *ReadLine, key keys.Key) {
 		rl.Text = rl.Text[:rl.Pos]
 	},
@@ -49,6 +59,7 @@ var commands = map[string]Command{
 
 func DefaultBindings() map[string]string {
 	b := map[string]string{
+		// Moving
 		"C-a": "beginning-of-line",
 		"C-e": "end-of-line",
 		"C-f": "forward-char",
@@ -56,14 +67,19 @@ func DefaultBindings() map[string]string {
 		"M-f": "forward-word",
 		"M-b": "backward-word",
 
+		"Right": "forward-char",
+		"Left":  "backward-char",
+
+		// History
+		"Enter": "accept-line",
+
+		// Text
 		"C-h":       "backward-delete-char",
 		"Backspace": "backward-delete-char",
 
+		// Kiling
 		"C-k": "kill-line",
 		"C-u": "unix-line-discard",
-
-		"Right": "forward-char",
-		"Left":  "backward-char",
 	}
 	for ch := ' '; ch <= '~'; ch++ {
 		b[fmt.Sprintf("%c", ch)] = "self-insert"

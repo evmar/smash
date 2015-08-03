@@ -22,6 +22,7 @@ type ReadLine struct {
 	Config *Config
 	Text   []byte
 	Pos    int
+	Accept func()
 }
 
 func (c *Config) NewReadLine() *ReadLine {
