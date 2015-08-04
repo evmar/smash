@@ -212,15 +212,21 @@ func (lr *logReader) Read(buf []byte) (int, error) {
 
 // runBash runs bash in the TermBuf, blocking until it completes.
 func (t *TermBuf) runBash() {
+	t.runCommand(exec.Command("bash"))
+}
+
+func (t *TermBuf) runCommand(cmd *exec.Cmd) {
 	logf, err := os.Create("log")
 	check(err)
 
-	cmd := exec.Command("bash")
 	f, err := pty.Start(cmd)
 	check(err)
+	defer f.Close()
 
+	t.term.Mu.Lock()
 	t.term.Height = 24
 	t.term.Input = f
+	t.term.Mu.Unlock()
 
 	t.keys = f
 	lr := &logReader{f, logf}

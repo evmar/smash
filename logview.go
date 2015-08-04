@@ -1,7 +1,9 @@
 package main
 
 import (
+	"os/exec"
 	"smash/keys"
+	"strings"
 
 	"github.com/martine/gocairo/cairo"
 )
@@ -28,11 +30,17 @@ func NewLogView(parent View) *LogView {
 	return lv
 }
 
+func ParseCommand(input string) *exec.Cmd {
+	// TODO: something correct.
+	args := strings.Split(input, " ")
+	return exec.Command(args[0], args[1:]...)
+}
+
 func (l *LogView) Accept(input string) {
 	e := l.Entries[len(l.Entries)-1]
 	tb := NewTermBuf(l)
 	e.tb = tb
-	go tb.runBash()
+	go tb.runCommand(ParseCommand(input))
 }
 
 func (l *LogView) Draw(cr *cairo.Context) {
