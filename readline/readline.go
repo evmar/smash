@@ -18,8 +18,16 @@ func NewConfig() *Config {
 	return c
 }
 
-type pendingComplete struct {
+type Complete struct {
+	rl        *ReadLine
 	cancelled bool
+}
+
+func (c *Complete) Results(input string, pos int) {
+	if c.cancelled {
+		return
+	}
+	c.rl.finishComplete(input, pos)
 }
 
 type ReadLine struct {
@@ -27,9 +35,8 @@ type ReadLine struct {
 	Text            []byte
 	Pos             int
 	Accept          func()
-	Enqueue         func(func())
-	pendingComplete *pendingComplete
-	Complete        func(input string, pos int) (string, int)
+	pendingComplete *Complete
+	StartComplete   func(c *Complete, input string, pos int)
 }
 
 func (c *Config) NewReadLine() *ReadLine {
@@ -52,7 +59,7 @@ func (rl *ReadLine) Insert(ch byte) {
 }
 
 func (rl *ReadLine) Key(key keys.Key) {
-	rl.pendingComplete = nil
+	rl.cancelPending()
 
 	bind := rl.Config.Bindings[key.Spec()]
 	if bind == "" {
@@ -69,18 +76,20 @@ func (rl *ReadLine) Key(key keys.Key) {
 	cmd(rl, key)
 }
 
+func (rl *ReadLine) cancelPending() {
+	if rl.pendingComplete == nil {
+		return
+	}
+	rl.pendingComplete.cancelled = true
+	rl.pendingComplete = nil
+}
+
 func (rl *ReadLine) startComplete() {
-	pc := &pendingComplete{}
+	rl.cancelPending()
+
+	pc := &Complete{rl: rl}
 	rl.pendingComplete = pc
-	text, pos := rl.String(), rl.Pos
-	go func() {
-		text, pos := rl.Complete(text, pos)
-		rl.Enqueue(func() {
-			if rl.pendingComplete == pc {
-				rl.finishComplete(text, pos)
-			}
-		})
-	}()
+	rl.StartComplete(pc, rl.String(), rl.Pos)
 }
 
 func (rl *ReadLine) finishComplete(text string, pos int) {

@@ -63,14 +63,18 @@ func (pb *PromptBuf) Key(key keys.Key) {
 func (pb *PromptBuf) Scroll(dy int) {
 }
 
-func (pb *PromptBuf) Complete(text string, pos int) (string, int) {
-	time.Sleep(500 * time.Millisecond)
-	return "foo", 0
+func (pb *PromptBuf) StartComplete(c *readline.Complete, text string, pos int) {
+	go func() {
+		time.Sleep(500 * time.Millisecond)
+		pb.Enqueue(func() {
+			c.Results("foo", 0)
+			pb.Dirty()
+		})
+	}()
 }
 
 func (pb *PromptBuf) Reset() {
 	pb.readline = pb.rlconfig.NewReadLine()
 	pb.readline.Accept = pb.Reset
-	pb.readline.Enqueue = pb.Enqueue
-	pb.readline.Complete = pb.Complete
+	pb.readline.StartComplete = pb.StartComplete
 }
