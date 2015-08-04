@@ -16,28 +16,13 @@ import (
 	"github.com/martine/gocairo/cairo"
 )
 
-type Metrics struct {
-	// Character width and height.
-	cw, ch int
-	// Adjustment from drawing baseline to bottom of character.
-	descent int
-}
-
-func (m *Metrics) FillFromCairo(cr *cairo.Context) {
-	ext := cairo.FontExtents{}
-	cr.FontExtents(&ext)
-	m.cw = int(ext.MaxXAdvance)
-	m.ch = int(ext.Height)
-	m.descent = int(ext.Descent)
-}
-
 type TermBuf struct {
 	ViewBase
 	term *Terminal
 
 	keys io.Writer
 
-	metrics Metrics
+	mf *MonoFont
 
 	offset     int
 	scrollRows int
@@ -48,6 +33,7 @@ func NewTermBuf(parent View) *TermBuf {
 	return &TermBuf{
 		ViewBase: ViewBase{Parent: parent},
 		term:     NewTerminal(),
+		mf:       GetMonoFont(),
 	}
 }
 
@@ -65,15 +51,15 @@ func setColor(cr *cairo.Context, color *Color) {
 	cr.SetSourceRGB(float64(color.R)/0xff, float64(color.G)/0xff, float64(color.B)/0xff)
 }
 
-func drawText(cr *cairo.Context, metrics *Metrics, x, y int, fg, bg *Color, line string) {
+func drawText(cr *cairo.Context, mf *MonoFont, x, y int, fg, bg *Color, line string) {
 	if bg != nil {
 		setColor(cr, bg)
 		cr.Rectangle(float64(x), float64(y),
-			float64(len(line)*metrics.cw), float64(metrics.ch))
+			float64(len(line)*mf.cw), float64(mf.ch))
 		cr.Fill()
 	}
 
-	cr.MoveTo(float64(x), float64(y+metrics.ch-metrics.descent+1))
+	cr.MoveTo(float64(x), float64(y+mf.ch-mf.descent+1))
 	setColor(cr, fg)
 	cr.ShowText(line)
 }
@@ -81,7 +67,7 @@ func drawText(cr *cairo.Context, metrics *Metrics, x, y int, fg, bg *Color, line
 // drawTerminalLine draws one line of a terminal buffer, handling
 // layout of text spans of multiple attributes as well as rendering
 // the cursor.
-func drawTerminalLine(cr *cairo.Context, metrics *Metrics, y int, line []TerminalChar) {
+func drawTerminalLine(cr *cairo.Context, mf *MonoFont, y int, line []TerminalChar) {
 	// TODO: reuse buf across lines?
 	buf := make([]byte, 0, 100)
 
@@ -112,12 +98,12 @@ func drawTerminalLine(cr *cairo.Context, metrics *Metrics, y int, line []Termina
 			bg = nil
 		}
 
-		drawText(cr, metrics, x1*metrics.cw, y, fg, bg, string(buf))
+		drawText(cr, mf, x1*mf.cw, y, fg, bg, string(buf))
 	}
 }
 
-func drawCursor(cr *cairo.Context, metrics *Metrics, row, col int, ch rune) {
-	drawText(cr, metrics, col*metrics.cw, row*metrics.ch, &white, &black, string(ch))
+func drawCursor(cr *cairo.Context, mf *MonoFont, row, col int, ch rune) {
+	drawText(cr, mf, col*mf.cw, row*mf.ch, &white, &black, string(ch))
 }
 
 func (t *TermBuf) Draw(cr *cairo.Context) {
@@ -125,16 +111,12 @@ func (t *TermBuf) Draw(cr *cairo.Context) {
 	cr.Paint()
 
 	cr.SetSourceRGB(0, 0, 0)
-	cr.SelectFontFace("monospace", cairo.FontSlantNormal, cairo.FontWeightNormal)
-	cr.SetFontSize(14)
-	if t.metrics.cw == 0 {
-		t.metrics.FillFromCairo(cr)
-	}
+	t.mf.Use(cr)
 
 	t.term.Mu.Lock()
 	defer t.term.Mu.Unlock()
 
-	offset := (t.term.Top + t.scrollRows) * t.metrics.ch
+	offset := (t.term.Top + t.scrollRows) * t.mf.ch
 
 	cr.IdentityMatrix()
 	cr.Translate(0, float64(-t.offset))
@@ -149,7 +131,7 @@ func (t *TermBuf) Draw(cr *cairo.Context) {
 			// TODO adjust existing anim
 		}
 	}
-	firstLine := t.offset / t.metrics.ch
+	firstLine := t.offset / t.mf.ch
 	if firstLine < 0 {
 		firstLine = 0
 	}
@@ -159,7 +141,7 @@ func (t *TermBuf) Draw(cr *cairo.Context) {
 	}
 
 	for row := firstLine; row < lastLine; row++ {
-		drawTerminalLine(cr, &t.metrics, row*t.metrics.ch, t.term.Lines[row])
+		drawTerminalLine(cr, t.mf, row*t.mf.ch, t.term.Lines[row])
 	}
 
 	if !t.term.HideCursor {
@@ -168,7 +150,7 @@ func (t *TermBuf) Draw(cr *cairo.Context) {
 			t.term.Col < len(t.term.Lines[t.term.Row]) {
 			ch = t.term.Lines[t.term.Row][t.term.Col].Ch
 		}
-		drawCursor(cr, &t.metrics, t.term.Row, t.term.Col, ch)
+		drawCursor(cr, t.mf, t.term.Row, t.term.Col, ch)
 	}
 }
 
