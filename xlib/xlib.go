@@ -167,8 +167,9 @@ func (dpy *Display) processXEvents(win *Window) {
 				case C.XK_Alt_L, C.XK_Alt_R:
 				case C.XK_Super_L, C.XK_Super_R:
 				case C.XK_Hyper_L, C.XK_Hyper_R:
+					// ignore for now
 				default:
-					log.Printf("unhandled keysym %#v: %#v", keysym, e)
+					log.Printf("xlib: unhandled keysym %#v: %#v", keysym, e)
 				}
 			}
 			win.delegate.Key(key)
