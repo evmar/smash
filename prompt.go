@@ -14,14 +14,16 @@ type PromptBuf struct {
 
 	rlconfig *readline.Config
 	readline *readline.ReadLine
+	Accept   func(string)
 }
 
-func NewPromptBuf(parent View) *PromptBuf {
+func NewPromptBuf(parent View, accept func(string)) *PromptBuf {
 	config := readline.NewConfig()
 	pb := &PromptBuf{
 		ViewBase: ViewBase{Parent: parent},
 		mf:       GetMonoFont(),
 		rlconfig: config,
+		Accept:   accept,
 	}
 	pb.Reset()
 	return pb
@@ -72,6 +74,6 @@ func (pb *PromptBuf) StartComplete(c *readline.Complete, text string, pos int) {
 
 func (pb *PromptBuf) Reset() {
 	pb.readline = pb.rlconfig.NewReadLine()
-	pb.readline.Accept = pb.Reset
+	pb.readline.Accept = pb.Accept
 	pb.readline.StartComplete = pb.StartComplete
 }

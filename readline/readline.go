@@ -34,7 +34,7 @@ type ReadLine struct {
 	Config          *Config
 	Text            []byte
 	Pos             int
-	Accept          func()
+	Accept          func(string)
 	pendingComplete *Complete
 	StartComplete   func(c *Complete, input string, pos int)
 }

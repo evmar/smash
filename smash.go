@@ -102,7 +102,7 @@ func main() {
 		win.term = NewTermBuf(win)
 		win.view = win.term
 	} else {
-		win.view = NewPromptBuf(win)
+		win.view = NewLogView(win)
 	}
 
 	dpy.Loop(win.xwin)

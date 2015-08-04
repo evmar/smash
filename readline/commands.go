@@ -29,7 +29,7 @@ var commands = map[string]Command{
 	// History
 	"accept-line": func(rl *ReadLine, key keys.Key) {
 		if rl.Accept != nil {
-			rl.Accept()
+			rl.Accept(rl.String())
 		}
 	},
 
