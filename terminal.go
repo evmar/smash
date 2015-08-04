@@ -8,47 +8,57 @@ import (
 	"unicode/utf8"
 )
 
+type Bits uint16
+
+func (b Bits) Get(ofs uint, count uint) uint16 {
+	return (uint16(b) >> ofs) & (uint16(1<<count) - 1)
+}
+func (b *Bits) Set(ofs uint, count uint, val uint) {
+	mask := (uint16(1<<count) - 1) << ofs
+	*b = Bits((uint16(*b) & ^uint16(mask)) | uint16(val)<<ofs)
+}
+
 // xxxx xxIB AAAA CCCC
 //  I = inverse
 //  B = bright
 //  A = background color
 //  C = foreground color
-type Attr uint16
+type Attr Bits
 
-func (a *Attr) Color() int {
-	return int(*a & 0xF)
+func (a Attr) Color() int {
+	return int(Bits(a).Get(0, 4))
 }
 func (a *Attr) SetColor(color int) {
-	*a = Attr((uint16(*a) & ^uint16(0xF)) | uint16(color))
+	(*Bits)(a).Set(0, 4, uint(color))
 }
 
-func (a *Attr) Bright() bool {
-	return *a&0x100 != 0
+func (a Attr) Bright() bool {
+	return Bits(a).Get(8, 1) != 0
 }
 func (a *Attr) SetBright(bright bool) {
-	flag := uint16(0)
+	flag := uint(0)
 	if bright {
 		flag = 1
 	}
-	*a = Attr((uint16(*a) & ^uint16(0x100)) | (flag << 8))
+	(*Bits)(a).Set(8, 1, flag)
 }
 
-func (a *Attr) Inverse() bool {
-	return *a&0x200 != 0
+func (a Attr) Inverse() bool {
+	return Bits(a).Get(9, 1) != 0
 }
 func (a *Attr) SetInverse(inverse bool) {
-	flag := uint16(0)
+	flag := uint(0)
 	if inverse {
 		flag = 1
 	}
-	*a = Attr((uint16(*a) & ^uint16(0x200)) | (flag << 9))
+	(*Bits)(a).Set(9, 1, flag)
 }
 
-func (a *Attr) BackColor() int {
-	return int((*a >> 4) & 0xF)
+func (a Attr) BackColor() int {
+	return int(Bits(a).Get(4, 4))
 }
 func (a *Attr) SetBackColor(color int) {
-	*a = Attr((uint16(*a) & ^uint16(0xF0)) | uint16(color)<<4)
+	(*Bits)(a).Set(4, 4, uint(color))
 }
 
 func showChar(ch byte) string {
