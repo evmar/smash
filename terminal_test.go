@@ -60,12 +60,12 @@ func TestReset(t *testing.T) {
 
 func TestColor(t *testing.T) {
 	term := NewTerminal()
-	assert.Equal(t, false, term.Attr.Bold())
+	assert.Equal(t, false, term.Attr.Bright())
 	assert.Equal(t, false, term.Attr.Inverse())
 	assert.Equal(t, 0, term.Attr.Color())
 
 	mustRun(t, term, "\x1b[1;34m")
-	assert.Equal(t, true, term.Attr.Bold())
+	assert.Equal(t, true, term.Attr.Bright())
 	assert.Equal(t, 5, term.Attr.Color())
 	assert.Equal(t, "", term.ToString())
 

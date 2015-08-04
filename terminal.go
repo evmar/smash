@@ -10,7 +10,7 @@ import (
 
 // xxxx xxIB AAAA CCCC
 //  I = inverse
-//  B = bold
+//  B = bright
 //  A = background color
 //  C = foreground color
 type Attr uint16
@@ -22,12 +22,12 @@ func (a *Attr) SetColor(color int) {
 	*a = Attr((uint16(*a) & ^uint16(0xF)) | uint16(color))
 }
 
-func (a *Attr) Bold() bool {
+func (a *Attr) Bright() bool {
 	return *a&0x100 != 0
 }
-func (a *Attr) SetBold(bold bool) {
+func (a *Attr) SetBright(bright bool) {
 	flag := uint16(0)
-	if bold {
+	if bright {
 		flag = 1
 	}
 	*a = Attr((uint16(*a) & ^uint16(0x100)) | (flag << 8))
@@ -470,7 +470,7 @@ L:
 			case arg == 0:
 				t.Attr = 0
 			case arg == 1:
-				t.Attr.SetBold(true)
+				t.Attr.SetBright(true)
 			case arg == 7:
 				t.Attr.SetInverse(true)
 			case arg == 27:

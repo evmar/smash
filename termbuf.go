@@ -37,11 +37,11 @@ func NewTermBuf(parent View) *TermBuf {
 	}
 }
 
-func ansiColor(c int, bold bool, def *Color) *Color {
+func ansiColor(c int, bright bool, def *Color) *Color {
 	if c == 0 {
 		return def
 	}
-	if bold {
+	if bright {
 		return &ansiBrightColors[c-1]
 	}
 	return &ansiColors[c-1]
@@ -88,7 +88,7 @@ func drawTerminalLine(cr *cairo.Context, mf *MonoFont, y int, line []TerminalCha
 			}
 		}
 
-		fg := ansiColor(attr.Color(), attr.Bold(), &black)
+		fg := ansiColor(attr.Color(), attr.Bright(), &black)
 		bg := ansiColor(attr.BackColor(), false, &white)
 		if attr.Inverse() {
 			fg, bg = bg, fg
