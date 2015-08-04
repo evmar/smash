@@ -24,9 +24,8 @@ type TermBuf struct {
 
 	mf *MonoFont
 
-	offset     int
-	scrollRows int
-	anim       *base.Lerp
+	offset int
+	anim   *base.Lerp
 }
 
 func NewTermBuf(parent View) *TermBuf {
@@ -116,7 +115,7 @@ func (t *TermBuf) Draw(cr *cairo.Context) {
 	t.term.Mu.Lock()
 	defer t.term.Mu.Unlock()
 
-	offset := (t.term.Top + t.scrollRows) * t.mf.ch
+	offset := t.term.Top * t.mf.ch
 
 	cr.IdentityMatrix()
 	cr.Translate(0, float64(-t.offset))
@@ -195,8 +194,6 @@ func (t *TermBuf) Key(key keys.Key) {
 }
 
 func (t *TermBuf) Scroll(dy int) {
-	t.scrollRows -= dy
-	t.Dirty()
 }
 
 type logReader struct {
