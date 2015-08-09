@@ -84,16 +84,20 @@ func (f FeatureLog) Add(text string, args ...interface{}) {
 }
 
 type Terminal struct {
-	Mu         sync.Mutex
+	Mu sync.Mutex
+
 	Title      string
 	Lines      [][]TerminalChar
 	Width      int
 	Height     int
-	Top        int
 	Input      io.Writer
 	HideCursor bool
 	TODOs      FeatureLog
 
+	// Index of first displayed line; greater than 0 when content has
+	// scrolled off the top of the terminal.
+	Top int
+	// The 0-based position of the cursor.
 	Row, Col int
 	Attr     Attr
 }
@@ -101,8 +105,6 @@ type Terminal struct {
 func NewTerminal() *Terminal {
 	return &Terminal{
 		Lines:  make([][]TerminalChar, 1),
-		Row:    0,
-		Col:    0,
 		Width:  80,
 		Height: 24,
 		TODOs:  FeatureLog{},
