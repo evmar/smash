@@ -158,7 +158,7 @@ func (t *Terminal) Read(r io.ByteScanner) error {
 		t.Mu.Unlock()
 	case c == '\t':
 		t.Mu.Lock()
-		t.Col += 8
+		t.Col += 8 - (t.Col % 8)
 		t.fixPosition()
 		t.Mu.Unlock()
 	case c > '~':

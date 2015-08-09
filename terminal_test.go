@@ -40,7 +40,7 @@ func TestBasic(t *testing.T) {
 	mustRun(t, term, "\n\n")
 	assert.Equal(t, "test\nfoo\n\n", term.ToString())
 	mustRun(t, term, "x\ty")
-	assert.Equal(t, "test\nfoo\n\nx        y", term.ToString())
+	assert.Equal(t, "test\nfoo\n\nx       y", term.ToString())
 }
 
 func TestTitle(t *testing.T) {
