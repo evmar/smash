@@ -109,8 +109,12 @@ func (t *TermBuf) Draw(cr *cairo.Context) {
 	defer t.term.Mu.Unlock()
 
 	offset := t.term.Top * t.mf.ch
+	if offset > 0 {
+		cr.Save()
+		defer cr.Restore()
+		cr.Translate(0, float64(-offset))
+	}
 
-	// cr.Translate(0, float64(-t.offset))
 	firstLine := offset / t.mf.ch
 	if firstLine < 0 {
 		firstLine = 0
