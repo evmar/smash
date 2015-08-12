@@ -8,7 +8,6 @@ import (
 	"os"
 	"os/exec"
 	"smash/keys"
-	"strings"
 	"syscall"
 
 	"github.com/kr/pty"
@@ -223,10 +222,7 @@ func (t *TermBuf) Start(cmd *exec.Cmd) {
 func (t *TermBuf) runCommand(cmd *exec.Cmd) {
 	f, err := pty.Start(cmd)
 	if err != nil {
-		r := strings.NewReader(err.Error())
-		for err = nil; err == nil; {
-			err = t.term.Read(r)
-		}
+		t.term.DisplayString(err.Error())
 		t.Dirty()
 		return
 	}

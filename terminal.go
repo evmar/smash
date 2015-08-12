@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io"
 	"log"
+	"strings"
 	"sync"
 	"unicode/utf8"
 )
@@ -591,6 +592,14 @@ func (t *Terminal) readTo(r io.ByteScanner, end byte) ([]byte, error) {
 		buf = append(buf, c)
 	}
 	return nil, fmt.Errorf("term: readTo(%s) overlong", showChar(end))
+}
+
+func (t *Terminal) DisplayString(input string) {
+	r := strings.NewReader(input)
+	var err error
+	for err == nil {
+		err = t.Read(r)
+	}
 }
 
 func (t *Terminal) ToString() string {
