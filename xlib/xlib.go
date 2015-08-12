@@ -290,7 +290,7 @@ func OpenDisplay(anims *base.AnimSet) *Display {
 
 func (d *Display) NewWindow(delegate WinDelegate) *Window {
 	w := C.XCreateSimpleWindow(d.dpy, C.XDefaultRootWindow(d.dpy),
-		0, 0, 640, 388,
+		0, 0, 640, 400,
 		0, 0, C.XWhitePixel(d.dpy, 0))
 	C.XSelectInput(d.dpy, w, C.StructureNotifyMask|C.SubstructureNotifyMask|C.ExposureMask|C.KeyPress|C.KeyRelease|C.ButtonPress)
 	C.XMapWindow(d.dpy, w)

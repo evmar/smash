@@ -7,10 +7,8 @@ import (
 	"log"
 	"os"
 	"os/exec"
-	"smash/base"
 	"smash/keys"
 	"syscall"
-	"time"
 
 	"github.com/kr/pty"
 	"github.com/martine/gocairo/cairo"
@@ -24,8 +22,6 @@ type TermBuf struct {
 
 	mf *MonoFont
 
-	offset int
-	anim   *base.Lerp
 	OnExit func()
 }
 
@@ -115,18 +111,7 @@ func (t *TermBuf) Draw(cr *cairo.Context) {
 	offset := t.term.Top * t.mf.ch
 
 	// cr.Translate(0, float64(-t.offset))
-	if t.offset != offset {
-		if t.anim != nil && t.anim.Done {
-			t.anim = nil
-		}
-		if t.anim == nil {
-			t.anim = base.NewLerp(&t.offset, offset, 40*time.Millisecond)
-			anims.Add(t.anim)
-		} else {
-			// TODO adjust existing anim
-		}
-	}
-	firstLine := t.offset / t.mf.ch
+	firstLine := offset / t.mf.ch
 	if firstLine < 0 {
 		firstLine = 0
 	}
@@ -196,7 +181,7 @@ func (t *TermBuf) Height() int {
 	t.term.Mu.Lock()
 	defer t.term.Mu.Unlock()
 	lines := len(t.term.Lines) - t.term.Top
-	if len(t.term.Lines[len(t.term.Lines)-1]) == 0 {
+	if len(t.term.Lines) > 0 && len(t.term.Lines[len(t.term.Lines)-1]) == 0 {
 		// Drop the trailing newline.
 		lines--
 	}
