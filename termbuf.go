@@ -26,6 +26,7 @@ type TermBuf struct {
 
 	offset int
 	anim   *base.Lerp
+	OnExit func()
 }
 
 func NewTermBuf(parent View) *TermBuf {
@@ -113,7 +114,7 @@ func (t *TermBuf) Draw(cr *cairo.Context) {
 
 	offset := t.term.Top * t.mf.ch
 
-	cr.Translate(0, float64(-t.offset))
+	// cr.Translate(0, float64(-t.offset))
 	if t.offset != offset {
 		if t.anim != nil && t.anim.Done {
 			t.anim = nil
@@ -191,6 +192,12 @@ func (t *TermBuf) Key(key keys.Key) {
 func (t *TermBuf) Scroll(dy int) {
 }
 
+func (t *TermBuf) Height() int {
+	t.term.Mu.Lock()
+	defer t.term.Mu.Unlock()
+	return (len(t.term.Lines) - t.term.Top) * t.mf.ch
+}
+
 type logReader struct {
 	io.Reader
 	log io.Writer
@@ -202,9 +209,19 @@ func (lr *logReader) Read(buf []byte) (int, error) {
 	return n, err
 }
 
-// runBash runs bash in the TermBuf, blocking until it completes.
-func (t *TermBuf) runBash() {
-	t.runCommand(exec.Command("bash"))
+func (t *TermBuf) Start(cmd *exec.Cmd) {
+	go func() {
+		t.runCommand(cmd)
+		t.Enqueue(t.Exit)
+	}()
+}
+
+func (t *TermBuf) Exit() {
+	t.term.HideCursor = true
+	t.Dirty()
+	if t.OnExit != nil {
+		t.OnExit()
+	}
 }
 
 func (t *TermBuf) runCommand(cmd *exec.Cmd) {

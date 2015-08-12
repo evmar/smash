@@ -30,10 +30,6 @@ func NewPromptBuf(parent View, accept func(string)) *PromptBuf {
 }
 
 func (pb *PromptBuf) Draw(cr *cairo.Context) {
-	cr.SetSourceRGB(1, 1, 1)
-	cr.Paint()
-
-	cr.SetSourceRGB(0, 0, 0)
 	pb.mf.Use(cr)
 
 	cr.MoveTo(0, float64(pb.mf.ch-pb.mf.descent))

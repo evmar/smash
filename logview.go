@@ -22,11 +22,15 @@ func NewLogView(parent View) *LogView {
 	lv := &LogView{
 		ViewBase: ViewBase{parent},
 	}
+	lv.addEntry()
+	return lv
+}
+
+func (lv *LogView) addEntry() {
 	e := &LogEntry{
 		pb: NewPromptBuf(lv, lv.Accept),
 	}
 	lv.Entries = append(lv.Entries, e)
-	return lv
 }
 
 func ParseCommand(input string) *exec.Cmd {
@@ -39,7 +43,10 @@ func (l *LogView) Accept(input string) {
 	e := l.Entries[len(l.Entries)-1]
 	tb := NewTermBuf(l)
 	e.tb = tb
-	go tb.runCommand(ParseCommand(input))
+	e.tb.OnExit = func() {
+		l.addEntry()
+	}
+	tb.Start(ParseCommand(input))
 }
 
 func (l *LogView) Draw(cr *cairo.Context) {
@@ -48,6 +55,7 @@ func (l *LogView) Draw(cr *cairo.Context) {
 		cr.Translate(0, float64(e.pb.Height()))
 		if e.tb != nil {
 			e.tb.Draw(cr)
+			cr.Translate(0, float64(e.tb.Height()))
 		}
 	}
 }

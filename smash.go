@@ -4,6 +4,7 @@ import (
 	"flag"
 	"log"
 	"os"
+	"os/exec"
 	"runtime/pprof"
 	"smash/base"
 	"smash/keys"
@@ -56,7 +57,7 @@ func (vb *ViewBase) Enqueue(f func()) {
 func (win *Window) Mapped() {
 	if win.term != nil {
 		go func() {
-			win.term.runBash()
+			win.term.runCommand(exec.Command("bash"))
 			win.dpy.Quit()
 		}()
 	}
