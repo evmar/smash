@@ -195,7 +195,12 @@ func (t *TermBuf) Scroll(dy int) {
 func (t *TermBuf) Height() int {
 	t.term.Mu.Lock()
 	defer t.term.Mu.Unlock()
-	return (len(t.term.Lines) - t.term.Top) * t.mf.ch
+	lines := len(t.term.Lines) - t.term.Top
+	if len(t.term.Lines[len(t.term.Lines)-1]) == 0 {
+		// Drop the trailing newline.
+		lines--
+	}
+	return lines * t.mf.ch
 }
 
 type logReader struct {
