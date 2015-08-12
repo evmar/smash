@@ -152,6 +152,7 @@ func (dpy *Display) processXEvents(win *Window) {
 					key.Sym += 'a' - 1
 				}
 			} else {
+				// See /usr/include/X11/keysymdef.h
 				switch keysym {
 				case C.XK_Left:
 					key.Sym = keys.Left
@@ -167,6 +168,7 @@ func (dpy *Display) processXEvents(win *Window) {
 				case C.XK_Alt_L, C.XK_Alt_R:
 				case C.XK_Super_L, C.XK_Super_R:
 				case C.XK_Hyper_L, C.XK_Hyper_R:
+				case C.XK_Caps_Lock:
 					// ignore for now
 				default:
 					log.Printf("xlib: unhandled keysym %#v: %#v", keysym, e)
