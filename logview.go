@@ -25,7 +25,6 @@ func NewLogView(parent View) *LogView {
 	e := &LogEntry{
 		pb: NewPromptBuf(lv, lv.Accept),
 	}
-	e.pb.Accept = lv.Accept
 	lv.Entries = append(lv.Entries, e)
 	return lv
 }
