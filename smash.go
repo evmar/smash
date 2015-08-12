@@ -63,6 +63,8 @@ func (win *Window) Mapped() {
 }
 
 func (w *Window) Draw(cr *cairo.Context) {
+	cr.SetSourceRGB(1, 1, 1)
+	cr.Paint()
 	w.view.Draw(cr)
 }
 

@@ -43,9 +43,6 @@ func (l *LogView) Accept(input string) {
 }
 
 func (l *LogView) Draw(cr *cairo.Context) {
-	cr.SetSourceRGB(1, 1, 1)
-	cr.Paint()
-
 	for _, e := range l.Entries {
 		e.pb.Draw(cr)
 		cr.Translate(0, float64(e.pb.Height()))
