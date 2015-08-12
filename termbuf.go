@@ -8,6 +8,7 @@ import (
 	"os"
 	"os/exec"
 	"smash/keys"
+	"strings"
 	"syscall"
 
 	"github.com/kr/pty"
@@ -220,17 +221,25 @@ func (t *TermBuf) Start(cmd *exec.Cmd) {
 }
 
 func (t *TermBuf) runCommand(cmd *exec.Cmd) {
-	logf, err := os.Create("log")
-	check(err)
-
 	f, err := pty.Start(cmd)
-	check(err)
+	if err != nil {
+		r := strings.NewReader(err.Error())
+		for err = nil; err == nil; {
+			err = t.term.Read(r)
+		}
+		t.Dirty()
+		return
+	}
 	defer f.Close()
 
 	t.term.Mu.Lock()
 	t.term.Height = 24
 	t.term.Input = f
 	t.term.Mu.Unlock()
+
+	logf, err := os.Create("log")
+	check(err)
+	defer logf.Close()
 
 	t.keys = f
 	lr := &logReader{f, logf}
@@ -240,7 +249,6 @@ func (t *TermBuf) runCommand(cmd *exec.Cmd) {
 		err = t.term.Read(r)
 		t.Dirty()
 	}
-	logf.Close()
 
 	if err != io.EOF {
 		if perr, ok := err.(*os.PathError); ok {
