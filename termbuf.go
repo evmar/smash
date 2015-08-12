@@ -106,10 +106,6 @@ func drawCursor(cr *cairo.Context, mf *MonoFont, row, col int, ch rune) {
 }
 
 func (t *TermBuf) Draw(cr *cairo.Context) {
-	cr.SetSourceRGB(1, 1, 1)
-	cr.Paint()
-
-	cr.SetSourceRGB(0, 0, 0)
 	t.mf.Use(cr)
 
 	t.term.Mu.Lock()
@@ -117,7 +113,6 @@ func (t *TermBuf) Draw(cr *cairo.Context) {
 
 	offset := t.term.Top * t.mf.ch
 
-	cr.IdentityMatrix()
 	cr.Translate(0, float64(-t.offset))
 	if t.offset != offset {
 		if t.anim != nil && t.anim.Done {

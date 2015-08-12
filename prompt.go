@@ -44,11 +44,18 @@ func (pb *PromptBuf) Draw(cr *cairo.Context) {
 		line = append(line, TerminalChar{Ch: rune(c)})
 	}
 	drawTerminalLine(cr, pb.mf, 0, line)
-	ch := rune(0)
-	if pb.readline.Pos < len(pb.readline.Text) {
-		ch = rune(pb.readline.Text[pb.readline.Pos])
+
+	if pb.readline.Pos >= 0 {
+		ch := rune(0)
+		if pb.readline.Pos < len(pb.readline.Text) {
+			ch = rune(pb.readline.Text[pb.readline.Pos])
+		}
+		drawCursor(cr, pb.mf, 0, pb.readline.Pos+2, ch)
 	}
-	drawCursor(cr, pb.mf, 0, pb.readline.Pos+2, ch)
+}
+
+func (pb *PromptBuf) Height() int {
+	return pb.mf.ch
 }
 
 func (pb *PromptBuf) Key(key keys.Key) {

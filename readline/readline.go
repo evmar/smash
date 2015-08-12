@@ -31,9 +31,14 @@ func (c *Complete) Results(input string, pos int) {
 }
 
 type ReadLine struct {
-	Config          *Config
-	Text            []byte
-	Pos             int
+	Config *Config
+
+	// User-entered text.  TODO: runes?
+	Text []byte
+
+	// Cursor position, or -1 for no cursor.
+	Pos int
+
 	Accept          func(string)
 	pendingComplete *Complete
 	StartComplete   func(c *Complete, input string, pos int)
