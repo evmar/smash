@@ -22,7 +22,8 @@ type TermBuf struct {
 
 	mf *MonoFont
 
-	OnExit func()
+	Running bool
+	OnExit  func()
 }
 
 func NewTermBuf(parent View) *TermBuf {
@@ -204,18 +205,18 @@ func (lr *logReader) Read(buf []byte) (int, error) {
 }
 
 func (t *TermBuf) Start(cmd *exec.Cmd) {
+	t.Running = true
 	go func() {
 		t.runCommand(cmd)
-		t.Enqueue(t.Exit)
+		t.Enqueue(func() {
+			t.Running = false
+			t.term.HideCursor = true
+			t.Dirty()
+			if t.OnExit != nil {
+				t.OnExit()
+			}
+		})
 	}()
-}
-
-func (t *TermBuf) Exit() {
-	t.term.HideCursor = true
-	t.Dirty()
-	if t.OnExit != nil {
-		t.OnExit()
-	}
 }
 
 func (t *TermBuf) runCommand(cmd *exec.Cmd) {

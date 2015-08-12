@@ -87,7 +87,11 @@ func (l *LogView) Draw(cr *cairo.Context) {
 
 func (l *LogView) Key(key keys.Key) {
 	e := l.Entries[len(l.Entries)-1]
-	e.pb.Key(key)
+	if e.tb != nil && e.tb.Running {
+		e.tb.Key(key)
+	} else {
+		e.pb.Key(key)
+	}
 }
 
 func (l *LogView) Scroll(dy int) {
