@@ -8,6 +8,9 @@ import (
 
 type Config struct {
 	Bindings map[string]string
+
+	History    []string
+	HistoryPos int
 }
 
 func NewConfig() *Config {

@@ -4,6 +4,7 @@ import (
 	"os/exec"
 	"smash/base"
 	"smash/keys"
+	"smash/readline"
 	"strings"
 	"time"
 
@@ -19,6 +20,7 @@ type LogView struct {
 	ViewBase
 	Entries []*LogEntry
 
+	rlconfig     *readline.Config
 	scrollOffset int
 	scrollAnim   *base.Lerp
 }
@@ -26,6 +28,7 @@ type LogView struct {
 func NewLogView(parent View) *LogView {
 	lv := &LogView{
 		ViewBase: ViewBase{parent},
+		rlconfig: readline.NewConfig(),
 	}
 	lv.addEntry()
 	return lv
@@ -33,7 +36,7 @@ func NewLogView(parent View) *LogView {
 
 func (lv *LogView) addEntry() {
 	e := &LogEntry{
-		pb: NewPromptBuf(lv, lv.Accept),
+		pb: NewPromptBuf(lv, lv.rlconfig, lv.Accept),
 	}
 	lv.Entries = append(lv.Entries, e)
 }

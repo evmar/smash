@@ -32,6 +32,24 @@ var commands = map[string]Command{
 			rl.Pos = -1
 			rl.Accept(rl.String())
 		}
+		rl.Config.History = append(rl.Config.History, rl.String())
+		rl.Config.HistoryPos = len(rl.Config.History)
+	},
+	"previous-history": func(rl *ReadLine, key keys.Key) {
+		if rl.Config.HistoryPos == 0 {
+			return
+		}
+		rl.Config.HistoryPos--
+		rl.Text = []byte(rl.Config.History[rl.Config.HistoryPos])
+		rl.Pos = len(rl.Text)
+	},
+	"next-history": func(rl *ReadLine, key keys.Key) {
+		if rl.Config.HistoryPos+1 == len(rl.Config.History) {
+			return
+		}
+		rl.Config.HistoryPos++
+		rl.Text = []byte(rl.Config.History[rl.Config.HistoryPos])
+		rl.Pos = len(rl.Text)
 	},
 
 	// Text
@@ -78,6 +96,8 @@ func DefaultBindings() map[string]string {
 
 		// History
 		"Enter": "accept-line",
+		"C-p":   "previous-history",
+		"C-n":   "next-history",
 
 		// Text
 		"C-h":       "backward-delete-char",

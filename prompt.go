@@ -17,8 +17,7 @@ type PromptBuf struct {
 	Accept   func(string)
 }
 
-func NewPromptBuf(parent View, accept func(string)) *PromptBuf {
-	config := readline.NewConfig()
+func NewPromptBuf(parent View, config *readline.Config, accept func(string)) *PromptBuf {
 	pb := &PromptBuf{
 		ViewBase: ViewBase{Parent: parent},
 		mf:       GetMonoFont(),
