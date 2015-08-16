@@ -110,6 +110,7 @@ func (t *TermBuf) Draw(cr *cairo.Context) {
 	defer t.term.Mu.Unlock()
 
 	offset := t.term.Top * t.mf.ch
+	offset = 0
 	if offset > 0 {
 		cr.Save()
 		defer cr.Restore()
@@ -185,8 +186,8 @@ func (t *TermBuf) Scroll(dy int) {
 func (t *TermBuf) Height() int {
 	t.term.Mu.Lock()
 	defer t.term.Mu.Unlock()
-	lines := len(t.term.Lines) - t.term.Top
-	if len(t.term.Lines) > 0 && len(t.term.Lines[len(t.term.Lines)-1]) == 0 {
+	lines := len(t.term.Lines)
+	if lines > 0 && len(t.term.Lines[lines-1]) == 0 {
 		// Drop the trailing newline.
 		lines--
 	}

@@ -275,6 +275,9 @@ func (t *Terminal) readEscape(r io.ByteScanner) error {
 		} else {
 			if t.Row == t.Top {
 				t.Top--
+				if len(t.Lines) > t.Top+t.Height {
+					t.Lines = t.Lines[:t.Top+t.Height-1]
+				}
 			}
 			t.Row--
 		}

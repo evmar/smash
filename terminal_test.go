@@ -188,6 +188,15 @@ func TestScrollUp(t *testing.T) {
 	assert.Equal(t, "   1\naaZ\nbYb\nXcc\n", term.ToString())
 }
 
+func TestScrollUpDropLines(t *testing.T) {
+	term := NewTerminal()
+	term.Height = 3
+	mustRun(t, term, "aaa\nbbb\nccc\n")
+	assert.Equal(t, "aaa\nbbb\nccc\n", term.ToString())
+	mustRun(t, term, "\x1bM\x1bM\x1bM\x1bMx")
+	assert.Equal(t, "x\naaa\nbbb", term.ToString())
+}
+
 func TestWrap(t *testing.T) {
 	term := NewTerminal()
 	term.Width = 5
