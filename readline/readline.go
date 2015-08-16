@@ -42,7 +42,7 @@ type ReadLine struct {
 	// Cursor position, or -1 for no cursor.
 	Pos int
 
-	Accept          func(string)
+	Accept          func(string) bool
 	pendingComplete *Complete
 	StartComplete   func(c *Complete, input string, pos int)
 }

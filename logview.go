@@ -47,7 +47,7 @@ func ParseCommand(input string) *exec.Cmd {
 	return exec.Command(args[0], args[1:]...)
 }
 
-func (l *LogView) Accept(input string) {
+func (l *LogView) Accept(input string) bool {
 	e := l.Entries[len(l.Entries)-1]
 	tb := NewTermBuf(l)
 	e.tb = tb
@@ -55,6 +55,7 @@ func (l *LogView) Accept(input string) {
 		l.addEntry()
 	}
 	tb.Start(ParseCommand(input))
+	return true
 }
 
 func (l *LogView) Draw(cr *cairo.Context) {

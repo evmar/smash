@@ -14,10 +14,10 @@ type PromptBuf struct {
 
 	rlconfig *readline.Config
 	readline *readline.ReadLine
-	Accept   func(string)
+	Accept   func(string) bool
 }
 
-func NewPromptBuf(parent View, config *readline.Config, accept func(string)) *PromptBuf {
+func NewPromptBuf(parent View, config *readline.Config, accept func(string) bool) *PromptBuf {
 	pb := &PromptBuf{
 		ViewBase: ViewBase{Parent: parent},
 		mf:       GetMonoFont(),

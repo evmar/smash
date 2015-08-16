@@ -28,12 +28,11 @@ var commands = map[string]Command{
 
 	// History
 	"accept-line": func(rl *ReadLine, key keys.Key) {
-		if rl.Accept != nil {
-			rl.Pos = -1
-			rl.Accept(rl.String())
+		rl.Pos = -1
+		if rl.Accept(rl.String()) {
+			rl.Config.History = append(rl.Config.History, rl.String())
+			rl.Config.HistoryPos = len(rl.Config.History)
 		}
-		rl.Config.History = append(rl.Config.History, rl.String())
-		rl.Config.HistoryPos = len(rl.Config.History)
 	},
 	"previous-history": func(rl *ReadLine, key keys.Key) {
 		if rl.Config.HistoryPos == 0 {
