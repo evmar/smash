@@ -8,7 +8,7 @@ import (
 	"runtime/pprof"
 	"smash/base"
 	"smash/keys"
-	"smash/xlib"
+	"smash/ui/xlib"
 	"syscall"
 
 	"github.com/martine/gocairo/cairo"
