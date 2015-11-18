@@ -72,8 +72,10 @@ func callKey(delegateP unsafe.Pointer, keyP unsafe.Pointer) {
 		C.GDK_KEY_Super_L, C.GDK_KEY_Super_R:
 		return
 	}
+
+	rune := C.gdk_keyval_to_unicode(gkey.keyval)
 	key := keys.Key{}
-	key.Sym = keys.Sym(gkey.keyval)
+	key.Sym = keys.Sym(rune)
 	if gkey.state&C.GDK_CONTROL_MASK != 0 {
 		key.Mods |= keys.ModControl
 	}
