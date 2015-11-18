@@ -45,4 +45,9 @@ SmashWin* smash_gtk_new_window(SmashWinDelegate* delegate) {
   return win;
 }
 
+extern "C" int callIdle(void*);
+int smash_idle_cb(void* data) {
+  return callIdle(data);
+}
+
 }

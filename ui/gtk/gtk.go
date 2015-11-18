@@ -15,7 +15,10 @@ import (
 	"github.com/martine/gocairo/cairo"
 )
 
-type UI struct{}
+type UI struct {
+	// Functions enqueued to do work on the main goroutine.
+	enqueued chan func()
+}
 
 type Window struct {
 	win unsafe.Pointer
@@ -25,11 +28,33 @@ type Window struct {
 
 func Init() *UI {
 	C.smash_gtk_init()
-	return &UI{}
+	return &UI{
+		enqueued: make(chan func(), 1),
+	}
+}
+
+//export callIdle
+func callIdle(data unsafe.Pointer) int {
+	ui := (*UI)(data)
+	for {
+		select {
+		case f := <-ui.enqueued:
+			f()
+		default:
+			return 0 // Don't run again
+		}
+	}
 }
 
 func (ui *UI) Enqueue(f func()) {
-	panic("x")
+	// Proxy the function to the main thread by using g_idle_add.
+	// You'd be tempted to want to pass f to g_idle_add directly, but
+	// (a) passing closures into C code is annoying, and (b) we need a
+	// reference to the function on the Go side for GC reasons.  So
+	// it's easier to just put the function in a channel that pulls it
+	// back out on the other thread.
+	ui.enqueued <- f
+	C.g_idle_add(C.GSourceFunc(C.smash_idle_cb), C.gpointer(ui))
 }
 
 func (ui *UI) NewWindow(delegate ui.WinDelegate) ui.Win {
