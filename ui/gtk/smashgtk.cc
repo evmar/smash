@@ -2,12 +2,32 @@
 
 #include "smashgtk.h"
 
-static void activate(GtkApplication* app, gpointer data) {
-  GtkWidget* win = gtk_application_window_new(app);
+namespace {
+
+extern "C" void callDraw(void*, void*);
+void draw(GtkWidget* widget, cairo_t* cr, gpointer data) {
+  callDraw(data, cr);
+}
+
+extern "C" void callKey(void*, void*);
+void key(GtkWidget* widget, GdkEventKey* event, gpointer data) {
+  callKey(data, event);
+}
+
+}  // anonymous namespace
+
+extern "C" {
+
+void smash_gtk_init(void) {
+  gtk_init(NULL, NULL);
+}
+
+SmashWin* smash_gtk_new_window(SmashWinDelegate* delegate) {
+  GtkWidget* win = gtk_window_new(GTK_WINDOW_TOPLEVEL);
   gtk_window_set_title(GTK_WINDOW(win), "smash");
   gtk_widget_set_app_paintable(win, TRUE);
-  //g_signal_connect(win, "draw", G_CALLBACK(draw), NULL);
-  //g_signal_connect(win, "key-press-event", G_CALLBACK(key), NULL);
+  g_signal_connect(win, "draw", G_CALLBACK(draw), delegate);
+  g_signal_connect(win, "key-press-event", G_CALLBACK(key), delegate);
 
   /*
  gtk_widget_realize(win);
@@ -22,19 +42,7 @@ static void activate(GtkApplication* app, gpointer data) {
                               term_->width_, term_->height_);
   */
   gtk_widget_show(win);
+  return win;
 }
 
-int smash_gtk_main(int argc, char** argv) {
-  GtkApplication* app = gtk_application_new("org.neugierig.smash",
-                                            G_APPLICATION_FLAGS_NONE);
-  g_signal_connect(app, "activate",
-                   G_CALLBACK(activate), NULL);
-
-  return g_application_run(G_APPLICATION(app), argc, argv);
-}
-
-extern "C" {
-void run(void) {
-  smash_gtk_main(0, NULL);
-}
 }

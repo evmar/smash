@@ -9,7 +9,7 @@ import (
 	"smash/base"
 	"smash/keys"
 	"smash/ui"
-	"smash/ui/xlib"
+	"smash/ui/gtk"
 	"syscall"
 
 	"github.com/martine/gocairo/cairo"
@@ -98,7 +98,8 @@ func main() {
 	}
 
 	anims = base.NewAnimSet()
-	ui := xlib.OpenDisplay(anims)
+	// ui := xlib.OpenDisplay(anims)
+	ui := gtk.Init()
 
 	win := &Window{ui: ui}
 	win.win = ui.NewWindow(win)
