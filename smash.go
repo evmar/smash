@@ -56,6 +56,7 @@ func (vb *ViewBase) Enqueue(f func()) {
 }
 
 func (win *Window) Mapped() {
+	panic("x")
 	if win.term != nil {
 		go func() {
 			win.term.runCommand(exec.Command("bash"))

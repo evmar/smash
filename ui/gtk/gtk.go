@@ -2,7 +2,6 @@ package gtk
 
 /*
 #cgo pkg-config: gtk+-3.0
-#cgo LDFLAGS: -L${SRCDIR} -lsmashgtk
 #include <gtk/gtk.h>
 #include "smashgtk.h"
 */
