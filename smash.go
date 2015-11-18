@@ -28,8 +28,8 @@ func check(err error) {
 }
 
 type Window struct {
-	ui   ui.UI
-	xwin *xlib.Window
+	ui  ui.UI
+	win ui.Win
 
 	view View
 	term *TermBuf
@@ -79,7 +79,7 @@ func (w *Window) Scroll(dy int) {
 }
 
 func (w *Window) Dirty() {
-	w.xwin.Dirty()
+	w.win.Dirty()
 }
 
 func (w *Window) Enqueue(f func()) {
@@ -101,7 +101,7 @@ func main() {
 	ui := xlib.OpenDisplay(anims)
 
 	win := &Window{ui: ui}
-	win.xwin = ui.NewWindow(win).(*xlib.Window)
+	win.win = ui.NewWindow(win)
 	if false {
 		win.term = NewTermBuf(win)
 		win.view = win.term
@@ -109,7 +109,7 @@ func main() {
 		win.view = NewLogView(win)
 	}
 
-	ui.Loop(win.xwin)
+	ui.Loop(win.win)
 
 	// For some reason, things wait a bit on shutdown unless we force-exit.
 	if *cpuprofile == "" {
