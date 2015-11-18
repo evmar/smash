@@ -18,6 +18,7 @@ import (
 
 	"smash/base"
 	"smash/keys"
+	"smash/ui"
 )
 
 const EINTR syscall.Errno = 4
@@ -37,19 +38,8 @@ type Display struct {
 	anims *base.AnimSet
 }
 
-type WinDelegate interface {
-	// Mapped is called when the window is first shown.
-	Mapped()
-	// Draw draws the display content into the backing store.
-	Draw(cr *cairo.Context)
-	// Key is called when there's a keypress on the window.
-	Key(key keys.Key)
-	// Scrolled is called when there's a scroll event.
-	Scroll(dy int)
-}
-
 type Window struct {
-	delegate WinDelegate
+	delegate ui.WinDelegate
 
 	dpy *Display
 	xw  C.Window
@@ -224,7 +214,8 @@ func waitUntilReadable(fd int) error {
 }
 
 // Loop runs the main X loop.
-func (dpy *Display) Loop(win *Window) {
+func (dpy *Display) Loop(uwin ui.Win) {
+	win := uwin.(*Window)
 	awaitEvent := make(chan bool)
 	go func() {
 		xfd := int(C.XConnectionNumber(dpy.dpy))
@@ -288,7 +279,7 @@ func OpenDisplay(anims *base.AnimSet) *Display {
 	}
 }
 
-func (d *Display) NewWindow(delegate WinDelegate) *Window {
+func (d *Display) NewWindow(delegate ui.WinDelegate) ui.Win {
 	w := C.XCreateSimpleWindow(d.dpy, C.XDefaultRootWindow(d.dpy),
 		0, 0, 640, 400,
 		0, 0, C.XWhitePixel(d.dpy, 0))

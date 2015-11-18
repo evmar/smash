@@ -8,6 +8,7 @@ import (
 	"runtime/pprof"
 	"smash/base"
 	"smash/keys"
+	"smash/ui"
 	"smash/ui/xlib"
 	"syscall"
 
@@ -27,7 +28,7 @@ func check(err error) {
 }
 
 type Window struct {
-	dpy  *xlib.Display
+	ui   ui.UI
 	xwin *xlib.Window
 
 	view View
@@ -58,7 +59,7 @@ func (win *Window) Mapped() {
 	if win.term != nil {
 		go func() {
 			win.term.runCommand(exec.Command("bash"))
-			win.dpy.Quit()
+			win.ui.Quit()
 		}()
 	}
 }
@@ -82,7 +83,7 @@ func (w *Window) Dirty() {
 }
 
 func (w *Window) Enqueue(f func()) {
-	w.dpy.Enqueue(f)
+	w.ui.Enqueue(f)
 }
 
 func main() {
@@ -97,10 +98,10 @@ func main() {
 	}
 
 	anims = base.NewAnimSet()
-	dpy := xlib.OpenDisplay(anims)
+	ui := xlib.OpenDisplay(anims)
 
-	win := &Window{dpy: dpy}
-	win.xwin = dpy.NewWindow(win)
+	win := &Window{ui: ui}
+	win.xwin = ui.NewWindow(win).(*xlib.Window)
 	if false {
 		win.term = NewTermBuf(win)
 		win.view = win.term
@@ -108,7 +109,7 @@ func main() {
 		win.view = NewLogView(win)
 	}
 
-	dpy.Loop(win.xwin)
+	ui.Loop(win.xwin)
 
 	// For some reason, things wait a bit on shutdown unless we force-exit.
 	if *cpuprofile == "" {
