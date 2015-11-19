@@ -4,7 +4,6 @@ import (
 	"flag"
 	"log"
 	"os"
-	"os/exec"
 	"runtime/pprof"
 	"smash/base"
 	"smash/keys"
@@ -33,7 +32,6 @@ type Window struct {
 	win ui.Win
 
 	view View
-	term *TermBuf
 }
 
 type View interface {
@@ -67,12 +65,6 @@ func (win *Window) GetWindow() ui.Win {
 
 func (win *Window) Mapped() {
 	panic("x")
-	if win.term != nil {
-		go func() {
-			win.term.runCommand(exec.Command("bash"))
-			win.ui.Quit()
-		}()
-	}
 }
 
 func (w *Window) Draw(cr *cairo.Context) {
@@ -114,12 +106,7 @@ func main() {
 
 	win := &Window{ui: ui}
 	win.win = ui.NewWindow(win)
-	if false {
-		win.term = NewTermBuf(win)
-		win.view = win.term
-	} else {
-		win.view = NewLogView(win)
-	}
+	win.view = NewLogView(win)
 
 	ui.Loop(win.win)
 

@@ -13,7 +13,7 @@ import (
 
 type LogEntry struct {
 	pb *PromptBuf
-	tb *TermBuf
+	tb *TermView
 }
 
 type LogView struct {
@@ -49,7 +49,7 @@ func ParseCommand(input string) *exec.Cmd {
 
 func (l *LogView) Accept(input string) bool {
 	e := l.Entries[len(l.Entries)-1]
-	tb := NewTermBuf(l)
+	tb := NewTermView(l)
 	e.tb = tb
 	e.tb.OnExit = func() {
 		l.addEntry()

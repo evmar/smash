@@ -14,7 +14,7 @@ import (
 	"github.com/martine/gocairo/cairo"
 )
 
-type TermBuf struct {
+type TermView struct {
 	ViewBase
 	term *Terminal
 
@@ -26,8 +26,8 @@ type TermBuf struct {
 	OnExit  func()
 }
 
-func NewTermBuf(parent View) *TermBuf {
-	return &TermBuf{
+func NewTermView(parent View) *TermView {
+	return &TermView{
 		ViewBase: ViewBase{Parent: parent},
 		term:     NewTerminal(),
 		mf:       GetMonoFont(),
@@ -103,7 +103,7 @@ func drawCursor(cr *cairo.Context, mf *MonoFont, row, col int, ch rune) {
 	drawText(cr, mf, col*mf.cw, row*mf.ch, &white, &black, string(ch))
 }
 
-func (t *TermBuf) Draw(cr *cairo.Context) {
+func (t *TermView) Draw(cr *cairo.Context) {
 	t.mf.Use(cr)
 
 	t.term.Mu.Lock()
@@ -140,7 +140,7 @@ func (t *TermBuf) Draw(cr *cairo.Context) {
 	}
 }
 
-func (t *TermBuf) Key(key keys.Key) {
+func (t *TermView) Key(key keys.Key) {
 	if key.Sym == keys.NoSym {
 		// Modifier-only keypress.
 		return
@@ -180,10 +180,10 @@ func (t *TermBuf) Key(key keys.Key) {
 	}
 }
 
-func (t *TermBuf) Scroll(dy int) {
+func (t *TermView) Scroll(dy int) {
 }
 
-func (t *TermBuf) Height() int {
+func (t *TermView) Height() int {
 	t.term.Mu.Lock()
 	defer t.term.Mu.Unlock()
 	lines := len(t.term.Lines)
@@ -205,7 +205,7 @@ func (lr *logReader) Read(buf []byte) (int, error) {
 	return n, err
 }
 
-func (t *TermBuf) Start(cmd *exec.Cmd) {
+func (t *TermView) Start(cmd *exec.Cmd) {
 	t.Running = true
 	go func() {
 		t.runCommand(cmd)
@@ -220,7 +220,7 @@ func (t *TermBuf) Start(cmd *exec.Cmd) {
 	}()
 }
 
-func (t *TermBuf) runCommand(cmd *exec.Cmd) {
+func (t *TermView) runCommand(cmd *exec.Cmd) {
 	f, err := pty.Start(cmd)
 	if err != nil {
 		t.term.DisplayString(err.Error())
