@@ -5,7 +5,6 @@ import (
 	"log"
 	"os"
 	"runtime/pprof"
-	"smash/base"
 	"smash/keys"
 	"smash/ui"
 	"smash/ui/gtk"
@@ -17,9 +16,6 @@ import (
 var cpuprofile = flag.String("cpuprofile", "", "write cpu profile to file")
 
 const EIO syscall.Errno = 5
-
-var g_anims *base.AnimSet
-var gui ui.UI
 
 func check(err error) {
 	if err != nil {
@@ -103,7 +99,6 @@ func main() {
 
 	// ui := xlib.OpenDisplay(anims)
 	ui := gtk.Init()
-	gui = ui
 
 	win := &Window{
 		ui:   ui,
