@@ -7,8 +7,10 @@ package gtk
 */
 import "C"
 import (
+	"smash/base"
 	"smash/keys"
 	"smash/ui"
+	"time"
 	"unsafe"
 
 	"github.com/martine/gocairo/cairo"
@@ -20,9 +22,11 @@ type UI struct {
 }
 
 type Window struct {
-	win unsafe.Pointer
+	gtkWin unsafe.Pointer
 	// Store the delegate here so this interface isn't gc'd.
 	delegate ui.WinDelegate
+
+	anims map[base.Anim]bool
 }
 
 func Init() *UI {
@@ -59,8 +63,9 @@ func (ui *UI) Enqueue(f func()) {
 func (ui *UI) NewWindow(delegate ui.WinDelegate) ui.Win {
 	win := &Window{
 		delegate: delegate,
+		anims:    make(map[base.Anim]bool),
 	}
-	win.win = C.smash_gtk_new_window(unsafe.Pointer(&win.delegate))
+	win.gtkWin = C.smash_gtk_new_window(unsafe.Pointer(&win.delegate))
 	return win
 }
 
@@ -73,7 +78,27 @@ func (ui *UI) Quit() {
 }
 
 func (w *Window) Dirty() {
-	C.gtk_widget_queue_draw((*C.GtkWidget)(w.win))
+	C.gtk_widget_queue_draw((*C.GtkWidget)(w.gtkWin))
+}
+
+//export callTick
+func callTick(data unsafe.Pointer) bool {
+	win := (*Window)(data)
+	// TODO: use gdk_frame_clock_get_frame_time here instead of Go time.
+	now := time.Now()
+	for anim := range win.anims {
+		if !anim.Frame(now) {
+			delete(win.anims, anim)
+		}
+	}
+	return len(win.anims) > 0
+}
+
+func (w *Window) AddAnimation(anim base.Anim) {
+	if len(w.anims) == 0 {
+		C.smash_start_ticks(unsafe.Pointer(w), (*C.GtkWidget)(w.gtkWin))
+	}
+	w.anims[anim] = true
 }
 
 //export callDraw

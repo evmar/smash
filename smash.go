@@ -19,7 +19,8 @@ var cpuprofile = flag.String("cpuprofile", "", "write cpu profile to file")
 
 const EIO syscall.Errno = 5
 
-var anims *base.AnimSet
+var g_anims *base.AnimSet
+var gui ui.UI
 
 func check(err error) {
 	if err != nil {
@@ -36,6 +37,7 @@ type Window struct {
 }
 
 type View interface {
+	GetWindow() ui.Win
 	Draw(cr *cairo.Context)
 	Key(key keys.Key)
 	Scroll(dy int)
@@ -47,12 +49,20 @@ type ViewBase struct {
 	Parent View
 }
 
+func (vb *ViewBase) GetWindow() ui.Win {
+	return vb.Parent.GetWindow()
+}
+
 func (vb *ViewBase) Dirty() {
 	vb.Parent.Dirty()
 }
 
 func (vb *ViewBase) Enqueue(f func()) {
 	vb.Parent.Enqueue(f)
+}
+
+func (win *Window) GetWindow() ui.Win {
+	return win.win
 }
 
 func (win *Window) Mapped() {
@@ -98,9 +108,9 @@ func main() {
 		defer pprof.StopCPUProfile()
 	}
 
-	anims = base.NewAnimSet()
 	// ui := xlib.OpenDisplay(anims)
 	ui := gtk.Init()
+	gui = ui
 
 	win := &Window{ui: ui}
 	win.win = ui.NewWindow(win)

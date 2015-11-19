@@ -1,6 +1,7 @@
 package ui
 
 import (
+	"smash/base"
 	"smash/keys"
 
 	"github.com/martine/gocairo/cairo"
@@ -8,6 +9,8 @@ import (
 
 type Win interface {
 	Dirty()
+
+	AddAnimation(anim base.Anim)
 }
 
 type WinDelegate interface {

@@ -14,6 +14,13 @@ void key(GtkWidget* widget, GdkEventKey* event, gpointer data) {
   callKey(data, event);
 }
 
+extern "C" int callTick(void*);
+gboolean tick(GtkWidget* widget, GdkFrameClock* clock, gpointer data) {
+  gboolean more = callTick(data) != 0;
+  gtk_widget_queue_draw(widget);
+  return more;
+}
+
 }  // anonymous namespace
 
 extern "C" {
@@ -50,6 +57,10 @@ SmashWin* smash_gtk_new_window(SmashWinDelegate* delegate) {
 extern "C" int callIdle(void*);
 int smash_idle_cb(void* data) {
   return callIdle(data);
+}
+
+void smash_start_ticks(void* data, GtkWidget* widget) {
+  gtk_widget_add_tick_callback(widget, tick, data, NULL);
 }
 
 }
