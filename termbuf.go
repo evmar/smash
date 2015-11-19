@@ -65,8 +65,8 @@ func drawText(cr *cairo.Context, mf *MonoFont, x, y int, fg, bg *Color, line str
 // layout of text spans of multiple attributes as well as rendering
 // the cursor.
 func drawTerminalLine(cr *cairo.Context, mf *MonoFont, y int, line []TerminalChar) {
-	// TODO: reuse buf across lines?
-	buf := make([]byte, 0, 100)
+	var sbuf [100]byte
+	buf := sbuf[:]
 
 	// Collect spans of text with the same attributes, to batch
 	// the drawing calls to cairo.
