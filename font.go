@@ -12,7 +12,7 @@ type MonoFont struct {
 	descent int
 }
 
-func GetMonoFont() *MonoFont {
+func NewMonoFont() *MonoFont {
 	return &MonoFont{
 		Name: "monospace",
 		Size: 16,

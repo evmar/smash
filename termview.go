@@ -30,7 +30,7 @@ func NewTermView(parent View) *TermView {
 	return &TermView{
 		ViewBase: ViewBase{Parent: parent},
 		term:     NewTerminal(),
-		mf:       GetMonoFont(),
+		mf:       parent.GetWindow().font,
 	}
 }
 
@@ -220,6 +220,8 @@ func (t *TermView) Start(cmd *exec.Cmd) {
 	}()
 }
 
+// runCommand executes a subprocess in a TermView and reads its output.
+// It should be run in a separate goroutine.
 func (t *TermView) runCommand(cmd *exec.Cmd) {
 	f, err := pty.Start(cmd)
 	if err != nil {

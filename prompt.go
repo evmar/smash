@@ -20,7 +20,7 @@ type PromptView struct {
 func NewPromptView(parent View, config *readline.Config, accept func(string) bool) *PromptView {
 	pb := &PromptView{
 		ViewBase: ViewBase{Parent: parent},
-		mf:       GetMonoFont(),
+		mf:       parent.GetWindow().font,
 		rlconfig: config,
 		Accept:   accept,
 	}

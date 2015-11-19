@@ -80,7 +80,7 @@ func (l *LogView) Draw(cr *cairo.Context) {
 			}
 			if l.scrollAnim == nil {
 				l.scrollAnim = base.NewLerp(&l.scrollOffset, scrollOffset, 40*time.Millisecond)
-				l.GetWindow().AddAnimation(l.scrollAnim)
+				l.GetWindow().win.AddAnimation(l.scrollAnim)
 			} else {
 				// TODO adjust existing anim
 			}

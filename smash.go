@@ -32,10 +32,11 @@ type Window struct {
 	win ui.Win
 
 	view View
+	font *MonoFont
 }
 
 type View interface {
-	GetWindow() ui.Win
+	GetWindow() *Window
 	Draw(cr *cairo.Context)
 	Key(key keys.Key)
 	Scroll(dy int)
@@ -47,7 +48,7 @@ type ViewBase struct {
 	Parent View
 }
 
-func (vb *ViewBase) GetWindow() ui.Win {
+func (vb *ViewBase) GetWindow() *Window {
 	return vb.Parent.GetWindow()
 }
 
@@ -59,8 +60,8 @@ func (vb *ViewBase) Enqueue(f func()) {
 	vb.Parent.Enqueue(f)
 }
 
-func (win *Window) GetWindow() ui.Win {
-	return win.win
+func (win *Window) GetWindow() *Window {
+	return win
 }
 
 func (win *Window) Mapped() {
@@ -104,7 +105,10 @@ func main() {
 	ui := gtk.Init()
 	gui = ui
 
-	win := &Window{ui: ui}
+	win := &Window{
+		ui:   ui,
+		font: NewMonoFont(),
+	}
 	win.win = ui.NewWindow(win)
 	win.view = NewLogView(win)
 
