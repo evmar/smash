@@ -27,17 +27,14 @@ func main() {
 		defer pprof.StopCPUProfile()
 	}
 
-	// ui := xlib.OpenDisplay(anims)
 	ui := gtk.Init()
-
 	win := &Window{
 		ui:   ui,
 		font: NewMonoFont(),
 	}
 	win.win = ui.NewWindow(win)
 	win.view = NewLogView(win)
-
-	ui.Loop(win.win)
+	ui.Loop()
 
 	// For some reason, things wait a bit on shutdown unless we force-exit.
 	if *cpuprofile == "" {

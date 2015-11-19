@@ -27,6 +27,6 @@ type WinDelegate interface {
 type UI interface {
 	NewWindow(delegate WinDelegate) Win
 	Enqueue(f func())
-	Loop(win Win)
+	Loop()
 	Quit()
 }

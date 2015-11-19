@@ -69,7 +69,7 @@ func (ui *UI) NewWindow(delegate ui.WinDelegate) ui.Win {
 	return win
 }
 
-func (ui *UI) Loop(win ui.Win) {
+func (ui *UI) Loop() {
 	C.gtk_main()
 }
 
