@@ -8,7 +8,7 @@ import (
 	"github.com/martine/gocairo/cairo"
 )
 
-type PromptBuf struct {
+type PromptView struct {
 	ViewBase
 	mf *MonoFont
 
@@ -17,8 +17,8 @@ type PromptBuf struct {
 	Accept   func(string) bool
 }
 
-func NewPromptBuf(parent View, config *readline.Config, accept func(string) bool) *PromptBuf {
-	pb := &PromptBuf{
+func NewPromptView(parent View, config *readline.Config, accept func(string) bool) *PromptView {
+	pb := &PromptView{
 		ViewBase: ViewBase{Parent: parent},
 		mf:       GetMonoFont(),
 		rlconfig: config,
@@ -28,7 +28,7 @@ func NewPromptBuf(parent View, config *readline.Config, accept func(string) bool
 	return pb
 }
 
-func (pb *PromptBuf) Draw(cr *cairo.Context) {
+func (pb *PromptView) Draw(cr *cairo.Context) {
 	pb.mf.Use(cr)
 
 	cr.MoveTo(0, float64(pb.mf.ch-pb.mf.descent))
@@ -49,11 +49,11 @@ func (pb *PromptBuf) Draw(cr *cairo.Context) {
 	}
 }
 
-func (pb *PromptBuf) Height() int {
+func (pb *PromptView) Height() int {
 	return pb.mf.ch
 }
 
-func (pb *PromptBuf) Key(key keys.Key) {
+func (pb *PromptView) Key(key keys.Key) {
 	if key.Sym == keys.NoSym {
 		return
 	}
@@ -61,10 +61,10 @@ func (pb *PromptBuf) Key(key keys.Key) {
 	pb.Dirty()
 }
 
-func (pb *PromptBuf) Scroll(dy int) {
+func (pb *PromptView) Scroll(dy int) {
 }
 
-func (pb *PromptBuf) StartComplete(c *readline.Complete, text string, pos int) {
+func (pb *PromptView) StartComplete(c *readline.Complete, text string, pos int) {
 	go func() {
 		time.Sleep(500 * time.Millisecond)
 		pb.Enqueue(func() {
@@ -74,7 +74,7 @@ func (pb *PromptBuf) StartComplete(c *readline.Complete, text string, pos int) {
 	}()
 }
 
-func (pb *PromptBuf) Reset() {
+func (pb *PromptView) Reset() {
 	pb.readline = pb.rlconfig.NewReadLine()
 	pb.readline.Accept = pb.Accept
 	pb.readline.StartComplete = pb.StartComplete

@@ -12,7 +12,7 @@ import (
 )
 
 type LogEntry struct {
-	pb *PromptBuf
+	pb *PromptView
 	tb *TermView
 }
 
@@ -36,7 +36,7 @@ func NewLogView(parent View) *LogView {
 
 func (lv *LogView) addEntry() {
 	e := &LogEntry{
-		pb: NewPromptBuf(lv, lv.rlconfig, lv.Accept),
+		pb: NewPromptView(lv, lv.rlconfig, lv.Accept),
 	}
 	lv.Entries = append(lv.Entries, e)
 }
