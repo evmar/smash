@@ -250,6 +250,8 @@ func (t *TermView) runCommand(cmd *exec.Cmd) {
 	}
 
 	if err != io.EOF {
+		// When a pty closes, you get an EIO error instead of an EOF.
+		const EIO syscall.Errno = 5
 		if perr, ok := err.(*os.PathError); ok {
 			if errno, ok := perr.Err.(syscall.Errno); ok && errno == EIO {
 				// read /dev/ptmx: input/output error

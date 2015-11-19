@@ -6,12 +6,9 @@ import (
 	"os"
 	"runtime/pprof"
 	"smash/ui/gtk"
-	"syscall"
 )
 
 var cpuprofile = flag.String("cpuprofile", "", "write cpu profile to file")
-
-const EIO syscall.Errno = 5
 
 func check(err error) {
 	if err != nil {
