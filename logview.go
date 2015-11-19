@@ -12,8 +12,8 @@ import (
 )
 
 type LogEntry struct {
-	pb *PromptView
-	tb *TermView
+	prompt *PromptView
+	term   *TermView
 }
 
 type LogView struct {
@@ -36,7 +36,7 @@ func NewLogView(parent View) *LogView {
 
 func (lv *LogView) addEntry() {
 	e := &LogEntry{
-		pb: NewPromptView(lv, lv.rlconfig, lv.Accept),
+		prompt: NewPromptView(lv, lv.rlconfig, lv.Accept),
 	}
 	lv.Entries = append(lv.Entries, e)
 }
@@ -49,12 +49,11 @@ func ParseCommand(input string) *exec.Cmd {
 
 func (l *LogView) Accept(input string) bool {
 	e := l.Entries[len(l.Entries)-1]
-	tb := NewTermView(l)
-	e.tb = tb
-	e.tb.OnExit = func() {
+	e.term = NewTermView(l)
+	e.term.OnExit = func() {
 		l.addEntry()
 	}
-	tb.Start(ParseCommand(input))
+	e.term.Start(ParseCommand(input))
 	return true
 }
 
@@ -62,13 +61,13 @@ func (l *LogView) Draw(cr *cairo.Context) {
 	cr.Translate(0, float64(-l.scrollOffset))
 	y := 0
 	for _, e := range l.Entries {
-		e.pb.Draw(cr)
-		h := e.pb.Height()
+		e.prompt.Draw(cr)
+		h := e.prompt.Height()
 		y += h
 		cr.Translate(0, float64(h))
-		if e.tb != nil {
-			e.tb.Draw(cr)
-			h = e.tb.Height()
+		if e.term != nil {
+			e.term.Draw(cr)
+			h = e.term.Height()
 			y += h
 			cr.Translate(0, float64(h))
 		}
@@ -91,10 +90,10 @@ func (l *LogView) Draw(cr *cairo.Context) {
 
 func (l *LogView) Key(key keys.Key) {
 	e := l.Entries[len(l.Entries)-1]
-	if e.tb != nil && e.tb.Running {
-		e.tb.Key(key)
+	if e.term != nil && e.term.Running {
+		e.term.Key(key)
 	} else {
-		e.pb.Key(key)
+		e.prompt.Key(key)
 	}
 }
 
