@@ -1,6 +1,7 @@
 #include <gtk/gtk.h>
 
 #include "smashgtk.h"
+#include "_cgo_export.h"
 
 extern "C" {
 
@@ -9,12 +10,10 @@ void smash_gtk_init(void) {
   gtk_init(NULL, NULL);
 }
 
-void smashGoDraw(void*, void*);
 static void draw(GtkWidget* widget, cairo_t* cr, gpointer data) {
   smashGoDraw(data, cr);
 }
 
-void smashGoKey(void*, void*);
 static void key(GtkWidget* widget, GdkEventKey* event, gpointer data) {
   smashGoKey(data, event);
 }
@@ -44,12 +43,10 @@ GtkWidget* smash_gtk_new_window(void* delegate) {
   return win;
 }
 
-int smashGoIdle(void*);
 int smash_idle_cb(void* data) {
   return smashGoIdle(data);
 }
 
-int smashGoTick(void*);
 static gboolean tick(GtkWidget* widget, GdkFrameClock* clock, gpointer data) {
   gboolean more = smashGoTick(data) != 0;
   gtk_widget_queue_draw(widget);
