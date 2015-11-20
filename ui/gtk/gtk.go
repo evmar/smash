@@ -36,8 +36,8 @@ func Init() *UI {
 	}
 }
 
-//export callIdle
-func callIdle(data unsafe.Pointer) int {
+//export smashGoIdle
+func smashGoIdle(data unsafe.Pointer) int {
 	ui := (*UI)(data)
 	for {
 		select {
@@ -81,8 +81,8 @@ func (w *Window) Dirty() {
 	C.gtk_widget_queue_draw((*C.GtkWidget)(w.gtkWin))
 }
 
-//export callTick
-func callTick(data unsafe.Pointer) bool {
+//export smashGoTick
+func smashGoTick(data unsafe.Pointer) bool {
 	win := (*Window)(data)
 	// TODO: use gdk_frame_clock_get_frame_time here instead of Go time.
 	now := time.Now()
@@ -101,15 +101,15 @@ func (w *Window) AddAnimation(anim base.Anim) {
 	w.anims[anim] = true
 }
 
-//export callDraw
-func callDraw(delegateP unsafe.Pointer, crP unsafe.Pointer) {
+//export smashGoDraw
+func smashGoDraw(delegateP unsafe.Pointer, crP unsafe.Pointer) {
 	delegate := (*ui.WinDelegate)(delegateP)
 	cr := cairo.BorrowContext(crP)
 	(*delegate).Draw(cr)
 }
 
-//export callKey
-func callKey(delegateP unsafe.Pointer, keyP unsafe.Pointer) {
+//export smashGoKey
+func smashGoKey(delegateP unsafe.Pointer, keyP unsafe.Pointer) {
 	delegate := (*ui.WinDelegate)(delegateP)
 	gkey := (*C.GdkEventKey)(keyP)
 
