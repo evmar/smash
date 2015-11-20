@@ -2,34 +2,24 @@
 
 #include "smashgtk.h"
 
-namespace {
-
-extern "C" void smashGoDraw(void*, void*);
-void draw(GtkWidget* widget, cairo_t* cr, gpointer data) {
-  smashGoDraw(data, cr);
-}
-
-extern "C" void smashGoKey(void*, void*);
-void key(GtkWidget* widget, GdkEventKey* event, gpointer data) {
-  smashGoKey(data, event);
-}
-
-extern "C" int smashGoTick(void*);
-gboolean tick(GtkWidget* widget, GdkFrameClock* clock, gpointer data) {
-  gboolean more = smashGoTick(data) != 0;
-  gtk_widget_queue_draw(widget);
-  return more;
-}
-
-}  // anonymous namespace
-
 extern "C" {
 
 void smash_gtk_init(void) {
+  // TODO: command-line params?
   gtk_init(NULL, NULL);
 }
 
-SmashWin* smash_gtk_new_window(SmashWinDelegate* delegate) {
+void smashGoDraw(void*, void*);
+static void draw(GtkWidget* widget, cairo_t* cr, gpointer data) {
+  smashGoDraw(data, cr);
+}
+
+void smashGoKey(void*, void*);
+static void key(GtkWidget* widget, GdkEventKey* event, gpointer data) {
+  smashGoKey(data, event);
+}
+
+GtkWidget* smash_gtk_new_window(void* delegate) {
   GtkWidget* win = gtk_window_new(GTK_WINDOW_TOPLEVEL);
   gtk_window_set_title(GTK_WINDOW(win), "smash");
   gtk_widget_set_app_paintable(win, TRUE);
@@ -54,13 +44,19 @@ SmashWin* smash_gtk_new_window(SmashWinDelegate* delegate) {
   return win;
 }
 
-extern "C" int smashGoIdle(void*);
+int smashGoIdle(void*);
 int smash_idle_cb(void* data) {
   return smashGoIdle(data);
 }
 
+int smashGoTick(void*);
+static gboolean tick(GtkWidget* widget, GdkFrameClock* clock, gpointer data) {
+  gboolean more = smashGoTick(data) != 0;
+  gtk_widget_queue_draw(widget);
+  return more;
+}
 void smash_start_ticks(void* data, GtkWidget* widget) {
   gtk_widget_add_tick_callback(widget, tick, data, NULL);
 }
 
-}
+}  // extern "C"

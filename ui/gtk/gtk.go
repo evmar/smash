@@ -22,7 +22,7 @@ type UI struct {
 }
 
 type Window struct {
-	gtkWin unsafe.Pointer
+	gtkWin *C.GtkWidget
 	// Store the delegate here so this interface isn't gc'd.
 	delegate ui.WinDelegate
 
@@ -78,7 +78,7 @@ func (ui *UI) Quit() {
 }
 
 func (w *Window) Dirty() {
-	C.gtk_widget_queue_draw((*C.GtkWidget)(w.gtkWin))
+	C.gtk_widget_queue_draw(w.gtkWin)
 }
 
 //export smashGoTick
@@ -96,7 +96,7 @@ func smashGoTick(data unsafe.Pointer) bool {
 
 func (w *Window) AddAnimation(anim base.Anim) {
 	if len(w.anims) == 0 {
-		C.smash_start_ticks(unsafe.Pointer(w), (*C.GtkWidget)(w.gtkWin))
+		C.smash_start_ticks(unsafe.Pointer(w), w.gtkWin)
 	}
 	w.anims[anim] = true
 }
@@ -109,9 +109,8 @@ func smashGoDraw(delegateP unsafe.Pointer, crP unsafe.Pointer) {
 }
 
 //export smashGoKey
-func smashGoKey(delegateP unsafe.Pointer, keyP unsafe.Pointer) {
+func smashGoKey(delegateP unsafe.Pointer, gkey *C.GdkEventKey) {
 	delegate := (*ui.WinDelegate)(delegateP)
-	gkey := (*C.GdkEventKey)(keyP)
 
 	switch gkey.keyval {
 	case C.GDK_KEY_Shift_L, C.GDK_KEY_Shift_R,
