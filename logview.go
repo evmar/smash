@@ -55,16 +55,19 @@ func ParseCommand(input string) *exec.Cmd {
 func (lv *LogView) Accept(input string) bool {
 	e := lv.Entries[len(lv.Entries)-1]
 	e.term = NewTermView(lv)
-	cmd, err := lv.shell.Run(lv.shell.Parse(input))
+	cmd, builtin := lv.shell.Run(input)
 	e.term.OnExit = func() {
 		lv.addEntry()
 	}
 	if cmd != nil {
 		e.term.Start(cmd)
-	} else {
-		// Command was run internally.
+	} else if builtin != nil {
+		// TODO: async.
+		output, err := builtin()
 		if err != nil {
 			e.term.term.DisplayString(err.Error())
+		} else {
+			e.term.term.DisplayString(output)
 		}
 		e.term.Finish()
 	}
