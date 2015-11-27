@@ -3,27 +3,21 @@ package shell
 import (
 	"fmt"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"strings"
 )
 
-type Delegate interface {
-	OnShellError(string)
-	OnShellStart(cwd string, argv []string) error
-}
-
 type Shell struct {
-	delegate   Delegate
 	cwd        string
 	env        map[string]string
 	lastStatus int
 }
 
-func NewShell(delegate Delegate, cwd string, env map[string]string) *Shell {
+func NewShell(cwd string, env map[string]string) *Shell {
 	return &Shell{
-		delegate: delegate,
-		cwd:      cwd,
-		env:      env,
+		cwd: cwd,
+		env: env,
 	}
 }
 
@@ -59,22 +53,24 @@ func (s *Shell) builtinCd(argv []string) error {
 	return nil
 }
 
-func (s *Shell) Run(argv []string) {
+func (s *Shell) Run(argv []string) (*exec.Cmd, error) {
 	if len(argv) == 0 {
-		return
+		return nil, nil
 	}
 
+	var cmd *exec.Cmd
 	var err error
 	switch argv[0] {
 	case "cd":
 		err = s.builtinCd(argv)
 	default:
-		err = s.delegate.OnShellStart(s.cwd, argv)
+		cmd = exec.Command(argv[0], argv[1:]...)
+		cmd.Dir = s.cwd
 	}
 	if err != nil {
-		s.delegate.OnShellError(err.Error())
 		s.Finish(1)
 	}
+	return cmd, err
 }
 
 func (s *Shell) Finish(status int) {

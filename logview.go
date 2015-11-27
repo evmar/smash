@@ -34,7 +34,7 @@ func NewLogView(parent View) *LogView {
 	}
 	cwd := ""
 	var env map[string]string
-	lv.shell = shell.NewShell(lv, cwd, env)
+	lv.shell = shell.NewShell(cwd, env)
 	lv.addEntry()
 	return lv
 }
@@ -46,17 +46,6 @@ func (lv *LogView) addEntry() {
 	lv.Entries = append(lv.Entries, e)
 }
 
-func (lv *LogView) OnShellStart(cwd string, argv []string) error {
-	e := lv.Entries[len(lv.Entries)-1]
-	cmd := exec.Command(argv[0], argv[1:]...)
-	cmd.Dir = cwd
-	e.term.Start(cmd)
-	return nil
-}
-
-func (lv *LogView) OnShellError(error string) {
-}
-
 func ParseCommand(input string) *exec.Cmd {
 	// TODO: something correct.
 	args := strings.Split(input, " ")
@@ -66,10 +55,19 @@ func ParseCommand(input string) *exec.Cmd {
 func (lv *LogView) Accept(input string) bool {
 	e := lv.Entries[len(lv.Entries)-1]
 	e.term = NewTermView(lv)
+	cmd, err := lv.shell.Run(lv.shell.Parse(input))
 	e.term.OnExit = func() {
 		lv.addEntry()
 	}
-	lv.shell.Run(lv.shell.Parse(input))
+	if cmd != nil {
+		e.term.Start(cmd)
+	} else {
+		// Command was run internally.
+		if err != nil {
+			e.term.term.DisplayString(err.Error())
+		}
+		e.term.Finish()
+	}
 	return true
 }
 

@@ -209,15 +209,17 @@ func (t *TermView) Start(cmd *exec.Cmd) {
 	t.Running = true
 	go func() {
 		t.runCommand(cmd)
-		t.Enqueue(func() {
-			t.Running = false
-			t.term.HideCursor = true
-			t.Dirty()
-			if t.OnExit != nil {
-				t.OnExit()
-			}
-		})
+		t.Enqueue(t.Finish)
 	}()
+}
+
+func (t *TermView) Finish() {
+	t.Running = false
+	t.term.HideCursor = true
+	t.Dirty()
+	if t.OnExit != nil {
+		t.OnExit()
+	}
 }
 
 // runCommand executes a subprocess in a TermView and reads its output.

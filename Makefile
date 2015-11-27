@@ -1,4 +1,4 @@
-.PHONY: all vendor test godoc cov
+.PHONY: all vendor test godoc cov basic
 
 all:
 	go install -race smash
@@ -15,3 +15,6 @@ godoc:
 cov:
 	go test -coverprofile=cov
 	go tool cover -html=cov
+
+basic:
+	go build shell/basic/basic.go
