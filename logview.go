@@ -5,6 +5,7 @@ import (
 	"smash/base"
 	"smash/keys"
 	"smash/readline"
+	"smash/shell"
 	"strings"
 	"time"
 
@@ -19,6 +20,7 @@ type LogEntry struct {
 type LogView struct {
 	ViewBase
 	Entries []*LogEntry
+	shell   *shell.Shell
 
 	rlconfig     *readline.Config
 	scrollOffset int
@@ -30,6 +32,9 @@ func NewLogView(parent View) *LogView {
 		ViewBase: ViewBase{parent},
 		rlconfig: readline.NewConfig(),
 	}
+	cwd := ""
+	var env map[string]string
+	lv.shell = shell.NewShell(lv, cwd, env)
 	lv.addEntry()
 	return lv
 }
@@ -41,19 +46,30 @@ func (lv *LogView) addEntry() {
 	lv.Entries = append(lv.Entries, e)
 }
 
+func (lv *LogView) OnShellStart(cwd string, argv []string) error {
+	e := lv.Entries[len(lv.Entries)-1]
+	cmd := exec.Command(argv[0], argv[1:]...)
+	cmd.Dir = cwd
+	e.term.Start(cmd)
+	return nil
+}
+
+func (lv *LogView) OnShellError(error string) {
+}
+
 func ParseCommand(input string) *exec.Cmd {
 	// TODO: something correct.
 	args := strings.Split(input, " ")
 	return exec.Command(args[0], args[1:]...)
 }
 
-func (l *LogView) Accept(input string) bool {
-	e := l.Entries[len(l.Entries)-1]
-	e.term = NewTermView(l)
+func (lv *LogView) Accept(input string) bool {
+	e := lv.Entries[len(lv.Entries)-1]
+	e.term = NewTermView(lv)
 	e.term.OnExit = func() {
-		l.addEntry()
+		lv.addEntry()
 	}
-	e.term.Start(ParseCommand(input))
+	lv.shell.Run(lv.shell.Parse(input))
 	return true
 }
 

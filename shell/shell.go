@@ -8,8 +8,8 @@ import (
 )
 
 type Delegate interface {
-	Error(string)
-	Start(cwd string, argv []string) error
+	OnShellError(string)
+	OnShellStart(cwd string, argv []string) error
 }
 
 type Shell struct {
@@ -32,6 +32,7 @@ func (s *Shell) Parse(cmd string) []string {
 }
 
 func (s *Shell) builtinCd(argv []string) error {
+
 	var dir string
 	switch len(argv) {
 	case 1:
@@ -68,10 +69,10 @@ func (s *Shell) Run(argv []string) {
 	case "cd":
 		err = s.builtinCd(argv)
 	default:
-		err = s.delegate.Start(s.cwd, argv)
+		err = s.delegate.OnShellStart(s.cwd, argv)
 	}
 	if err != nil {
-		s.delegate.Error(err.Error())
+		s.delegate.OnShellError(err.Error())
 		s.Finish(1)
 	}
 }

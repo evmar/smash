@@ -11,11 +11,11 @@ import (
 type ShellDelegate struct {
 }
 
-func (sd *ShellDelegate) Error(error string) {
+func (sd *ShellDelegate) OnShellError(error string) {
 	fmt.Fprintf(os.Stderr, "%s\n", error)
 }
 
-func (sd *ShellDelegate) Start(cwd string, argv []string) error {
+func (sd *ShellDelegate) OnShellStart(cwd string, argv []string) error {
 	cmd := exec.Command(argv[0], argv[1:]...)
 	cmd.Dir = cwd
 	cmd.Stdin = os.Stdin
