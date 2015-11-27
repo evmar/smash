@@ -15,8 +15,9 @@ func (sd *ShellDelegate) Error(error string) {
 	fmt.Fprintf(os.Stderr, "%s\n", error)
 }
 
-func (sd *ShellDelegate) Start(argv []string) error {
+func (sd *ShellDelegate) Start(cwd string, argv []string) error {
 	cmd := exec.Command(argv[0], argv[1:]...)
+	cmd.Dir = cwd
 	cmd.Stdin = os.Stdin
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr

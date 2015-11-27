@@ -9,7 +9,7 @@ import (
 
 type Delegate interface {
 	Error(string)
-	Start(argv []string) error
+	Start(cwd string, argv []string) error
 }
 
 type Shell struct {
@@ -68,7 +68,7 @@ func (s *Shell) Run(argv []string) {
 	case "cd":
 		err = s.builtinCd(argv)
 	default:
-		err = s.delegate.Start(argv)
+		err = s.delegate.Start(s.cwd, argv)
 	}
 	if err != nil {
 		s.delegate.Error(err.Error())
