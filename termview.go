@@ -90,6 +90,7 @@ func drawTerminalLine(cr *cairo.Context, mf *MonoFont, y int, line []TerminalCha
 		if attr.Inverse() {
 			fg, bg = bg, fg
 		}
+		mf.Use(cr, attr.Bright())
 
 		if bg == &white {
 			bg = nil
@@ -104,7 +105,7 @@ func drawCursor(cr *cairo.Context, mf *MonoFont, row, col int, ch rune) {
 }
 
 func (t *TermView) Draw(cr *cairo.Context) {
-	t.mf.Use(cr)
+	t.mf.Use(cr, false)
 
 	t.term.Mu.Lock()
 	defer t.term.Mu.Unlock()

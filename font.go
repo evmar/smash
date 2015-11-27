@@ -27,8 +27,12 @@ func (m *MonoFont) MetricsFromCairo(cr *cairo.Context) {
 	m.descent = int(ext.Descent)
 }
 
-func (m *MonoFont) Use(cr *cairo.Context) {
-	cr.SelectFontFace(m.Name, cairo.FontSlantNormal, cairo.FontWeightNormal)
+func (m *MonoFont) Use(cr *cairo.Context, bold bool) {
+	weight := cairo.FontWeightNormal
+	if bold {
+		weight = cairo.FontWeightBold
+	}
+	cr.SelectFontFace(m.Name, cairo.FontSlantNormal, weight)
 	cr.SetFontSize(float64(m.Size))
 	if m.cw == 0 {
 		m.MetricsFromCairo(cr)

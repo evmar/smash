@@ -29,14 +29,16 @@ func NewPromptView(parent View, config *readline.Config, accept func(string) boo
 }
 
 func (pb *PromptView) Draw(cr *cairo.Context) {
-	pb.mf.Use(cr)
+	pb.mf.Use(cr, false)
 
 	cr.MoveTo(0, float64(pb.mf.ch-pb.mf.descent))
 	var line []TerminalChar
 	line = append(line, TerminalChar{Ch: '$'})
 	line = append(line, TerminalChar{Ch: ' '})
+	var bold Attr
+	bold.SetBright(true)
 	for _, c := range pb.readline.Text {
-		line = append(line, TerminalChar{Ch: rune(c)})
+		line = append(line, TerminalChar{Ch: rune(c), Attr: bold})
 	}
 	drawTerminalLine(cr, pb.mf, 0, line)
 
