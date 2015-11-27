@@ -65,7 +65,11 @@ func (s *Shell) builtinCd(argv []string) (string, error) {
 		return "", fmt.Errorf("usage: cd [dir]")
 	}
 
-	dir = filepath.Join(s.cwd, dir)
+	if dir[0] == '/' {
+		// absolute path
+	} else {
+		dir = filepath.Join(s.cwd, dir)
+	}
 	st, err := os.Stat(dir)
 	if err != nil {
 		return "", err
