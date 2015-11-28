@@ -10,6 +10,9 @@ import (
 type Win interface {
 	Dirty()
 
+	SetSize(width, height int)
+	Show()
+
 	AddAnimation(anim base.Anim)
 }
 

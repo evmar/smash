@@ -94,6 +94,15 @@ func smashGoTick(data unsafe.Pointer) bool {
 	return len(win.anims) > 0
 }
 
+func (w *Window) SetSize(width, height int) {
+	C.gtk_window_set_default_size((*C.GtkWindow)(unsafe.Pointer(w.gtkWin)),
+		C.gint(width), C.gint(height))
+}
+
+func (w *Window) Show() {
+	C.gtk_widget_show(w.gtkWin)
+}
+
 func (w *Window) AddAnimation(anim base.Anim) {
 	if len(w.anims) == 0 {
 		C.smash_start_ticks(unsafe.Pointer(w), w.gtkWin)

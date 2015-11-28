@@ -33,7 +33,9 @@ func main() {
 		font: NewMonoFont(),
 	}
 	win.win = ui.NewWindow(win)
+	win.win.SetSize(640, 400)
 	win.view = NewLogView(win)
+	win.win.Show()
 	ui.Loop()
 
 	// For some reason, things wait a bit on shutdown unless we force-exit.

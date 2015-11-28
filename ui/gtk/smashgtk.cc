@@ -36,10 +36,6 @@ GtkWidget* smash_gtk_new_window(void* delegate) {
   // gtk_window_set_default_size(GTK_WINDOW(win_),
   //                             term_->width_, term_->height_);
   // cairo_destroy(cr);
-  gtk_window_set_default_size(GTK_WINDOW(win),
-                              640, 400);
- 
-  gtk_widget_show(win);
   return win;
 }
 
