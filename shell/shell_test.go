@@ -7,22 +7,56 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+func runBuiltin(t *testing.T, s *Shell, input string) (string, error) {
+	cmd, f := s.Run(input)
+	assert.Nil(t, cmd)
+	out, err := f()
+	if err != nil {
+		s.Finish(1)
+	} else {
+		s.Finish(0)
+	}
+	return out, err
+}
+
+func TestAlias(t *testing.T) {
+	var err error
+	s := NewShell("", map[string]string{})
+	_, err = runBuiltin(t, s, "alias foo xyz")
+	assert.Nil(t, err)
+
+	out, _ := runBuiltin(t, s, "alias")
+	assert.Contains(t, out, "xyz")
+}
+
 func TestCd(t *testing.T) {
+	var err error
+
 	cwd, _ := os.Getwd()
 	s := NewShell(cwd, map[string]string{})
 
-	s.builtinCd([]string{"cd", "."})
+	_, err = runBuiltin(t, s, "cd .")
+	assert.Nil(t, err)
 	assert.Equal(t, s.cwd, cwd)
+	assert.Equal(t, s.lastStatus, 0)
 
-	s.builtinCd([]string{"cd", "basic"})
+	runBuiltin(t, s, "cd basic")
 	assert.Equal(t, s.cwd, cwd+"/basic")
 
-	s.builtinCd([]string{"cd", ".."})
+	runBuiltin(t, s, "cd ..")
 	assert.Equal(t, s.cwd, cwd)
 
-	s.builtinCd([]string{"cd", "nosuchdir"})
-	assert.Equal(t, s.cwd, cwd)
+	_, err = runBuiltin(t, s, "cd nosuchdir")
+	assert.Contains(t, err.Error(), "no such file or dir")
+	assert.Equal(t, s.lastStatus, 1)
 
-	s.builtinCd([]string{"cd", "/tmp"})
+	runBuiltin(t, s, "cd /")
+	assert.Equal(t, s.cwd, "/")
+
+	_, err = runBuiltin(t, s, "cd")
+	assert.Contains(t, err.Error(), "no $HOME")
+
+	s.env["HOME"] = "/tmp"
+	runBuiltin(t, s, "cd")
 	assert.Equal(t, s.cwd, "/tmp")
 }

@@ -46,6 +46,10 @@ func (s *Shell) builtinAlias(argv []string) (string, error) {
 		for _, cmd := range cmds {
 			fmt.Fprintf(buf, "%*s %s\n", maxLen, cmd, s.aliases[cmd])
 		}
+	case 3:
+		s.aliases[argv[1]] = argv[2]
+	default:
+		return "", fmt.Errorf("usage: alias [input output]")
 	}
 	return buf.String(), nil
 }
