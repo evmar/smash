@@ -114,9 +114,9 @@ func (b *Bash) Chdir(path string) error {
 	return nil
 }
 
-// Expand passes some input through the bash subprocess to gather
+// expand passes some input through the bash subprocess to gather
 // potential expansions.
-func (b *Bash) Expand(input string) ([]string, error) {
+func (b *Bash) expand(input string) (expansions []string, err error) {
 	// Write:
 	// - the input
 	// - M-? ("expand")
@@ -131,7 +131,6 @@ func (b *Bash) Expand(input string) ([]string, error) {
 	// (empty line and prompt).  This means it's ambiguous if the
 	// first completion matches the magic prompt string.  :(
 	sawNL := false
-	var expansions []string
 L:
 	for b.lines.Scan() {
 		line := b.lines.Text()
@@ -146,8 +145,11 @@ L:
 			expansions = append(expansions, line)
 		}
 	}
-	if err := b.lines.Err(); err != nil {
-		return nil, err
-	}
-	return expansions, nil
+	err = b.lines.Err()
+	return
+}
+
+func (b *Bash) Complete(input string) (int, []string, error) {
+	expansions, err := b.expand(input)
+	return 0, expansions, err
 }

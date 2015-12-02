@@ -11,7 +11,7 @@ import (
 )
 
 type Completer interface {
-	Expand(input string) ([]string, error)
+	Complete(input string) (int, []string, error)
 }
 
 type Shell struct {
@@ -37,11 +37,11 @@ func NewShell(cwd string, env map[string]string, completer Completer) *Shell {
 	}
 }
 
-func (s *Shell) Complete(input string) ([]string, error) {
+func (s *Shell) Complete(input string) (int, []string, error) {
 	// if err := s.bash.Chdir(s.cwd); err != nil {
 	// 	return nil, err
 	// }
-	return s.completer.Expand(input)
+	return s.completer.Complete(input)
 }
 
 func (s *Shell) builtinAlias(argv []string) (string, error) {

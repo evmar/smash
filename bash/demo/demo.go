@@ -21,7 +21,7 @@ func main() {
 		if !s.Scan() {
 			break
 		}
-		exps, err := b.Expand(s.Text())
+		_, exps, err := b.Complete(s.Text())
 		if err != nil {
 			log.Fatalf("run failed: %s", err)
 		}

@@ -70,8 +70,8 @@ func (pb *PromptView) Scroll(dy int) {
 
 func (pb *PromptView) StartComplete(c *readline.Complete, text string, pos int) {
 	go func() {
-		completions, err := pb.shell.Complete(text)
-		log.Printf("comp %v => %v err %v", text, completions, err)
+		ofs, completions, err := pb.shell.Complete(text)
+		log.Printf("comp %v => %v %v %v", text, ofs, completions, err)
 		comp := "foo"
 		if len(completions) > 0 {
 			comp = completions[0]

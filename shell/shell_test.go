@@ -63,34 +63,35 @@ func TestCd(t *testing.T) {
 }
 
 type testCompleter struct {
-	expand func(input string) ([]string, error)
+	complete func(input string) (int, []string, error)
 }
 
-func (t *testCompleter) Expand(input string) ([]string, error) {
-	return t.expand(input)
+func (t *testCompleter) Complete(input string) (int, []string, error) {
+	return t.complete(input)
 }
 
 func TestComplete(t *testing.T) {
 	c := &testCompleter{}
 	s := NewShell("", nil, c)
 
-	c.expand = func(input string) ([]string, error) {
+	c.complete = func(input string) (int, []string, error) {
 		if input == "p" {
-			return []string{"pwd"}, nil
+			return 0, []string{"pwd"}, nil
 		}
-		return nil, fmt.Errorf("unreached")
+		return 0, nil, fmt.Errorf("unreached")
 	}
-	comps, err := s.Complete("p")
+	ofs, comps, err := s.Complete("p")
 	assert.Nil(t, err)
 	assert.Equal(t, []string{"pwd"}, comps)
 
-	c.expand = func(input string) ([]string, error) {
+	c.complete = func(input string) (int, []string, error) {
 		if input == "cd f" {
-			return []string{"foo", "foox"}, nil
+			return 3, []string{"foo", "foox"}, nil
 		}
-		return nil, fmt.Errorf("unreached")
+		return 0, nil, fmt.Errorf("unreached")
 	}
-	comps, err = s.Complete("cd f")
+	ofs, comps, err = s.Complete("cd f")
 	assert.Nil(t, err)
+	assert.Equal(t, 3, ofs)
 	assert.Equal(t, []string{"foo", "foox"}, comps)
 }
