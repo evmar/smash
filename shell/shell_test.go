@@ -1,6 +1,7 @@
 package shell
 
 import (
+	"fmt"
 	"os"
 	"testing"
 
@@ -59,4 +60,37 @@ func TestCd(t *testing.T) {
 	s.env["HOME"] = "/tmp"
 	runBuiltin(t, s, "cd")
 	assert.Equal(t, s.cwd, "/tmp")
+}
+
+type testCompleter struct {
+	expand func(input string) ([]string, error)
+}
+
+func (t *testCompleter) Expand(input string) ([]string, error) {
+	return t.expand(input)
+}
+
+func TestComplete(t *testing.T) {
+	c := &testCompleter{}
+	s := NewShell("", nil, c)
+
+	c.expand = func(input string) ([]string, error) {
+		if input == "p" {
+			return []string{"pwd"}, nil
+		}
+		return nil, fmt.Errorf("unreached")
+	}
+	comps, err := s.Complete("p")
+	assert.Nil(t, err)
+	assert.Equal(t, []string{"pwd"}, comps)
+
+	c.expand = func(input string) ([]string, error) {
+		if input == "cd f" {
+			return []string{"foo", "foox"}, nil
+		}
+		return nil, fmt.Errorf("unreached")
+	}
+	comps, err = s.Complete("cd f")
+	assert.Nil(t, err)
+	assert.Equal(t, []string{"foo", "foox"}, comps)
 }
