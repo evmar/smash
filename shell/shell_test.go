@@ -21,7 +21,7 @@ func runBuiltin(t *testing.T, s *Shell, input string) (string, error) {
 
 func TestAlias(t *testing.T) {
 	var err error
-	s := NewShell("", map[string]string{})
+	s := NewShell("", map[string]string{}, nil)
 	_, err = runBuiltin(t, s, "alias foo xyz")
 	assert.Nil(t, err)
 
@@ -33,15 +33,15 @@ func TestCd(t *testing.T) {
 	var err error
 
 	cwd, _ := os.Getwd()
-	s := NewShell(cwd, map[string]string{})
+	s := NewShell(cwd, map[string]string{}, nil)
 
 	_, err = runBuiltin(t, s, "cd .")
 	assert.Nil(t, err)
 	assert.Equal(t, s.cwd, cwd)
 	assert.Equal(t, s.lastStatus, 0)
 
-	runBuiltin(t, s, "cd basic")
-	assert.Equal(t, s.cwd, cwd+"/basic")
+	runBuiltin(t, s, "cd testdir")
+	assert.Equal(t, s.cwd, cwd+"/testdir")
 
 	runBuiltin(t, s, "cd ..")
 	assert.Equal(t, s.cwd, cwd)

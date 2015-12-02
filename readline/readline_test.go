@@ -55,8 +55,9 @@ func TestBackspace(t *testing.T) {
 func TestAccept(t *testing.T) {
 	rl := NewConfig().NewReadLine()
 	ok := false
-	rl.Accept = func() {
+	rl.Accept = func(text string) bool {
 		ok = true
+		return true
 	}
 	testType(rl, "hello")
 	assert.Equal(t, false, ok)

@@ -12,10 +12,7 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-	sh, err := shell.NewShell(cwd, map[string]string{})
-	if err != nil {
-		panic(err)
-	}
+	sh := shell.NewShell(cwd, map[string]string{}, nil)
 	scanner := bufio.NewScanner(os.Stdin)
 	fmt.Printf("> ")
 	for scanner.Scan() {
