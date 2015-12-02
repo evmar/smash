@@ -1,3 +1,5 @@
+// +build xlib
+
 // Package xlib wraps enough of xlib to produce Cairo drawing surfaces.
 package xlib
 

@@ -1,3 +1,5 @@
+// +build xlib
+
 package xlib
 
 //go:generate stringer -type=xEventType
