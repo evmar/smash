@@ -12,19 +12,17 @@ type PromptView struct {
 	ViewBase
 	mf *MonoFont
 
-	rlconfig *readline.Config
 	readline *readline.ReadLine
-	Accept   func(string) bool
 }
 
 func NewPromptView(parent View, config *readline.Config, accept func(string) bool) *PromptView {
 	pb := &PromptView{
 		ViewBase: ViewBase{Parent: parent},
 		mf:       parent.GetWindow().font,
-		rlconfig: config,
-		Accept:   accept,
+		readline: config.NewReadLine(),
 	}
-	pb.Reset()
+	pb.readline.Accept = accept
+	pb.readline.StartComplete = pb.StartComplete
 	return pb
 }
 
@@ -74,10 +72,4 @@ func (pb *PromptView) StartComplete(c *readline.Complete, text string, pos int) 
 			pb.Dirty()
 		})
 	}()
-}
-
-func (pb *PromptView) Reset() {
-	pb.readline = pb.rlconfig.NewReadLine()
-	pb.readline.Accept = pb.Accept
-	pb.readline.StartComplete = pb.StartComplete
 }
