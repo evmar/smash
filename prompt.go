@@ -72,12 +72,15 @@ func (pb *PromptView) StartComplete(c *readline.Complete, text string, pos int) 
 	go func() {
 		ofs, completions, err := pb.shell.Complete(text)
 		log.Printf("comp %v => %v %v %v", text, ofs, completions, err)
-		comp := "foo"
 		if len(completions) > 0 {
-			comp = completions[0]
+			// Keep text up to the place where completion started and text
+			// after the cursor position.  This is consistent with bash, at
+			// least.
+			text = text[:ofs] + completions[0] + text[pos:]
+			pos = ofs + len(completions[0])
 		}
 		pb.Enqueue(func() {
-			c.Results(comp, 0)
+			c.Results(text, pos)
 			pb.Dirty()
 		})
 	}()

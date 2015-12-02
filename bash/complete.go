@@ -151,5 +151,27 @@ L:
 
 func (b *Bash) Complete(input string) (int, []string, error) {
 	expansions, err := b.expand(input)
-	return 0, expansions, err
+	if err != nil {
+		return 0, nil, err
+	}
+	if len(expansions) == 0 {
+		return 0, nil, nil
+	}
+
+	// We've got some completions, but we need to guess at the correct
+	// offset.  Some cases to consider:
+	//   "ls " => "foo", "bar", "baz"
+	//   "ls b" => "bar", "baz"
+	//   "ls ./b" => "bar", "baz"
+	//   "ls ./*" => "foo", "bar", "baz"
+	//   "ls --c" => "--classify", "--color=", ...
+	// Current logic: back up until we hit a space or a slash.
+	var ofs int
+	for ofs = len(input); ofs > 0; ofs-- {
+		if input[ofs-1] == ' ' || input[ofs-1] == '/' {
+			break
+		}
+	}
+
+	return ofs, expansions, err
 }
