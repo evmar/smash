@@ -101,15 +101,23 @@ func (s *Shell) builtinCd(argv []string) (string, error) {
 	return "", nil
 }
 
-func (s *Shell) Run(input string) (*exec.Cmd, Builtin) {
+func (s *Shell) parse(input string) []string {
 	argv := strings.Split(input, " ")
 	if len(argv) == 0 {
-		return nil, nil
+		return nil
 	}
 
 	if alias := s.aliases[argv[0]]; alias != "" {
 		exp := strings.Split(alias, " ")
 		argv = append(exp, argv[1:]...)
+	}
+	return argv
+}
+
+func (s *Shell) Run(input string) (*exec.Cmd, Builtin) {
+	argv := s.parse(input)
+	if argv == nil {
+		return nil, nil
 	}
 
 	var cmd *exec.Cmd
