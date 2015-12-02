@@ -1,24 +1,28 @@
 package main
 
 import (
-	"smash/keys"
-	"smash/readline"
-	"time"
+	"log"
 
 	"github.com/martine/gocairo/cairo"
+
+	"smash/keys"
+	"smash/readline"
+	"smash/shell"
 )
 
 type PromptView struct {
 	ViewBase
 	mf *MonoFont
 
+	shell    *shell.Shell
 	readline *readline.ReadLine
 }
 
-func NewPromptView(parent View, config *readline.Config, accept func(string) bool) *PromptView {
+func NewPromptView(parent View, config *readline.Config, shell *shell.Shell, accept func(string) bool) *PromptView {
 	pb := &PromptView{
 		ViewBase: ViewBase{Parent: parent},
 		mf:       parent.GetWindow().font,
+		shell:    shell,
 		readline: config.NewReadLine(),
 	}
 	pb.readline.Accept = accept
@@ -66,9 +70,14 @@ func (pb *PromptView) Scroll(dy int) {
 
 func (pb *PromptView) StartComplete(c *readline.Complete, text string, pos int) {
 	go func() {
-		time.Sleep(500 * time.Millisecond)
+		completions, err := pb.shell.Complete(text)
+		log.Printf("comp %v => %v err %v", text, completions, err)
+		comp := "foo"
+		if len(completions) > 0 {
+			comp = completions[0]
+		}
 		pb.Enqueue(func() {
-			c.Results("foo", 0)
+			c.Results(comp, 0)
 			pb.Dirty()
 		})
 	}()

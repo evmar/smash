@@ -34,7 +34,11 @@ func main() {
 	}
 	win.win = ui.NewWindow(win)
 	win.win.SetSize(640, 400)
-	win.view = NewLogView(win)
+	var err error
+	win.view, err = NewLogView(win)
+	if err != nil {
+		panic(err)
+	}
 	win.win.Show()
 	ui.Loop()
 

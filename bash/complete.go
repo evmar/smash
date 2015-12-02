@@ -109,6 +109,11 @@ func (b *Bash) setNarrow() error {
 	return nil
 }
 
+func (b *Bash) Chdir(path string) error {
+	// XXX TODO
+	return nil
+}
+
 // Expand passes some input through the bash subprocess to gather
 // potential expansions.
 func (b *Bash) Expand(input string) ([]string, error) {

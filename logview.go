@@ -27,21 +27,25 @@ type LogView struct {
 	scrollAnim   *base.Lerp
 }
 
-func NewLogView(parent View) *LogView {
+func NewLogView(parent View) (*LogView, error) {
 	lv := &LogView{
 		ViewBase: ViewBase{parent},
 		rlconfig: readline.NewConfig(),
 	}
 	cwd := ""
 	var env map[string]string
-	lv.shell = shell.NewShell(cwd, env)
+	var err error
+	lv.shell, err = shell.NewShell(cwd, env)
+	if err != nil {
+		return nil, err
+	}
 	lv.addEntry()
-	return lv
+	return lv, nil
 }
 
 func (lv *LogView) addEntry() {
 	e := &LogEntry{
-		prompt: NewPromptView(lv, lv.rlconfig, lv.Accept),
+		prompt: NewPromptView(lv, lv.rlconfig, lv.shell, lv.Accept),
 	}
 	lv.Entries = append(lv.Entries, e)
 }

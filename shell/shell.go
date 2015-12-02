@@ -8,6 +8,8 @@ import (
 	"path/filepath"
 	"sort"
 	"strings"
+
+	"smash/bash"
 )
 
 type Shell struct {
@@ -15,11 +17,17 @@ type Shell struct {
 	env        map[string]string
 	aliases    map[string]string
 	lastStatus int
+
+	bash *bash.Bash
 }
 
 type Builtin func() (string, error)
 
-func NewShell(cwd string, env map[string]string) *Shell {
+func NewShell(cwd string, env map[string]string) (*Shell, error) {
+	b, err := bash.StartBash()
+	if err != nil {
+		return nil, err
+	}
 	return &Shell{
 		cwd: cwd,
 		env: env,
@@ -27,7 +35,15 @@ func NewShell(cwd string, env map[string]string) *Shell {
 			"ls":   "ls --color",
 			"grep": "grep --color",
 		},
+		bash: b,
+	}, nil
+}
+
+func (s *Shell) Complete(input string) ([]string, error) {
+	if err := s.bash.Chdir(s.cwd); err != nil {
+		return nil, err
 	}
+	return s.bash.Expand(input)
 }
 
 func (s *Shell) builtinAlias(argv []string) (string, error) {
