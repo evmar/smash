@@ -2,14 +2,16 @@ package main
 
 import (
 	"os/exec"
-	"smash/base"
-	"smash/keys"
-	"smash/readline"
-	"smash/shell"
 	"strings"
 	"time"
 
 	"github.com/martine/gocairo/cairo"
+
+	"smash/base"
+	"smash/bash"
+	"smash/keys"
+	"smash/readline"
+	"smash/shell"
 )
 
 type LogEntry struct {
@@ -34,11 +36,11 @@ func NewLogView(parent View) (*LogView, error) {
 	}
 	cwd := ""
 	var env map[string]string
-	var err error
-	lv.shell, err = shell.NewShell(cwd, env)
+	bash, err := bash.StartBash()
 	if err != nil {
 		return nil, err
 	}
+	lv.shell = shell.NewShell(cwd, env, bash)
 	lv.addEntry()
 	return lv, nil
 }

@@ -8,9 +8,11 @@ import (
 	"path/filepath"
 	"sort"
 	"strings"
-
-	"smash/bash"
 )
+
+type Completer interface {
+	Expand(input string) ([]string, error)
+}
 
 type Shell struct {
 	cwd        string
@@ -18,16 +20,12 @@ type Shell struct {
 	aliases    map[string]string
 	lastStatus int
 
-	bash *bash.Bash
+	completer Completer
 }
 
 type Builtin func() (string, error)
 
-func NewShell(cwd string, env map[string]string) (*Shell, error) {
-	b, err := bash.StartBash()
-	if err != nil {
-		return nil, err
-	}
+func NewShell(cwd string, env map[string]string, completer Completer) *Shell {
 	return &Shell{
 		cwd: cwd,
 		env: env,
@@ -35,15 +33,15 @@ func NewShell(cwd string, env map[string]string) (*Shell, error) {
 			"ls":   "ls --color",
 			"grep": "grep --color",
 		},
-		bash: b,
-	}, nil
+		completer: completer,
+	}
 }
 
 func (s *Shell) Complete(input string) ([]string, error) {
-	if err := s.bash.Chdir(s.cwd); err != nil {
-		return nil, err
-	}
-	return s.bash.Expand(input)
+	// if err := s.bash.Chdir(s.cwd); err != nil {
+	// 	return nil, err
+	// }
+	return s.completer.Expand(input)
 }
 
 func (s *Shell) builtinAlias(argv []string) (string, error) {
