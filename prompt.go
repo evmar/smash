@@ -9,6 +9,7 @@ import (
 	"smash/readline"
 	"smash/shell"
 	"smash/ui"
+	"smash/vt100"
 )
 
 type PromptView struct {
@@ -45,13 +46,13 @@ func (pv *PromptView) Draw(cr *cairo.Context) {
 	pv.mf.Use(cr, false)
 
 	cr.MoveTo(0, float64(pv.mf.ch-pv.mf.descent))
-	var line []TerminalChar
-	line = append(line, TerminalChar{Ch: '$'})
-	line = append(line, TerminalChar{Ch: ' '})
-	var bold Attr
+	var line []vt100.Cell
+	line = append(line, vt100.Cell{Ch: '$'})
+	line = append(line, vt100.Cell{Ch: ' '})
+	var bold vt100.Attr
 	bold.SetBright(true)
 	for _, c := range pv.readline.Text {
-		line = append(line, TerminalChar{Ch: rune(c), Attr: bold})
+		line = append(line, vt100.Cell{Ch: rune(c), Attr: bold})
 	}
 	drawTerminalLine(cr, pv.mf, 0, line)
 

@@ -7,16 +7,18 @@ import (
 	"log"
 	"os"
 	"os/exec"
-	"smash/keys"
 	"syscall"
 
 	"github.com/kr/pty"
 	"github.com/martine/gocairo/cairo"
+
+	"smash/keys"
+	"smash/vt100"
 )
 
 type TermView struct {
 	ViewBase
-	term *Terminal
+	term *vt100.Terminal
 
 	keys io.Writer
 
@@ -29,7 +31,7 @@ type TermView struct {
 func NewTermView(parent View) *TermView {
 	return &TermView{
 		ViewBase: ViewBase{Parent: parent},
-		term:     NewTerminal(),
+		term:     vt100.NewTerminal(),
 		mf:       parent.GetWindow().font,
 	}
 }
@@ -64,7 +66,7 @@ func drawText(cr *cairo.Context, mf *MonoFont, x, y int, fg, bg *Color, line str
 // drawTerminalLine draws one line of a terminal buffer, handling
 // layout of text spans of multiple attributes as well as rendering
 // the cursor.
-func drawTerminalLine(cr *cairo.Context, mf *MonoFont, y int, line []TerminalChar) {
+func drawTerminalLine(cr *cairo.Context, mf *MonoFont, y int, line []vt100.Cell) {
 	var sbuf [100]byte
 	buf := sbuf[:]
 

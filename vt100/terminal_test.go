@@ -1,4 +1,4 @@
-package main
+package vt100
 
 import (
 	"bufio"

@@ -1,4 +1,4 @@
-package main
+package vt100
 
 import (
 	"fmt"
@@ -62,7 +62,7 @@ func (a *Attr) SetBackColor(color int) {
 	(*Bits)(a).Set(4, 4, uint(color))
 }
 
-func showChar(ch byte) string {
+func showCell(ch byte) string {
 	if ch >= ' ' && ch <= '~' {
 		return fmt.Sprintf("'%c'", ch)
 	} else {
@@ -70,7 +70,7 @@ func showChar(ch byte) string {
 	}
 }
 
-type TerminalChar struct {
+type Cell struct {
 	Ch   rune
 	Attr Attr
 }
@@ -88,7 +88,7 @@ type Terminal struct {
 	Mu sync.Mutex
 
 	Title      string
-	Lines      [][]TerminalChar
+	Lines      [][]Cell
 	Width      int
 	Height     int
 	Input      io.Writer
@@ -105,7 +105,7 @@ type Terminal struct {
 
 func NewTerminal() *Terminal {
 	return &Terminal{
-		Lines:  make([][]TerminalChar, 1),
+		Lines:  make([][]Cell, 1),
 		Width:  80,
 		Height: 24,
 		TODOs:  FeatureLog{},
@@ -124,10 +124,10 @@ func (t *Terminal) fixPosition() {
 		t.Top++
 	}
 	for t.Row >= len(t.Lines) {
-		t.Lines = append(t.Lines, make([]TerminalChar, 0))
+		t.Lines = append(t.Lines, make([]Cell, 0))
 	}
 	for t.Col > len(t.Lines[t.Row]) {
-		t.Lines[t.Row] = append(t.Lines[t.Row], TerminalChar{' ', 0})
+		t.Lines[t.Row] = append(t.Lines[t.Row], Cell{' ', 0})
 	}
 }
 
@@ -182,7 +182,7 @@ func (t *Terminal) writeRune(r rune) {
 	}
 	t.Col++
 	t.fixPosition()
-	t.Lines[t.Row][t.Col-1] = TerminalChar{r, t.Attr}
+	t.Lines[t.Row][t.Col-1] = Cell{r, t.Attr}
 	t.Mu.Unlock()
 }
 
@@ -235,7 +235,7 @@ func (t *Terminal) readEscape(r io.ByteScanner) error {
 		case 'B': // US ASCII
 			// ignore
 		default:
-			t.TODOs.Add("g0 charset %s", showChar(c))
+			t.TODOs.Add("g0 charset %s", showCell(c))
 		}
 	case c == '=':
 		t.TODOs.Add("application keypad")
@@ -271,7 +271,7 @@ func (t *Terminal) readEscape(r io.ByteScanner) error {
 			// Insert line above.
 			t.Lines = append(t.Lines, nil)
 			copy(t.Lines[1:], t.Lines)
-			t.Lines[0] = make([]TerminalChar, 0)
+			t.Lines[0] = make([]Cell, 0)
 		} else {
 			if t.Row == t.Top {
 				t.Top--
@@ -283,7 +283,7 @@ func (t *Terminal) readEscape(r io.ByteScanner) error {
 		}
 		t.Mu.Unlock()
 	default:
-		log.Printf("term: unknown escape %s", showChar(c))
+		log.Printf("term: unknown escape %s", showCell(c))
 	}
 	return nil
 }
@@ -338,11 +338,11 @@ L:
 		readArgs(args, &n)
 		t.Mu.Lock()
 		for i := 0; i < n; i++ {
-			t.Lines[t.Row] = append(t.Lines[t.Row], TerminalChar{})
+			t.Lines[t.Row] = append(t.Lines[t.Row], Cell{})
 		}
 		copy(t.Lines[t.Row][t.Col+n:], t.Lines[t.Row][t.Col:])
 		for i := 0; i < n; i++ {
-			t.Lines[t.Row][t.Col+i] = TerminalChar{' ', 0}
+			t.Lines[t.Row][t.Col+i] = Cell{' ', 0}
 		}
 		t.Mu.Unlock()
 	case c == 'A': // cursor up
@@ -410,7 +410,7 @@ L:
 		}
 		copy(t.Lines[t.Row+n:], t.Lines[t.Row:])
 		for i := 0; i < n; i++ {
-			t.Lines[t.Row+i] = make([]TerminalChar, 0)
+			t.Lines[t.Row+i] = make([]Cell, 0)
 		}
 		t.Mu.Unlock()
 	case c == 'P': // erase in line
@@ -548,7 +548,7 @@ L:
 			t.TODOs.Add("set scrolling region %v", args)
 		}
 	default:
-		log.Printf("term: unknown CSI %v %s", args, showChar(c))
+		log.Printf("term: unknown CSI %v %s", args, showCell(c))
 	}
 	return nil
 }
@@ -560,7 +560,7 @@ func (t *Terminal) expect(r io.ByteScanner, exp byte) (bool, error) {
 	}
 	ok := c == exp
 	if !ok {
-		log.Printf("expect %s failed, got %s", showChar(exp), showChar(c))
+		log.Printf("expect %s failed, got %s", showCell(exp), showCell(c))
 	}
 	return ok, nil
 }
@@ -594,7 +594,7 @@ func (t *Terminal) readTo(r io.ByteScanner, end byte) ([]byte, error) {
 		}
 		buf = append(buf, c)
 	}
-	return nil, fmt.Errorf("term: readTo(%s) overlong", showChar(end))
+	return nil, fmt.Errorf("term: readTo(%s) overlong", showCell(end))
 }
 
 func (t *Terminal) DisplayString(input string) {
