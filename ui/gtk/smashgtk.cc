@@ -1,9 +1,10 @@
 #include <gtk/gtk.h>
 
 #include "smashgtk.h"
-#include "_cgo_export.h"
 
 extern "C" {
+
+#include "_cgo_export.h"
 
 void smash_gtk_init(void) {
   // TODO: command-line params?
