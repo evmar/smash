@@ -7,7 +7,6 @@ package gtk
 */
 import "C"
 import (
-	"smash/base"
 	"smash/keys"
 	"smash/ui"
 	"time"
@@ -26,7 +25,7 @@ type Window struct {
 	// Store the delegate here so this interface isn't gc'd.
 	delegate ui.WinDelegate
 
-	anims map[base.Anim]bool
+	anims map[ui.Anim]bool
 }
 
 func Init() *UI {
@@ -60,10 +59,10 @@ func (ui *UI) Enqueue(f func()) {
 	C.g_idle_add(C.GSourceFunc(C.smash_idle_cb), C.gpointer(ui))
 }
 
-func (ui *UI) NewWindow(delegate ui.WinDelegate, toplevel bool) ui.Win {
+func (_ *UI) NewWindow(delegate ui.WinDelegate, toplevel bool) ui.Win {
 	win := &Window{
 		delegate: delegate,
-		anims:    make(map[base.Anim]bool),
+		anims:    make(map[ui.Anim]bool),
 	}
 	ctoplevel := C.int(0)
 	if toplevel {
@@ -107,7 +106,7 @@ func (w *Window) Show() {
 	C.gtk_widget_show(w.gtkWin)
 }
 
-func (w *Window) AddAnimation(anim base.Anim) {
+func (w *Window) AddAnimation(anim ui.Anim) {
 	if len(w.anims) == 0 {
 		C.smash_start_ticks(unsafe.Pointer(w), w.gtkWin)
 	}

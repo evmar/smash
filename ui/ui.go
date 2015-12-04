@@ -1,7 +1,6 @@
 package ui
 
 import (
-	"smash/base"
 	"smash/keys"
 
 	"github.com/martine/gocairo/cairo"
@@ -13,7 +12,7 @@ type Win interface {
 	SetSize(width, height int)
 	Show()
 
-	AddAnimation(anim base.Anim)
+	AddAnimation(anim Anim)
 }
 
 type WinDelegate interface {

@@ -7,11 +7,11 @@ import (
 
 	"github.com/martine/gocairo/cairo"
 
-	"smash/base"
 	"smash/bash"
 	"smash/keys"
 	"smash/readline"
 	"smash/shell"
+	"smash/ui"
 )
 
 type LogEntry struct {
@@ -26,7 +26,7 @@ type LogView struct {
 
 	rlconfig     *readline.Config
 	scrollOffset int
-	scrollAnim   *base.Lerp
+	scrollAnim   *ui.Lerp
 }
 
 func NewLogView(parent View) (*LogView, error) {
@@ -102,7 +102,7 @@ func (l *LogView) Draw(cr *cairo.Context) {
 				l.scrollAnim = nil
 			}
 			if l.scrollAnim == nil {
-				l.scrollAnim = base.NewLerp(&l.scrollOffset, scrollOffset, 40*time.Millisecond)
+				l.scrollAnim = ui.NewLerp(&l.scrollOffset, scrollOffset, 40*time.Millisecond)
 				l.GetWindow().win.AddAnimation(l.scrollAnim)
 			} else {
 				// TODO adjust existing anim

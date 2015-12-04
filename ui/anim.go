@@ -1,4 +1,4 @@
-package base
+package ui
 
 import "time"
 
