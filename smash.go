@@ -32,7 +32,7 @@ func main() {
 		ui:   ui,
 		font: NewMonoFont(),
 	}
-	win.win = ui.NewWindow(win)
+	win.win = ui.NewWindow(win, true)
 	win.win.SetSize(640, 400)
 	var err error
 	win.view, err = NewLogView(win)

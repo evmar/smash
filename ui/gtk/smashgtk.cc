@@ -19,8 +19,9 @@ static void key(GtkWidget* widget, GdkEventKey* event, gpointer data) {
   smashGoKey(data, event);
 }
 
-GtkWidget* smash_gtk_new_window(void* delegate) {
-  GtkWidget* win = gtk_window_new(GTK_WINDOW_TOPLEVEL);
+GtkWidget* smash_gtk_new_window(void* delegate, int toplevel) {
+  GtkWidget* win = gtk_window_new(toplevel ? GTK_WINDOW_TOPLEVEL
+                                  : GTK_WINDOW_POPUP);
   gtk_window_set_title(GTK_WINDOW(win), "smash");
   gtk_widget_set_app_paintable(win, TRUE);
   g_signal_connect(win, "draw", G_CALLBACK(draw), delegate);

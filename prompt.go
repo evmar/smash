@@ -8,6 +8,7 @@ import (
 	"smash/keys"
 	"smash/readline"
 	"smash/shell"
+	"smash/ui"
 )
 
 type PromptView struct {
@@ -16,6 +17,16 @@ type PromptView struct {
 
 	shell    *shell.Shell
 	readline *readline.ReadLine
+
+	cwin *CompletionWindow
+}
+
+type CompletionWindow struct {
+	win         ui.Win
+	completions []string
+}
+
+type CompletionView struct {
 }
 
 func NewPromptView(parent View, config *readline.Config, shell *shell.Shell, accept func(string) bool) *PromptView {
@@ -83,9 +94,35 @@ func (pv *PromptView) StartComplete(cb func(string, int), text string, pos int) 
 				pv.Dirty()
 			})
 		} else if len(completions) > 1 {
-			// pv.Enqueue(func() {
-			// 	pv.completions = completions
-			// })
+			pv.Enqueue(func() {
+				pv.ShowCompletions(completions)
+			})
 		}
 	}()
+}
+
+func (pv *PromptView) ShowCompletions(completions []string) {
+	pv.cwin = NewCompletionWindow(pv.GetWindow().ui, completions)
+}
+
+func NewCompletionWindow(ui ui.UI, completions []string) *CompletionWindow {
+	cwin := &CompletionWindow{
+		completions: completions,
+	}
+	cwin.win = ui.NewWindow(cwin, false)
+	cwin.win.SetSize(300, 200)
+	//cwin.view = &CompletionView{}
+	cwin.win.Show()
+	return cwin
+}
+
+func (cw *CompletionWindow) Mapped() {
+}
+func (cw *CompletionWindow) Draw(cr *cairo.Context) {
+	cr.SetSourceRGB(1, 1, 1)
+	cr.Paint()
+}
+func (cw *CompletionWindow) Key(key keys.Key) {
+}
+func (cw *CompletionWindow) Scroll(dy int) {
 }

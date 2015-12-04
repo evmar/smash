@@ -60,12 +60,16 @@ func (ui *UI) Enqueue(f func()) {
 	C.g_idle_add(C.GSourceFunc(C.smash_idle_cb), C.gpointer(ui))
 }
 
-func (ui *UI) NewWindow(delegate ui.WinDelegate) ui.Win {
+func (ui *UI) NewWindow(delegate ui.WinDelegate, toplevel bool) ui.Win {
 	win := &Window{
 		delegate: delegate,
 		anims:    make(map[base.Anim]bool),
 	}
-	win.gtkWin = C.smash_gtk_new_window(unsafe.Pointer(&win.delegate))
+	ctoplevel := C.int(0)
+	if toplevel {
+		ctoplevel = C.int(1)
+	}
+	win.gtkWin = C.smash_gtk_new_window(unsafe.Pointer(&win.delegate), ctoplevel)
 	return win
 }
 
