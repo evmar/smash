@@ -10,6 +10,7 @@ type Win interface {
 	Dirty()
 
 	SetSize(width, height int)
+	SetPosition(x, y int)
 	Show()
 
 	AddAnimation(anim Anim)

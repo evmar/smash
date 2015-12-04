@@ -112,6 +112,7 @@ func NewCompletionWindow(ui ui.UI, completions []string) *CompletionWindow {
 	}
 	cwin.win = ui.NewWindow(cwin, false)
 	cwin.win.SetSize(300, 200)
+	cwin.win.SetPosition(300, 200)
 	//cwin.view = &CompletionView{}
 	cwin.win.Show()
 	return cwin
@@ -120,7 +121,7 @@ func NewCompletionWindow(ui ui.UI, completions []string) *CompletionWindow {
 func (cw *CompletionWindow) Mapped() {
 }
 func (cw *CompletionWindow) Draw(cr *cairo.Context) {
-	cr.SetSourceRGB(1, 1, 1)
+	cr.SetSourceRGB(1, 1, 0)
 	cr.Paint()
 }
 func (cw *CompletionWindow) Key(key keys.Key) {

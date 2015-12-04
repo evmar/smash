@@ -102,6 +102,11 @@ func (w *Window) SetSize(width, height int) {
 		C.gint(width), C.gint(height))
 }
 
+func (w *Window) SetPosition(x, y int) {
+	C.gtk_window_move((*C.GtkWindow)(unsafe.Pointer(w.gtkWin)),
+		C.gint(x), C.gint(y))
+}
+
 func (w *Window) Show() {
 	C.gtk_widget_show(w.gtkWin)
 }
