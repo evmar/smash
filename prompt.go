@@ -19,58 +19,58 @@ type PromptView struct {
 }
 
 func NewPromptView(parent View, config *readline.Config, shell *shell.Shell, accept func(string) bool) *PromptView {
-	pb := &PromptView{
+	pv := &PromptView{
 		ViewBase: ViewBase{Parent: parent},
 		mf:       parent.GetWindow().font,
 		shell:    shell,
 		readline: config.NewReadLine(),
 	}
-	pb.readline.Accept = accept
-	pb.readline.StartComplete = pb.StartComplete
-	return pb
+	pv.readline.Accept = accept
+	pv.readline.StartComplete = pv.StartComplete
+	return pv
 }
 
-func (pb *PromptView) Draw(cr *cairo.Context) {
-	pb.mf.Use(cr, false)
+func (pv *PromptView) Draw(cr *cairo.Context) {
+	pv.mf.Use(cr, false)
 
-	cr.MoveTo(0, float64(pb.mf.ch-pb.mf.descent))
+	cr.MoveTo(0, float64(pv.mf.ch-pv.mf.descent))
 	var line []TerminalChar
 	line = append(line, TerminalChar{Ch: '$'})
 	line = append(line, TerminalChar{Ch: ' '})
 	var bold Attr
 	bold.SetBright(true)
-	for _, c := range pb.readline.Text {
+	for _, c := range pv.readline.Text {
 		line = append(line, TerminalChar{Ch: rune(c), Attr: bold})
 	}
-	drawTerminalLine(cr, pb.mf, 0, line)
+	drawTerminalLine(cr, pv.mf, 0, line)
 
-	if pb.readline.Pos >= 0 {
+	if pv.readline.Pos >= 0 {
 		ch := rune(0)
-		if pb.readline.Pos < len(pb.readline.Text) {
-			ch = rune(pb.readline.Text[pb.readline.Pos])
+		if pv.readline.Pos < len(pv.readline.Text) {
+			ch = rune(pv.readline.Text[pv.readline.Pos])
 		}
-		drawCursor(cr, pb.mf, 0, pb.readline.Pos+2, ch)
+		drawCursor(cr, pv.mf, 0, pv.readline.Pos+2, ch)
 	}
 }
 
-func (pb *PromptView) Height() int {
-	return pb.mf.ch
+func (pv *PromptView) Height() int {
+	return pv.mf.ch
 }
 
-func (pb *PromptView) Key(key keys.Key) {
+func (pv *PromptView) Key(key keys.Key) {
 	if key.Sym == keys.NoSym {
 		return
 	}
-	pb.readline.Key(key)
-	pb.Dirty()
+	pv.readline.Key(key)
+	pv.Dirty()
 }
 
-func (pb *PromptView) Scroll(dy int) {
+func (pv *PromptView) Scroll(dy int) {
 }
 
-func (pb *PromptView) StartComplete(cb func(string, int), text string, pos int) {
+func (pv *PromptView) StartComplete(cb func(string, int), text string, pos int) {
 	go func() {
-		ofs, completions, err := pb.shell.Complete(text)
+		ofs, completions, err := pv.shell.Complete(text)
 		log.Printf("comp %v => %v %v %v", text, ofs, completions, err)
 		if len(completions) > 0 {
 			// Keep text up to the place where completion started and text
@@ -79,9 +79,9 @@ func (pb *PromptView) StartComplete(cb func(string, int), text string, pos int) 
 			text = text[:ofs] + completions[0] + text[pos:]
 			pos = ofs + len(completions[0])
 		}
-		pb.Enqueue(func() {
+		pv.Enqueue(func() {
 			cb(text, pos)
-			pb.Dirty()
+			pv.Dirty()
 		})
 	}()
 }
