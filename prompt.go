@@ -68,7 +68,7 @@ func (pb *PromptView) Key(key keys.Key) {
 func (pb *PromptView) Scroll(dy int) {
 }
 
-func (pb *PromptView) StartComplete(c *readline.Complete, text string, pos int) {
+func (pb *PromptView) StartComplete(cb func(string, int), text string, pos int) {
 	go func() {
 		ofs, completions, err := pb.shell.Complete(text)
 		log.Printf("comp %v => %v %v %v", text, ofs, completions, err)
@@ -80,7 +80,7 @@ func (pb *PromptView) StartComplete(c *readline.Complete, text string, pos int) 
 			pos = ofs + len(completions[0])
 		}
 		pb.Enqueue(func() {
-			c.Results(text, pos)
+			cb(text, pos)
 			pb.Dirty()
 		})
 	}()
