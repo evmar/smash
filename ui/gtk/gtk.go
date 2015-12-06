@@ -97,6 +97,10 @@ func smashGoTick(data unsafe.Pointer) bool {
 	return len(win.anims) > 0
 }
 
+func (w *Window) GetCairo() *cairo.Context {
+	return cairo.WrapContext(unsafe.Pointer(C.gdk_cairo_create(C.gtk_widget_get_window(w.gtkWin))))
+}
+
 func (w *Window) SetSize(width, height int) {
 	C.gtk_window_set_default_size((*C.GtkWindow)(unsafe.Pointer(w.gtkWin)),
 		C.gint(width), C.gint(height))

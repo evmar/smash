@@ -9,6 +9,7 @@ import (
 type Win interface {
 	Dirty()
 
+	GetCairo() *cairo.Context
 	SetSize(width, height int)
 	SetPosition(x, y int)
 	Show()
