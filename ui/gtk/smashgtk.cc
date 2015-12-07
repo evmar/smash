@@ -27,9 +27,8 @@ GtkWidget* smash_gtk_new_window(void* delegate, int toplevel) {
   g_signal_connect(win, "draw", G_CALLBACK(draw), delegate);
   g_signal_connect(win, "key-press-event", G_CALLBACK(key), delegate);
 
-  // gtk_widget_realize(win);
-  // cairo_t* cr = gdk_cairo_create(gtk_widget_get_window(win));
-  // term_->measure(cr.get());
+  gtk_widget_realize(win);
+
   // GdkGeometry geo = {};
   // geo.width_inc = term_->font_metrics_.width;
   // geo.height_inc = term_->font_metrics_.height;
@@ -37,7 +36,7 @@ GtkWidget* smash_gtk_new_window(void* delegate, int toplevel) {
   //                               &geo, GDK_HINT_RESIZE_INC);
   // gtk_window_set_default_size(GTK_WINDOW(win_),
   //                             term_->width_, term_->height_);
-  // cairo_destroy(cr);
+
   return win;
 }
 

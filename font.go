@@ -19,7 +19,7 @@ func NewMonoFont() *MonoFont {
 	}
 }
 
-func (m *MonoFont) MetricsFromCairo(cr *cairo.Context) {
+func (m *MonoFont) metricsFromCairo(cr *cairo.Context) {
 	ext := cairo.FontExtents{}
 	cr.FontExtents(&ext)
 	m.cw = int(ext.MaxXAdvance)
@@ -35,6 +35,6 @@ func (m *MonoFont) Use(cr *cairo.Context, bold bool) {
 	cr.SelectFontFace(m.Name, cairo.FontSlantNormal, weight)
 	cr.SetFontSize(float64(m.Size))
 	if m.cw == 0 {
-		m.MetricsFromCairo(cr)
+		m.metricsFromCairo(cr)
 	}
 }

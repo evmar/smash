@@ -33,7 +33,11 @@ func main() {
 		font: NewMonoFont(),
 	}
 	win.win = ui.NewWindow(win, true)
-	win.win.SetSize(640, 400)
+	// Use the font once to get its metrics.
+	cr := win.win.GetCairo()
+	win.font.Use(cr, false)
+	w, h := win.font.cw*80, win.font.ch*24
+	win.win.SetSize(w, h)
 	var err error
 	win.view, err = NewLogView(win)
 	if err != nil {
