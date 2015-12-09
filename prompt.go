@@ -134,9 +134,11 @@ func (cw *CompletionWindow) Mapped() {
 }
 
 func (cw *CompletionWindow) Draw(cr *cairo.Context) {
-	cr.SetSourceRGB(0.95, 0.95, 0.95)
+	cr.SetSourceRGB(1, 1, 1)
 	cr.Paint()
 	cr.SetSourceRGB(0, 0, 0)
+	cr.Rectangle(0, 0, float64(cw.width), float64(cw.height))
+	cr.Stroke()
 	for i, c := range cw.completions {
 		y := (i+1)*cw.font.ch - cw.font.descent
 		cr.MoveTo(0, float64(y))
