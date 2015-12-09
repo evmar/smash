@@ -29,6 +29,7 @@ type CompletionWindow struct {
 
 	width, height int
 
+	prefix      int
 	completions []string
 }
 
@@ -98,17 +99,17 @@ func (pv *PromptView) StartComplete(cb func(string, int), text string, pos int) 
 			})
 		} else if len(completions) > 1 {
 			pv.Enqueue(func() {
-				pv.ShowCompletions(completions)
+				pv.ShowCompletions(len(text)-ofs, completions)
 			})
 		}
 	}()
 }
 
-func (pv *PromptView) ShowCompletions(completions []string) {
-	pv.cwin = NewCompletionWindow(pv.GetWindow(), completions)
+func (pv *PromptView) ShowCompletions(prefix int, completions []string) {
+	pv.cwin = NewCompletionWindow(pv.GetWindow(), prefix, completions)
 }
 
-func NewCompletionWindow(win *Window, completions []string) *CompletionWindow {
+func NewCompletionWindow(win *Window, prefix int, completions []string) *CompletionWindow {
 	w := 0
 	for _, c := range completions {
 		if len(c) > w {
@@ -117,6 +118,7 @@ func NewCompletionWindow(win *Window, completions []string) *CompletionWindow {
 	}
 	cwin := &CompletionWindow{
 		font:        win.font,
+		prefix:      prefix,
 		completions: completions,
 		width:       w * win.font.cw,
 		height:      len(completions) * win.font.ch,
@@ -130,18 +132,25 @@ func NewCompletionWindow(win *Window, completions []string) *CompletionWindow {
 
 func (cw *CompletionWindow) Mapped() {
 }
+
 func (cw *CompletionWindow) Draw(cr *cairo.Context) {
 	cr.SetSourceRGB(0.95, 0.95, 0.95)
 	cr.Paint()
 	cr.SetSourceRGB(0, 0, 0)
-	cw.font.Use(cr, false)
 	for i, c := range cw.completions {
 		y := (i+1)*cw.font.ch - cw.font.descent
 		cr.MoveTo(0, float64(y))
-		cr.ShowText(c)
+		cw.font.Use(cr, true)
+		cr.ShowText(c[:cw.prefix])
+		cw.font.Use(cr, false)
+		cr.ShowText(c[cw.prefix:])
 	}
 }
+
 func (cw *CompletionWindow) Key(key keys.Key) {
+	panic("x")
 }
+
 func (cw *CompletionWindow) Scroll(dy int) {
+	panic("x")
 }
