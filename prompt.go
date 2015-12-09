@@ -23,11 +23,13 @@ type PromptView struct {
 }
 
 type CompletionWindow struct {
-	win         ui.Win
-	completions []string
-}
+	win ui.Win
 
-type CompletionView struct {
+	font *MonoFont
+
+	width, height int
+
+	completions []string
 }
 
 func NewPromptView(parent View, config *readline.Config, shell *shell.Shell, accept func(string) bool) *PromptView {
@@ -103,17 +105,25 @@ func (pv *PromptView) StartComplete(cb func(string, int), text string, pos int) 
 }
 
 func (pv *PromptView) ShowCompletions(completions []string) {
-	pv.cwin = NewCompletionWindow(pv.GetWindow().ui, completions)
+	pv.cwin = NewCompletionWindow(pv.GetWindow(), completions)
 }
 
-func NewCompletionWindow(ui ui.UI, completions []string) *CompletionWindow {
-	cwin := &CompletionWindow{
-		completions: completions,
+func NewCompletionWindow(win *Window, completions []string) *CompletionWindow {
+	w := 0
+	for _, c := range completions {
+		if len(c) > w {
+			w = len(c)
+		}
 	}
-	cwin.win = ui.NewWindow(cwin, false)
-	cwin.win.SetSize(300, 200)
+	cwin := &CompletionWindow{
+		font:        win.font,
+		completions: completions,
+		width:       w * win.font.cw,
+		height:      len(completions) * win.font.ch,
+	}
+	cwin.win = win.ui.NewWindow(cwin, false)
+	cwin.win.SetSize(cwin.width, cwin.height)
 	cwin.win.SetPosition(300, 200)
-	//cwin.view = &CompletionView{}
 	cwin.win.Show()
 	return cwin
 }
@@ -121,8 +131,15 @@ func NewCompletionWindow(ui ui.UI, completions []string) *CompletionWindow {
 func (cw *CompletionWindow) Mapped() {
 }
 func (cw *CompletionWindow) Draw(cr *cairo.Context) {
-	cr.SetSourceRGB(1, 1, 0)
+	cr.SetSourceRGB(0.95, 0.95, 0.95)
 	cr.Paint()
+	cr.SetSourceRGB(0, 0, 0)
+	cw.font.Use(cr, false)
+	for i, c := range cw.completions {
+		y := (i+1)*cw.font.ch - cw.font.descent
+		cr.MoveTo(0, float64(y))
+		cr.ShowText(c)
+	}
 }
 func (cw *CompletionWindow) Key(key keys.Key) {
 }
