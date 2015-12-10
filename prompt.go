@@ -10,6 +10,7 @@ import (
 	"smash/shell"
 	"smash/ui"
 	"smash/vt100"
+	"strings"
 )
 
 type PromptView struct {
@@ -29,7 +30,7 @@ type CompletionWindow struct {
 
 	width, height int
 
-	prefix      int
+	prefix      string
 	completions []string
 }
 
@@ -99,17 +100,17 @@ func (pv *PromptView) StartComplete(cb func(string, int), text string, pos int) 
 			})
 		} else if len(completions) > 1 {
 			pv.Enqueue(func() {
-				pv.ShowCompletions(len(text)-ofs, completions)
+				pv.ShowCompletions(text[ofs:], completions)
 			})
 		}
 	}()
 }
 
-func (pv *PromptView) ShowCompletions(prefix int, completions []string) {
+func (pv *PromptView) ShowCompletions(prefix string, completions []string) {
 	pv.cwin = NewCompletionWindow(pv.GetWindow(), prefix, completions)
 }
 
-func NewCompletionWindow(win *Window, prefix int, completions []string) *CompletionWindow {
+func NewCompletionWindow(win *Window, prefix string, completions []string) *CompletionWindow {
 	w := 0
 	for _, c := range completions {
 		if len(c) > w {
@@ -130,6 +131,9 @@ func NewCompletionWindow(win *Window, prefix int, completions []string) *Complet
 	return cwin
 }
 
+func (cw *CompletionWindow) Update(prefix string) {
+}
+
 func (cw *CompletionWindow) Mapped() {
 }
 
@@ -139,13 +143,17 @@ func (cw *CompletionWindow) Draw(cr *cairo.Context) {
 	cr.SetSourceRGB(0, 0, 0)
 	cr.Rectangle(0, 0, float64(cw.width), float64(cw.height))
 	cr.Stroke()
-	for i, c := range cw.completions {
-		y := (i+1)*cw.font.ch - cw.font.descent
-		cr.MoveTo(0, float64(y))
+	y := 0
+	for _, c := range cw.completions {
+		if !strings.HasPrefix(c, cw.prefix) {
+			continue
+		}
+		y += cw.font.ch
+		cr.MoveTo(0, float64(y-cw.font.descent))
 		cw.font.Use(cr, true)
-		cr.ShowText(c[:cw.prefix])
+		cr.ShowText(cw.prefix)
 		cw.font.Use(cr, false)
-		cr.ShowText(c[cw.prefix:])
+		cr.ShowText(c[len(cw.prefix):])
 	}
 }
 
