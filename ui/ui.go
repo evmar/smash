@@ -12,6 +12,7 @@ type Win interface {
 	GetCairo() *cairo.Context
 	SetSize(width, height int)
 	SetPosition(x, y int)
+	GetContentPosition() (int, int)
 	Show()
 
 	AddAnimation(anim Anim)

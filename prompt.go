@@ -13,8 +13,15 @@ import (
 	"strings"
 )
 
+type PromptDelegate interface {
+	OnPromptAccept(string) bool
+	GetPromptAbsolutePosition(pv *PromptView) (int, int)
+}
+
 type PromptView struct {
 	ViewBase
+	delegate PromptDelegate
+
 	mf *MonoFont
 
 	shell    *shell.Shell
@@ -34,14 +41,15 @@ type CompletionWindow struct {
 	completions []string
 }
 
-func NewPromptView(parent View, config *readline.Config, shell *shell.Shell, accept func(string) bool) *PromptView {
+func NewPromptView(parent View, delegate PromptDelegate, config *readline.Config, shell *shell.Shell) *PromptView {
 	pv := &PromptView{
 		ViewBase: ViewBase{Parent: parent},
+		delegate: delegate,
 		mf:       parent.GetWindow().font,
 		shell:    shell,
 		readline: config.NewReadLine(),
 	}
-	pv.readline.Accept = accept
+	pv.readline.Accept = delegate.OnPromptAccept
 	pv.readline.StartComplete = pv.StartComplete
 	return pv
 }
@@ -100,17 +108,21 @@ func (pv *PromptView) StartComplete(cb func(string, int), text string, pos int) 
 			})
 		} else if len(completions) > 1 {
 			pv.Enqueue(func() {
-				pv.ShowCompletions(text[ofs:], completions)
+				pv.ShowCompletions(ofs, completions)
 			})
 		}
 	}()
 }
 
-func (pv *PromptView) ShowCompletions(prefix string, completions []string) {
-	pv.cwin = NewCompletionWindow(pv.GetWindow(), prefix, completions)
+func (pv *PromptView) ShowCompletions(ofs int, completions []string) {
+	x, y := pv.delegate.GetPromptAbsolutePosition(pv)
+	x += (len("$ ") + ofs) * pv.mf.cw
+	y -= pv.mf.ch
+
+	pv.cwin = NewCompletionWindow(pv.GetWindow(), x, y, string(pv.readline.Text[ofs:]), completions)
 }
 
-func NewCompletionWindow(win *Window, prefix string, completions []string) *CompletionWindow {
+func NewCompletionWindow(win *Window, x, y int, prefix string, completions []string) *CompletionWindow {
 	w := 0
 	for _, c := range completions {
 		if len(c) > w {
@@ -126,7 +138,7 @@ func NewCompletionWindow(win *Window, prefix string, completions []string) *Comp
 	}
 	cwin.win = win.ui.NewWindow(cwin, false)
 	cwin.win.SetSize(cwin.width, cwin.height)
-	cwin.win.SetPosition(300, 200)
+	cwin.win.SetPosition(x, y)
 	cwin.win.Show()
 	return cwin
 }

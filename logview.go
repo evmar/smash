@@ -19,6 +19,14 @@ type LogEntry struct {
 	term   *TermView
 }
 
+func (le *LogEntry) Height() int {
+	h := le.prompt.Height()
+	if le.term != nil {
+		h += le.term.Height()
+	}
+	return h
+}
+
 type LogView struct {
 	ViewBase
 	Entries []*LogEntry
@@ -47,7 +55,7 @@ func NewLogView(parent View) (*LogView, error) {
 
 func (lv *LogView) addEntry() {
 	e := &LogEntry{
-		prompt: NewPromptView(lv, lv.rlconfig, lv.shell, lv.Accept),
+		prompt: NewPromptView(lv, lv, lv.rlconfig, lv.shell),
 	}
 	lv.Entries = append(lv.Entries, e)
 }
@@ -58,7 +66,7 @@ func ParseCommand(input string) *exec.Cmd {
 	return exec.Command(args[0], args[1:]...)
 }
 
-func (lv *LogView) Accept(input string) bool {
+func (lv *LogView) OnPromptAccept(input string) bool {
 	e := lv.Entries[len(lv.Entries)-1]
 	e.term = NewTermView(lv)
 	cmd, builtin := lv.shell.Run(input)
@@ -78,6 +86,15 @@ func (lv *LogView) Accept(input string) bool {
 		e.term.Finish()
 	}
 	return true
+}
+
+func (lv *LogView) GetPromptAbsolutePosition(pv *PromptView) (int, int) {
+	x, y := lv.GetWindow().win.GetContentPosition()
+	for _, e := range lv.Entries {
+		y += e.Height()
+	}
+	y -= lv.scrollOffset
+	return x, y
 }
 
 func (l *LogView) Draw(cr *cairo.Context) {

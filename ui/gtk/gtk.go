@@ -111,6 +111,13 @@ func (w *Window) SetPosition(x, y int) {
 		C.gint(x), C.gint(y))
 }
 
+func (w *Window) GetContentPosition() (int, int) {
+	gdkWin := C.gtk_widget_get_window(w.gtkWin)
+	var cx, cy C.gint
+	C.gdk_window_get_position(gdkWin, &cx, &cy)
+	return int(cx), int(cy)
+}
+
 func (w *Window) Show() {
 	C.gtk_widget_show(w.gtkWin)
 }
