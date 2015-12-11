@@ -101,13 +101,17 @@ func (l *LogView) Draw(cr *cairo.Context) {
 	cr.Translate(0, float64(-l.scrollOffset))
 	y := 0
 	for _, e := range l.Entries {
-		e.prompt.Draw(cr)
 		h := e.prompt.Height()
+		if y+h >= l.scrollOffset {
+			e.prompt.Draw(cr)
+		}
 		y += h
 		cr.Translate(0, float64(h))
 		if e.term != nil {
-			e.term.Draw(cr)
 			h = e.term.Height()
+			if y+h >= l.scrollOffset {
+				e.term.Draw(cr)
+			}
 			y += h
 			cr.Translate(0, float64(h))
 		}
