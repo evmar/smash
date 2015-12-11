@@ -30,17 +30,21 @@ func (le *LogEntry) Height() int {
 type LogView struct {
 	ViewBase
 	Entries []*LogEntry
-	shell   *shell.Shell
+
+	height int
+
+	shell *shell.Shell
 
 	rlconfig     *readline.Config
 	scrollOffset int
 	scrollAnim   *ui.Lerp
 }
 
-func NewLogView(parent View) (*LogView, error) {
+func NewLogView(parent View, height int) (*LogView, error) {
 	lv := &LogView{
 		ViewBase: ViewBase{parent},
 		rlconfig: readline.NewConfig(),
+		height:   height,
 	}
 	cwd := ""
 	var env map[string]string
@@ -116,8 +120,8 @@ func (l *LogView) Draw(cr *cairo.Context) {
 			cr.Translate(0, float64(h))
 		}
 	}
-	if y > 400 {
-		scrollOffset := y - 400
+	if y > l.height {
+		scrollOffset := y - l.height
 		if l.scrollOffset != scrollOffset {
 			if l.scrollAnim != nil && l.scrollAnim.Done {
 				l.scrollAnim = nil

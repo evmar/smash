@@ -39,7 +39,7 @@ func main() {
 	w, h := win.font.cw*80, win.font.ch*24
 	win.win.SetSize(w, h)
 	var err error
-	win.view, err = NewLogView(win)
+	win.view, err = NewLogView(win, h)
 	if err != nil {
 		panic(err)
 	}
