@@ -10,7 +10,6 @@ import (
 	"smash/shell"
 	"smash/ui"
 	"smash/vt100"
-	"strings"
 )
 
 type PromptDelegate interface {
@@ -39,6 +38,7 @@ type CompletionWindow struct {
 
 	prefix      string
 	completions []string
+	sel         int
 }
 
 func NewPromptView(parent View, delegate PromptDelegate, config *readline.Config, shell *shell.Shell) *PromptView {
@@ -84,6 +84,11 @@ func (pv *PromptView) Height() int {
 func (pv *PromptView) Key(key keys.Key) bool {
 	if key.Sym == keys.NoSym {
 		return false
+	}
+	if pv.cwin != nil {
+		if pv.cwin.Key(key) {
+			return true
+		}
 	}
 	pv.readline.Key(key)
 	pv.Dirty()
@@ -157,10 +162,13 @@ func (cw *CompletionWindow) Draw(cr *cairo.Context) {
 	cr.Rectangle(0, 0, float64(cw.width), float64(cw.height))
 	cr.Stroke()
 	y := 0
-	for _, c := range cw.completions {
-		if !strings.HasPrefix(c, cw.prefix) {
-			continue
+	for i, c := range cw.completions {
+		if i == cw.sel {
+			cr.SetSourceRGB(0.95, 0.95, 0.95)
+			cr.Rectangle(0, float64(y), float64(cw.width), float64(cw.font.ch))
+			cr.Fill()
 		}
+		cr.SetSourceRGB(0, 0, 0)
 		y += cw.font.ch
 		cr.MoveTo(0, float64(y-cw.font.descent))
 		cw.font.Use(cr, true)
@@ -171,8 +179,16 @@ func (cw *CompletionWindow) Draw(cr *cairo.Context) {
 }
 
 func (cw *CompletionWindow) Key(key keys.Key) bool {
-	panic("x")
-	return false
+	switch key.Sym {
+	case keys.Tab, keys.Down:
+		cw.sel = (cw.sel + 1) % len(cw.completions)
+	case keys.Up:
+		cw.sel = (cw.sel - 1 + len(cw.completions)) % len(cw.completions)
+	default:
+		return false
+	}
+	cw.win.Dirty()
+	return true
 }
 
 func (cw *CompletionWindow) Scroll(dy int) {
