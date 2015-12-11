@@ -14,6 +14,15 @@ func isWordChar(c byte) bool {
 	return unicode.IsLetter(rune(c))
 }
 
+func backwardWord(rl *ReadLine, key keys.Key) {
+	for rl.Pos > 0 && !isWordChar(rl.Text[rl.Pos-1]) {
+		rl.Pos--
+	}
+	for rl.Pos > 0 && isWordChar(rl.Text[rl.Pos-1]) {
+		rl.Pos--
+	}
+}
+
 var commands = map[string]Command{
 	// Moving
 	"beginning-of-line": func(rl *ReadLine, key keys.Key) {
@@ -41,14 +50,7 @@ var commands = map[string]Command{
 			rl.Pos++
 		}
 	},
-	"backward-word": func(rl *ReadLine, key keys.Key) {
-		for rl.Pos > 0 && !isWordChar(rl.Text[rl.Pos-1]) {
-			rl.Pos--
-		}
-		for rl.Pos > 0 && isWordChar(rl.Text[rl.Pos-1]) {
-			rl.Pos--
-		}
-	},
+	"backward-word": backwardWord,
 
 	// History
 	"accept-line": func(rl *ReadLine, key keys.Key) {
@@ -92,6 +94,11 @@ var commands = map[string]Command{
 	"kill-line": func(rl *ReadLine, key keys.Key) {
 		rl.Text = rl.Text[:rl.Pos]
 	},
+	"kill-word": func(rl *ReadLine, key keys.Key) {
+		pos := rl.Pos
+		backwardWord(rl, key)
+		rl.Text = append(rl.Text[:rl.Pos], rl.Text[pos:]...)
+	},
 	"unix-line-discard": func(rl *ReadLine, key keys.Key) {
 		copy(rl.Text, rl.Text[rl.Pos:])
 		rl.Text = rl.Text[:len(rl.Text)-rl.Pos]
@@ -127,8 +134,9 @@ func DefaultBindings() map[string]string {
 		"Backspace": "backward-delete-char",
 
 		// Killing
-		"C-k": "kill-line",
-		"C-u": "unix-line-discard",
+		"C-k":         "kill-line",
+		"M-Backspace": "kill-word",
+		"C-u":         "unix-line-discard",
 
 		// Completion
 		"Tab": "complete",
