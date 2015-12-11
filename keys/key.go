@@ -17,6 +17,7 @@ const (
 	Backspace Sym = 8
 	Tab       Sym = 9
 	Enter     Sym = 13
+	Esc       Sym = 27
 
 	Left Sym = iota + 128
 	Right

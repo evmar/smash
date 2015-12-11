@@ -30,6 +30,7 @@ type PromptView struct {
 }
 
 type CompletionWindow struct {
+	pv  *PromptView
 	win ui.Win
 
 	font *MonoFont
@@ -95,6 +96,16 @@ func (pv *PromptView) Key(key keys.Key) bool {
 	return true
 }
 
+func (pv *PromptView) OnCompletion(text string) {
+	if len(text) > 0 {
+		pv.readline.Text = append(pv.readline.Text, []byte(text)...)
+		pv.readline.Pos += len(text)
+		pv.Dirty()
+	}
+	pv.cwin.Close()
+	pv.cwin = nil
+}
+
 func (pv *PromptView) Scroll(dy int) {
 }
 
@@ -125,17 +136,19 @@ func (pv *PromptView) ShowCompletions(ofs int, completions []string) {
 	x += (len("$ ") + ofs) * pv.mf.cw
 	y -= pv.mf.ch
 
-	pv.cwin = NewCompletionWindow(pv.GetWindow(), x, y, string(pv.readline.Text[ofs:]), completions)
+	pv.cwin = NewCompletionWindow(pv, x, y, string(pv.readline.Text[ofs:]), completions)
 }
 
-func NewCompletionWindow(win *Window, x, y int, prefix string, completions []string) *CompletionWindow {
+func NewCompletionWindow(pv *PromptView, x, y int, prefix string, completions []string) *CompletionWindow {
 	w := 0
 	for _, c := range completions {
 		if len(c) > w {
 			w = len(c)
 		}
 	}
+	win := pv.GetWindow()
 	cwin := &CompletionWindow{
+		pv:          pv,
 		font:        win.font,
 		prefix:      prefix,
 		completions: completions,
@@ -182,15 +195,28 @@ func (cw *CompletionWindow) Key(key keys.Key) bool {
 	switch key.Sym {
 	case keys.Tab, keys.Down:
 		cw.sel = (cw.sel + 1) % len(cw.completions)
+		cw.win.Dirty()
+		return true
 	case keys.Up:
 		cw.sel = (cw.sel - 1 + len(cw.completions)) % len(cw.completions)
+		cw.win.Dirty()
+		return true
+	case keys.Enter:
+		cw.pv.OnCompletion(cw.completions[cw.sel][len(cw.prefix):])
+		return true
+	case keys.Esc:
+		cw.pv.OnCompletion("")
+		return true
 	default:
+		log.Printf("k %#v", key)
 		return false
 	}
-	cw.win.Dirty()
-	return true
 }
 
 func (cw *CompletionWindow) Scroll(dy int) {
 	panic("x")
+}
+
+func (cw *CompletionWindow) Close() {
+	cw.win.Close()
 }

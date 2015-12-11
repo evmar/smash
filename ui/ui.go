@@ -14,6 +14,7 @@ type Win interface {
 	SetPosition(x, y int)
 	GetContentPosition() (int, int)
 	Show()
+	Close()
 
 	AddAnimation(anim Anim)
 }

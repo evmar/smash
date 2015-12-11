@@ -122,6 +122,10 @@ func (w *Window) Show() {
 	C.gtk_widget_show(w.gtkWin)
 }
 
+func (w *Window) Close() {
+	C.gtk_widget_destroy(w.gtkWin)
+}
+
 func (w *Window) AddAnimation(anim ui.Anim) {
 	if len(w.anims) == 0 {
 		C.smash_start_ticks(unsafe.Pointer(w), w.gtkWin)
