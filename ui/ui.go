@@ -24,7 +24,7 @@ type WinDelegate interface {
 	// Draw draws the display content into the backing store.
 	Draw(cr *cairo.Context)
 	// Key is called when there's a keypress on the window.
-	Key(key keys.Key)
+	Key(key keys.Key) bool
 	// Scrolled is called when there's a scroll event.
 	Scroll(dy int)
 }

@@ -81,12 +81,13 @@ func (pv *PromptView) Height() int {
 	return pv.mf.ch
 }
 
-func (pv *PromptView) Key(key keys.Key) {
+func (pv *PromptView) Key(key keys.Key) bool {
 	if key.Sym == keys.NoSym {
-		return
+		return false
 	}
 	pv.readline.Key(key)
 	pv.Dirty()
+	return true
 }
 
 func (pv *PromptView) Scroll(dy int) {
@@ -169,8 +170,9 @@ func (cw *CompletionWindow) Draw(cr *cairo.Context) {
 	}
 }
 
-func (cw *CompletionWindow) Key(key keys.Key) {
+func (cw *CompletionWindow) Key(key keys.Key) bool {
 	panic("x")
+	return false
 }
 
 func (cw *CompletionWindow) Scroll(dy int) {

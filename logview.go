@@ -128,12 +128,12 @@ func (l *LogView) Draw(cr *cairo.Context) {
 	}
 }
 
-func (l *LogView) Key(key keys.Key) {
+func (l *LogView) Key(key keys.Key) bool {
 	e := l.Entries[len(l.Entries)-1]
 	if e.term != nil && e.term.Running {
-		e.term.Key(key)
+		return e.term.Key(key)
 	} else {
-		e.prompt.Key(key)
+		return e.prompt.Key(key)
 	}
 }
 

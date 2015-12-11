@@ -143,10 +143,10 @@ func (t *TermView) Draw(cr *cairo.Context) {
 	}
 }
 
-func (t *TermView) Key(key keys.Key) {
+func (t *TermView) Key(key keys.Key) bool {
 	if key.Sym == keys.NoSym {
 		// Modifier-only keypress.
-		return
+		return false
 	}
 
 	// log.Printf("key %#x %c", key, key)
@@ -180,7 +180,9 @@ func (t *TermView) Key(key keys.Key) {
 	if send != "" {
 		io.WriteString(t.keys, send)
 		t.Dirty()
+		return true
 	}
+	return false
 }
 
 func (t *TermView) Scroll(dy int) {

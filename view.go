@@ -10,7 +10,7 @@ import (
 type View interface {
 	GetWindow() *Window
 	Draw(cr *cairo.Context)
-	Key(key keys.Key)
+	Key(key keys.Key) bool
 	Scroll(dy int)
 	Dirty()
 	Enqueue(f func())
@@ -54,8 +54,8 @@ func (w *Window) Draw(cr *cairo.Context) {
 	w.view.Draw(cr)
 }
 
-func (w *Window) Key(key keys.Key) {
-	w.view.Key(key)
+func (w *Window) Key(key keys.Key) bool {
+	return w.view.Key(key)
 }
 
 func (w *Window) Scroll(dy int) {
