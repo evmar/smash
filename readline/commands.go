@@ -2,10 +2,17 @@ package readline
 
 import (
 	"fmt"
+	"unicode"
+
 	"smash/keys"
 )
 
 type Command func(rl *ReadLine, key keys.Key)
+
+func isWordChar(c byte) bool {
+	// All this code should be rune-based anyway...
+	return unicode.IsLetter(rune(c))
+}
 
 var commands = map[string]Command{
 	// Moving
@@ -22,6 +29,23 @@ var commands = map[string]Command{
 	},
 	"backward-char": func(rl *ReadLine, key keys.Key) {
 		if rl.Pos > 0 {
+			rl.Pos--
+		}
+	},
+	"forward-word": func(rl *ReadLine, key keys.Key) {
+		// TODO: make this behavior make sense?
+		for rl.Pos < len(rl.Text) && !isWordChar(rl.Text[rl.Pos]) {
+			rl.Pos++
+		}
+		for rl.Pos < len(rl.Text) && isWordChar(rl.Text[rl.Pos]) {
+			rl.Pos++
+		}
+	},
+	"backward-word": func(rl *ReadLine, key keys.Key) {
+		for rl.Pos > 0 && !isWordChar(rl.Text[rl.Pos-1]) {
+			rl.Pos--
+		}
+		for rl.Pos > 0 && isWordChar(rl.Text[rl.Pos-1]) {
 			rl.Pos--
 		}
 	},
