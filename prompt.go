@@ -156,8 +156,8 @@ func NewCompletionWindow(pv *PromptView, x, y int, prefix string, completions []
 		height:      len(completions) * win.font.ch,
 	}
 	cwin.win = win.ui.NewWindow(cwin, false)
-	cwin.win.SetSize(cwin.width, cwin.height)
-	cwin.win.SetPosition(x, y)
+	cwin.win.SetSize(cwin.width+2, cwin.height+2)
+	cwin.win.SetPosition(x-1, y-1)
 	cwin.win.Show()
 	return cwin
 }
@@ -171,9 +171,13 @@ func (cw *CompletionWindow) Mapped() {
 func (cw *CompletionWindow) Draw(cr *cairo.Context) {
 	cr.SetSourceRGB(1, 1, 1)
 	cr.Paint()
+
+	// Border around the window.
 	cr.SetSourceRGB(0, 0, 0)
-	cr.Rectangle(0, 0, float64(cw.width), float64(cw.height))
+	cr.Rectangle(0, 0, float64(cw.width+2), float64(cw.height+2))
 	cr.Stroke()
+
+	cr.Translate(1, 1)
 	y := 0
 	for i, c := range cw.completions {
 		if i == cw.sel {

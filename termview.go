@@ -58,7 +58,7 @@ func drawText(cr *cairo.Context, mf *MonoFont, x, y int, fg, bg *Color, line str
 		cr.Fill()
 	}
 
-	cr.MoveTo(float64(x), float64(y+mf.ch-mf.descent+1))
+	cr.MoveTo(float64(x), float64(y+mf.ch-mf.descent))
 	setColor(cr, fg)
 	cr.ShowText(line)
 }
