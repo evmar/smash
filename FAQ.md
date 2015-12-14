@@ -16,8 +16,10 @@ existing terminal emulators.
 
 ## Why does Smash depend on GTK?
 
-Smash doesn't really use GTK, it just only needs to bring up a window
-and draw to it.  That code is abstracted to talk to an interface.
-There's even a plain-xlib implementation (build with `-tags xlib`) but
-it's bitrotted a bit.  Importantly, GTK implements the logic to
-synchronize with an X compositor so that animations are smooth.
+Smash doesn't really use GTK -- it just needs to bring up a window and
+draw to it.  Importantly, GTK implements the logic to synchronize with
+an X compositor so that animations are smooth.
+
+The GUI code is abstracted to talk to an interface.  There is a
+bitrotted (nonworking) plain-xlib implementation (build with `-tags
+xlib`) that lacks the compositor bits.
