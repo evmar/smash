@@ -72,8 +72,14 @@ func ParseCommand(input string) *exec.Cmd {
 
 func (lv *LogView) OnPromptAccept(input string) bool {
 	e := lv.Entries[len(lv.Entries)-1]
-	e.term = NewTermView(lv)
 	cmd, builtin := lv.shell.Run(input)
+	if cmd == nil && builtin == nil {
+		// Empty input.
+		lv.addEntry()
+		return false // Don't add to history.
+	}
+
+	e.term = NewTermView(lv)
 	e.term.OnExit = func() {
 		lv.addEntry()
 	}

@@ -101,7 +101,7 @@ func (s *Shell) builtinCd(argv []string) (string, error) {
 
 func (s *Shell) parse(input string) []string {
 	argv := strings.Split(input, " ")
-	if len(argv) == 0 {
+	if len(argv) == 1 && argv[0] == "" {
 		return nil
 	}
 
