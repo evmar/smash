@@ -10,6 +10,7 @@ import (
 	"smash/shell"
 	"smash/ui"
 	"smash/vt100"
+	"strings"
 )
 
 type PromptDelegate interface {
@@ -109,25 +110,60 @@ func (pv *PromptView) OnCompletion(text string) {
 func (pv *PromptView) Scroll(dy int) {
 }
 
+// filterPrefix takes some prefix text and a list of completions, and
+// computes the longest common prefix of all completions that starts
+// with the prefix, as well as all the completions with that prefix.
+func filterPrefix(text string, completions []string) (string, []string) {
+	log.Printf("filter %v %v", text, completions)
+
+	// First filter completions to those with the prefix.
+	if len(text) > 0 {
+		comps := []string{}
+		for _, c := range completions {
+			if strings.HasPrefix(c, text) {
+				comps = append(comps, c)
+			}
+		}
+		completions = comps
+	}
+
+	// Then find the longest common prefix of those completions.
+	for i := 0; ; i++ {
+		for _, comp := range completions {
+			if i == len(comp) || comp[i] != completions[0][i] {
+				return comp[:i], completions
+			}
+		}
+	}
+}
+
 func (pv *PromptView) StartComplete(cb func(string, int), text string, pos int) {
 	go func() {
 		ofs, completions, err := pv.shell.Complete(text)
-		log.Printf("comp %v => %v %v %v", text, ofs, completions, err)
-		if len(completions) == 1 {
-			// Keep text up to the place where completion started and text
-			// after the cursor position.  This is consistent with bash, at
-			// least.
-			text = text[:ofs] + completions[0] + text[pos:]
-			pos = ofs + len(completions[0])
-			pv.Enqueue(func() {
-				cb(text, pos)
-				pv.Dirty()
-			})
-		} else if len(completions) > 1 {
-			pv.Enqueue(func() {
+
+		// Consider the input:
+		//   ls l<tab>
+		// text: "ls l"
+		// pos, the cursor postion: 4 (after the "l")
+		// ofs, the completion beginning: 3 (before the "l")
+		// completions: [log logview ...]
+		log.Printf("comp %v %v => %v %v %v", text, pos, ofs, completions, err)
+
+		before := text[:ofs]
+		after := text[pos:]
+
+		text, completions = filterPrefix(text[ofs:pos], completions)
+
+		pos = ofs + len(text)
+		text = before + text + after
+
+		pv.Enqueue(func() {
+			cb(text, pos)
+			pv.Dirty()
+			if len(completions) > 1 {
 				pv.ShowCompletions(ofs, completions)
-			})
-		}
+			}
+		})
 	}()
 }
 
