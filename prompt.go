@@ -124,10 +124,15 @@ func filterPrefix(text string, completions []string) (string, []string) {
 				comps = append(comps, c)
 			}
 		}
-		completions = comps
+		if len(comps) > 0 {
+			completions = comps
+		}
 	}
 
 	// Then find the longest common prefix of those completions.
+	// (Consider input "l", completions [log logview].  We want to
+	// expand to the shared prefix "log" despite there still being
+	// multiple completions available.)
 	for i := 0; ; i++ {
 		for _, comp := range completions {
 			if i == len(comp) || comp[i] != completions[0][i] {
