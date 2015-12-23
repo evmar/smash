@@ -19,6 +19,16 @@ func NewMonoFont() *MonoFont {
 	}
 }
 
+// fakeMetrics fills in the font metrics with plausible fake values.
+// Useful in tests.
+func (m *MonoFont) fakeMetrics() {
+	m.cw = 10
+	m.ch = 18
+	m.descent = 5
+}
+
+// metricsFromCairo fills in the font metrics with the font metrics as
+// measured on a cairo Context.
 func (m *MonoFont) metricsFromCairo(cr *cairo.Context) {
 	ext := cairo.FontExtents{}
 	cr.FontExtents(&ext)
