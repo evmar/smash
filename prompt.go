@@ -38,7 +38,7 @@ type CompletionWindow struct {
 
 	width, height int
 
-	prefix      string
+	start, end  int
 	completions []string
 	sel         int
 }
@@ -95,7 +95,7 @@ func (pv *PromptView) Key(key keys.Key) bool {
 	bind := pv.readline.Key(key)
 	if pv.cwin != nil {
 		if bind == "self-insert" {
-			log.Printf("TODO: refilter")
+			pv.UseCompletions(pv.cwin.start, pv.readline.Pos, pv.cwin.completions, false)
 		} else {
 			pv.cwin.Close()
 			pv.cwin = nil
@@ -123,8 +123,6 @@ func (pv *PromptView) Scroll(dy int) {
 // computes the longest common prefix of all completions that starts
 // with the prefix, as well as all the completions with that prefix.
 func filterPrefix(text string, completions []string) (string, []string) {
-	log.Printf("filter %v %v", text, completions)
-
 	// First filter completions to those with the prefix.
 	if len(text) > 0 {
 		comps := []string{}
@@ -153,46 +151,53 @@ func filterPrefix(text string, completions []string) (string, []string) {
 
 func (pv *PromptView) StartComplete() {
 	text := string(pv.readline.Text)
-	pos := pv.readline.Pos
+	end := pv.readline.Pos
 	go func() {
-		ofs, completions, err := pv.shell.Complete(text)
+		start, completions, err := pv.shell.Complete(text)
 
 		// Consider the input:
 		//   ls l<tab>
 		// text: "ls l"
-		// pos, the cursor postion: 4 (after the "l")
-		// ofs, the completion beginning: 3 (before the "l")
+		// end, the cursor postion: 4 (after the "l")
+		// start, the completion beginning: 3 (before the "l")
 		// completions: [log logview ...]
-		log.Printf("comp %v %v => %v %v %v", text, pos, ofs, completions, err)
-
-		before := text[:ofs]
-		after := text[pos:]
-
-		text, completions = filterPrefix(text[ofs:pos], completions)
-
-		pos = ofs + len(text)
-		text = before + text + after
-
+		log.Printf("comp %v %v => %v %v %v", text, start, end, completions, err)
 		pv.Enqueue(func() {
-			pv.readline.Text = []byte(text)
-			pv.readline.Pos = pos
-			pv.Dirty()
-			if len(completions) > 1 {
-				pv.ShowCompletions(ofs, completions)
-			}
+			pv.UseCompletions(start, end, completions, true)
 		})
 	}()
 }
 
-func (pv *PromptView) ShowCompletions(ofs int, completions []string) {
-	x, y := pv.delegate.GetPromptAbsolutePosition(pv)
-	x += (len("$ ") + ofs) * pv.mf.cw
-	y -= pv.mf.ch
+func (pv *PromptView) UseCompletions(start, end int, completions []string, expand bool) {
+	text := string(pv.readline.Text)
 
-	pv.cwin = NewCompletionWindow(pv, x, y, string(pv.readline.Text[ofs:]), completions)
+	newText, completions := filterPrefix(text[start:end], completions)
+
+	if expand {
+		pos := start + len(newText)
+		text = text[:start] + newText + text[end:]
+		pv.readline.Text = []byte(text)
+		pv.readline.Pos = pos
+		pv.Dirty()
+	}
+
+	if len(completions) > 1 || !expand {
+		pv.ShowCompletions(start, end, completions)
+	}
 }
 
-func NewCompletionWindow(pv *PromptView, x, y int, prefix string, completions []string) *CompletionWindow {
+func (pv *PromptView) ShowCompletions(start, end int, completions []string) {
+	x, y := pv.delegate.GetPromptAbsolutePosition(pv)
+	x += (len("$ ") + start) * pv.mf.cw
+	y -= pv.mf.ch
+
+	if pv.cwin != nil {
+		pv.cwin.Close()
+	}
+	pv.cwin = NewCompletionWindow(pv, x, y, start, end, completions)
+}
+
+func NewCompletionWindow(pv *PromptView, x, y int, start, end int, completions []string) *CompletionWindow {
 	w := 0
 	for _, c := range completions {
 		if len(c) > w {
@@ -203,7 +208,8 @@ func NewCompletionWindow(pv *PromptView, x, y int, prefix string, completions []
 	cwin := &CompletionWindow{
 		pv:          pv,
 		font:        win.font,
-		prefix:      prefix,
+		start:       start,
+		end:         end,
 		completions: completions,
 		width:       w * win.font.cw,
 		height:      len(completions) * win.font.ch,
@@ -242,9 +248,9 @@ func (cw *CompletionWindow) Draw(cr *cairo.Context) {
 		y += cw.font.ch
 		cr.MoveTo(0, float64(y-cw.font.descent))
 		cw.font.Use(cr, true)
-		cr.ShowText(cw.prefix)
+		cr.ShowText(c[:cw.start])
 		cw.font.Use(cr, false)
-		cr.ShowText(c[len(cw.prefix):])
+		cr.ShowText(c[cw.start:])
 	}
 }
 
@@ -259,13 +265,13 @@ func (cw *CompletionWindow) Key(key keys.Key) bool {
 		cw.win.Dirty()
 		return true
 	case keys.Enter:
-		cw.pv.OnCompletion(cw.completions[cw.sel][len(cw.prefix):])
+		cw.pv.OnCompletion(cw.completions[cw.sel][cw.start:])
 		return true
 	case keys.Esc:
 		cw.pv.OnCompletion("")
 		return true
 	default:
-		log.Printf("k %#v", key)
+		log.Printf("CompletionWindow unhandled: %#v", key)
 		return false
 	}
 }
