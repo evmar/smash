@@ -92,7 +92,16 @@ func (pv *PromptView) Key(key keys.Key) bool {
 			return true
 		}
 	}
-	pv.readline.Key(key)
+	bind := pv.readline.Key(key)
+	if pv.cwin != nil {
+		if bind == "self-insert" {
+			log.Printf("TODO: refilter")
+		} else {
+			pv.cwin.Close()
+			pv.cwin = nil
+		}
+	}
+
 	pv.Dirty()
 	return true
 }
@@ -142,7 +151,9 @@ func filterPrefix(text string, completions []string) (string, []string) {
 	}
 }
 
-func (pv *PromptView) StartComplete(cb func(string, int), text string, pos int) {
+func (pv *PromptView) StartComplete() {
+	text := string(pv.readline.Text)
+	pos := pv.readline.Pos
 	go func() {
 		ofs, completions, err := pv.shell.Complete(text)
 
@@ -163,7 +174,8 @@ func (pv *PromptView) StartComplete(cb func(string, int), text string, pos int) 
 		text = before + text + after
 
 		pv.Enqueue(func() {
-			cb(text, pos)
+			pv.readline.Text = []byte(text)
+			pv.readline.Pos = pos
 			pv.Dirty()
 			if len(completions) > 1 {
 				pv.ShowCompletions(ofs, completions)

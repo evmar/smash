@@ -107,7 +107,7 @@ var commands = map[string]Command{
 
 	// Completion
 	"complete": func(rl *ReadLine, key keys.Key) {
-		rl.startComplete()
+		rl.StartComplete()
 	},
 }
 
