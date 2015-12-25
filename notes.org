@@ -1,3 +1,5 @@
+* feature ideas
+** mouse position cursor
 * vt100 sequences
 http://invisible-island.net/xterm/ctlseqs/ctlseqs.html
 http://www.vt100.net/docs/vt100-ug/contents.html
