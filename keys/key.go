@@ -18,6 +18,7 @@ const (
 	Tab       Sym = 9
 	Enter     Sym = 13
 	Esc       Sym = 27
+	Space     Sym = 32
 
 	Left Sym = iota + 128
 	Right
@@ -26,6 +27,21 @@ const (
 
 	FirstNonASCIISym = Left
 )
+
+func (sym Sym) IsText() bool {
+	return sym > ' ' && sym <= '~'
+}
+
+func (sym Sym) Name() string {
+	if sym.IsText() {
+		return fmt.Sprintf("%c", sym)
+	}
+	if sym == Space {
+		// XXX need to rerun stringer and delete this.
+		return "Space"
+	}
+	return sym.String()
+}
 
 const (
 	ModControl uint = 1 << iota
@@ -39,17 +55,6 @@ type Key struct {
 	Mods uint
 }
 
-func (sym Sym) IsText() bool {
-	return sym >= ' ' && sym <= '~'
-}
-
-func (sym Sym) Name() string {
-	if sym.IsText() {
-		return fmt.Sprintf("%c", sym)
-	}
-	return sym.String()
-}
-
 // Spec returns a string specifying the key, e.g. "C-M-a" for Control+Meta+a.
 func (k Key) Spec() string {
 	spec := ""
@@ -61,4 +66,8 @@ func (k Key) Spec() string {
 	}
 	spec += k.Sym.Name()
 	return spec
+}
+
+func (k Key) String() string {
+	return fmt.Sprintf("Key(%s)", k.Spec())
 }

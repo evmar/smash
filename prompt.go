@@ -275,7 +275,7 @@ func (cw *CompletionWindow) Key(key keys.Key) bool {
 		cw.pv.OnCompletion("")
 		return true
 	default:
-		log.Printf("CompletionWindow unhandled: %#v", key)
+		log.Printf("CompletionWindow unhandled: %s", key)
 		return false
 	}
 }

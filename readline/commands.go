@@ -141,7 +141,8 @@ func DefaultBindings() map[string]string {
 		// Completion
 		"Tab": "complete",
 	}
-	for ch := ' '; ch <= '~'; ch++ {
+	b["Space"] = "self-insert"
+	for ch := '!'; ch <= '~'; ch++ {
 		b[fmt.Sprintf("%c", ch)] = "self-insert"
 	}
 	return b
