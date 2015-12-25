@@ -55,8 +55,9 @@ var commands = map[string]Command{
 	// History
 	"accept-line": func(rl *ReadLine, key keys.Key) {
 		rl.Pos = -1
-		if rl.Accept(rl.String()) {
-			rl.Config.History = append(rl.Config.History, rl.String())
+		input := rl.String()
+		if rl.Accept(input) {
+			rl.Config.History = append(rl.Config.History, input)
 			rl.Config.HistoryPos = len(rl.Config.History)
 		}
 	},
@@ -69,7 +70,7 @@ var commands = map[string]Command{
 		rl.Pos = len(rl.Text)
 	},
 	"next-history": func(rl *ReadLine, key keys.Key) {
-		if rl.Config.HistoryPos+1 == len(rl.Config.History) {
+		if rl.Config.HistoryPos+1 >= len(rl.Config.History) {
 			return
 		}
 		rl.Config.HistoryPos++

@@ -53,6 +53,11 @@ func (rl *ReadLine) Insert(ch byte) {
 	rl.Pos++
 }
 
+func (rl *ReadLine) Clear() {
+	rl.Pos = 0
+	rl.Text = nil
+}
+
 func (rl *ReadLine) Key(key keys.Key) string {
 	bind := rl.Config.Bindings[key.Spec()]
 	if bind == "" {

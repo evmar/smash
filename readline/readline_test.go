@@ -64,3 +64,26 @@ func TestAccept(t *testing.T) {
 	testType(rl, "\r")
 	assert.Equal(t, true, ok)
 }
+
+func TestHistory(t *testing.T) {
+	rl := NewConfig().NewReadLine()
+
+	// Don't die when there's no history.
+	testType(rl, "C-n", "C-p")
+
+	rl.Accept = func(text string) bool {
+		rl.Clear()
+		return true
+	}
+	testType(rl, "foo\r", "bar\r")
+	testType(rl, "C-p")
+	assert.Equal(t, "bar", rl.String())
+	testType(rl, "C-p")
+	assert.Equal(t, "foo", rl.String())
+	testType(rl, "C-p")
+	assert.Equal(t, "foo", rl.String()) // didn't loop around
+	testType(rl, "C-n")
+	assert.Equal(t, "bar", rl.String())
+	testType(rl, "C-n")
+	assert.Equal(t, "bar", rl.String()) // didn't advance
+}
