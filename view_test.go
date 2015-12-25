@@ -2,39 +2,23 @@ package main
 
 import (
 	"smash/keys"
+	"smash/ui/fake"
 
 	"github.com/martine/gocairo/cairo"
 )
 
 type testViewHost struct {
 	win Window
-
-	uiQueue chan func()
 }
 
-func NewTestViewHost() *testViewHost {
+func NewTestViewHost(ui *fake.UI) *testViewHost {
 	font := NewMonoFont()
 	font.fakeMetrics()
 	return &testViewHost{
 		win: Window{
+			ui:   ui,
 			font: font,
 		},
-		uiQueue: make(chan func(), 10),
-	}
-}
-
-func (tv *testViewHost) runQueue(wait bool) {
-	if wait {
-		f := <-tv.uiQueue
-		f()
-	}
-	for {
-		select {
-		case f := <-tv.uiQueue:
-			f()
-		default:
-			return
-		}
 	}
 }
 
@@ -48,5 +32,5 @@ func (tv *testViewHost) Key(key keys.Key) bool {
 func (tv *testViewHost) Scroll(dy int) {}
 func (tv *testViewHost) Dirty()        {}
 func (tv *testViewHost) Enqueue(f func()) {
-	tv.uiQueue <- f
+	tv.win.ui.Enqueue(f)
 }
