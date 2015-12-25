@@ -136,6 +136,10 @@ func filterPrefix(text string, completions []string) (string, []string) {
 		}
 	}
 
+	if len(completions) == 0 {
+		return text, []string{}
+	}
+
 	// Then find the longest common prefix of those completions.
 	// (Consider input "l", completions [log logview].  We want to
 	// expand to the shared prefix "log" despite there still being
