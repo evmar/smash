@@ -10,6 +10,10 @@ import (
 	"strings"
 )
 
+type Exit struct{}
+
+func (e Exit) Error() string { return "shell exit" }
+
 type Completer interface {
 	Complete(input string) (int, []string, error)
 }
@@ -125,6 +129,8 @@ func (s *Shell) Run(input string) (*exec.Cmd, Builtin) {
 		builtin = func() (string, error) { return s.builtinAlias(argv) }
 	case "cd":
 		builtin = func() (string, error) { return s.builtinCd(argv) }
+	case "exit":
+		builtin = func() (string, error) { return "", Exit{} }
 	default:
 		cmd = exec.Command(argv[0], argv[1:]...)
 		cmd.Dir = s.cwd

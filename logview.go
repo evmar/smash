@@ -89,7 +89,11 @@ func (lv *LogView) OnPromptAccept(input string) bool {
 		// TODO: async.
 		output, err := builtin()
 		if err != nil {
-			e.term.term.DisplayString(err.Error())
+			if err, ok := err.(shell.Exit); ok {
+				lv.GetWindow().ui.Quit()
+			} else {
+				e.term.term.DisplayString(err.Error())
+			}
 		} else {
 			e.term.term.DisplayString(output)
 		}

@@ -46,8 +46,6 @@ func main() {
 	win.win.Show()
 	ui.Loop()
 
-	// For some reason, things wait a bit on shutdown unless we force-exit.
-	if *cpuprofile == "" {
-		os.Exit(0)
-	}
+	// For some reason, things wait a bit on shutdown.
+	// Maybe some sort of finalizers running?
 }
