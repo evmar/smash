@@ -259,19 +259,19 @@ func (cw *CompletionWindow) Draw(cr *cairo.Context) {
 }
 
 func (cw *CompletionWindow) Key(key keys.Key) bool {
-	switch key.Sym {
-	case keys.Tab, keys.Down:
+	switch key.Spec() {
+	case "Tab", "Down", "C-n":
 		cw.sel = (cw.sel + 1) % len(cw.completions)
 		cw.win.Dirty()
 		return true
-	case keys.Up:
+	case "Up":
 		cw.sel = (cw.sel - 1 + len(cw.completions)) % len(cw.completions)
 		cw.win.Dirty()
 		return true
-	case keys.Enter:
+	case "Enter":
 		cw.pv.OnCompletion(cw.completions[cw.sel][cw.start:])
 		return true
-	case keys.Esc:
+	case "Esc":
 		cw.pv.OnCompletion("")
 		return true
 	default:
