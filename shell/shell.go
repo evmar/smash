@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"fmt"
 	"os"
-	"os/exec"
 	"path/filepath"
 	"sort"
 	"strings"
@@ -19,7 +18,7 @@ type Completer interface {
 }
 
 type Shell struct {
-	cwd        string
+	Cwd        string
 	env        map[string]string
 	aliases    map[string]string
 	lastStatus int
@@ -31,7 +30,7 @@ type Builtin func() (string, error)
 
 func NewShell(cwd string, env map[string]string, completer Completer) *Shell {
 	return &Shell{
-		cwd: cwd,
+		Cwd: cwd,
 		env: env,
 		aliases: map[string]string{
 			"ls":   "ls --color",
@@ -90,7 +89,7 @@ func (s *Shell) builtinCd(argv []string) (string, error) {
 	if dir[0] == '/' {
 		// absolute path
 	} else {
-		dir = filepath.Join(s.cwd, dir)
+		dir = filepath.Join(s.Cwd, dir)
 	}
 	st, err := os.Stat(dir)
 	if err != nil {
@@ -99,7 +98,7 @@ func (s *Shell) builtinCd(argv []string) (string, error) {
 	if !st.IsDir() {
 		return "", fmt.Errorf("%q: not a directory", dir)
 	}
-	s.cwd = dir
+	s.Cwd = dir
 	return "", nil
 }
 
@@ -116,13 +115,12 @@ func (s *Shell) parse(input string) []string {
 	return argv
 }
 
-func (s *Shell) Run(input string) (*exec.Cmd, Builtin) {
+func (s *Shell) Run(input string) ([]string, Builtin) {
 	argv := s.parse(input)
 	if argv == nil {
 		return nil, nil
 	}
 
-	var cmd *exec.Cmd
 	var builtin Builtin
 	switch argv[0] {
 	case "alias":
@@ -131,11 +129,8 @@ func (s *Shell) Run(input string) (*exec.Cmd, Builtin) {
 		builtin = func() (string, error) { return s.builtinCd(argv) }
 	case "exit":
 		builtin = func() (string, error) { return "", Exit{} }
-	default:
-		cmd = exec.Command(argv[0], argv[1:]...)
-		cmd.Dir = s.cwd
 	}
-	return cmd, builtin
+	return argv, builtin
 }
 
 func (s *Shell) Finish(status int) {

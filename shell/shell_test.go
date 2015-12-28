@@ -9,8 +9,7 @@ import (
 )
 
 func runBuiltin(t *testing.T, s *Shell, input string) (string, error) {
-	cmd, f := s.Run(input)
-	assert.Nil(t, cmd)
+	_, f := s.Run(input)
 	out, err := f()
 	if err != nil {
 		s.Finish(1)
@@ -38,28 +37,28 @@ func TestCd(t *testing.T) {
 
 	_, err = runBuiltin(t, s, "cd .")
 	assert.Nil(t, err)
-	assert.Equal(t, s.cwd, cwd)
+	assert.Equal(t, s.Cwd, cwd)
 	assert.Equal(t, s.lastStatus, 0)
 
 	runBuiltin(t, s, "cd testdir")
-	assert.Equal(t, s.cwd, cwd+"/testdir")
+	assert.Equal(t, s.Cwd, cwd+"/testdir")
 
 	runBuiltin(t, s, "cd ..")
-	assert.Equal(t, s.cwd, cwd)
+	assert.Equal(t, s.Cwd, cwd)
 
 	_, err = runBuiltin(t, s, "cd nosuchdir")
 	assert.Contains(t, err.Error(), "no such file or dir")
 	assert.Equal(t, s.lastStatus, 1)
 
 	runBuiltin(t, s, "cd /")
-	assert.Equal(t, s.cwd, "/")
+	assert.Equal(t, s.Cwd, "/")
 
 	_, err = runBuiltin(t, s, "cd")
 	assert.Contains(t, err.Error(), "no $HOME")
 
 	s.env["HOME"] = "/tmp"
 	runBuiltin(t, s, "cd")
-	assert.Equal(t, s.cwd, "/tmp")
+	assert.Equal(t, s.Cwd, "/tmp")
 }
 
 type testCompleter struct {
