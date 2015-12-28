@@ -110,7 +110,16 @@ func (b *Bash) setNarrow() error {
 }
 
 func (b *Bash) Chdir(path string) error {
-	// XXX TODO
+	fmt.Fprintf(b.pty, "cd %q\n", path)
+	// Expected output is newline + a new prompt.
+	b.lines.Scan()
+	if line := b.lines.Text(); line != "" {
+		return fmt.Errorf("bash: unexpected line %q", line)
+	}
+	b.lines.Scan()
+	if line := b.lines.Text(); line != promptMagic {
+		return fmt.Errorf("bash: unexpected line %q", line)
+	}
 	return nil
 }
 

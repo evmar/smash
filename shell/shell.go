@@ -18,6 +18,7 @@ func (e NotExecutable) Error() string { return "not executable" }
 func (e NotFound) Error() string      { return "not found" }
 
 type Completer interface {
+	Chdir(path string) error
 	Complete(input string) (int, []string, error)
 }
 
@@ -111,6 +112,9 @@ func (s *Shell) builtinCd(argv []string) (string, error) {
 	}
 	if !st.IsDir() {
 		return "", fmt.Errorf("%q: not a directory", dir)
+	}
+	if err := s.completer.Chdir(dir); err != nil {
+		return "", err
 	}
 	s.Cwd = dir
 	return "", nil
