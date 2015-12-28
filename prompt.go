@@ -263,15 +263,25 @@ func (cw *CompletionWindow) Draw(cr *cairo.Context) {
 	}
 }
 
+func (cw *CompletionWindow) cycle(delta int) {
+	cw.sel = ((cw.sel + delta) + len(cw.completions)) % len(cw.completions)
+	cw.win.Dirty()
+}
+
 func (cw *CompletionWindow) Key(key keys.Key) bool {
 	switch key.Spec() {
-	case "Tab", "Down", "C-n":
-		cw.sel = (cw.sel + 1) % len(cw.completions)
-		cw.win.Dirty()
+	case "Tab":
+		if len(cw.completions) == 1 {
+			cw.pv.OnCompletion(cw.completions[0][cw.start:])
+		} else {
+			cw.cycle(1)
+		}
+		return true
+	case "Down", "C-n":
+		cw.cycle(1)
 		return true
 	case "Up":
-		cw.sel = (cw.sel - 1 + len(cw.completions)) % len(cw.completions)
-		cw.win.Dirty()
+		cw.cycle(-1)
 		return true
 	case "Enter":
 		cw.pv.OnCompletion(cw.completions[cw.sel][cw.start:])
