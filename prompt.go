@@ -123,6 +123,8 @@ func (pv *PromptView) Scroll(dy int) {
 // computes the longest common prefix of all completions that starts
 // with the prefix, as well as all the completions with that prefix.
 func filterPrefix(text string, completions []string) (string, []string) {
+	// log.Printf("filterPrefix %q %q", text, completions)
+
 	// First filter completions to those with the prefix.
 	if len(text) > 0 {
 		comps := []string{}
@@ -176,6 +178,7 @@ func (pv *PromptView) UseCompletions(start, end int, completions []string, expan
 	text := string(pv.readline.Text)
 
 	newText, completions := filterPrefix(text[start:end], completions)
+	log.Printf("usecomp %q %q %q", expand, newText, completions)
 
 	if expand {
 		pos := start + len(newText)
@@ -251,10 +254,12 @@ func (cw *CompletionWindow) Draw(cr *cairo.Context) {
 		cr.SetSourceRGB(0, 0, 0)
 		y += cw.font.ch
 		cr.MoveTo(0, float64(y-cw.font.descent))
+
+		prefixLen := cw.end - cw.start
 		cw.font.Use(cr, true)
-		cr.ShowText(c[:cw.start])
+		cr.ShowText(c[:prefixLen])
 		cw.font.Use(cr, false)
-		cr.ShowText(c[cw.start:])
+		cr.ShowText(c[prefixLen:])
 	}
 }
 
