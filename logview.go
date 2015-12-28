@@ -2,7 +2,6 @@ package main
 
 import (
 	"os/exec"
-	"strings"
 	"time"
 
 	"github.com/martine/gocairo/cairo"
@@ -47,12 +46,12 @@ func NewLogView(parent View, height int) (*LogView, error) {
 		height:   height,
 	}
 	cwd := ""
-	var env map[string]string
 	bash, err := bash.StartBash()
 	if err != nil {
 		return nil, err
 	}
-	lv.shell = shell.NewShell(cwd, env, bash)
+	lv.shell = shell.NewShell(cwd, nil, bash)
+	lv.shell.LoadEnv()
 	lv.addEntry()
 	return lv, nil
 }
@@ -62,12 +61,6 @@ func (lv *LogView) addEntry() {
 		prompt: NewPromptView(lv, lv, lv.rlconfig, lv.shell),
 	}
 	lv.Entries = append(lv.Entries, e)
-}
-
-func ParseCommand(input string) *exec.Cmd {
-	// TODO: something correct.
-	args := strings.Split(input, " ")
-	return exec.Command(args[0], args[1:]...)
 }
 
 func (lv *LogView) OnPromptAccept(input string) bool {
@@ -97,7 +90,17 @@ func (lv *LogView) OnPromptAccept(input string) bool {
 		}
 		e.term.Finish()
 	} else if argv != nil {
-		cmd := exec.Command(argv[0], argv[1:]...)
+		// TODO: async.
+		path, err := lv.shell.LookPath(argv[0])
+		if err != nil {
+			e.term.term.DisplayString(err.Error())
+			e.term.Finish()
+			return true
+		}
+		cmd := &exec.Cmd{
+			Path: path,
+			Args: argv,
+		}
 		cmd.Dir = lv.shell.Cwd
 		e.term.Start(cmd)
 	}
