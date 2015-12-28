@@ -108,8 +108,9 @@ func (pv *PromptView) Key(key keys.Key) bool {
 
 func (pv *PromptView) OnCompletion(text string) {
 	if len(text) > 0 {
-		pv.readline.Text = append(pv.readline.Text, []byte(text)...)
-		pv.readline.Pos += len(text)
+		t := string(pv.readline.Text)
+		pv.readline.Text = []byte(t[:pv.cwin.start] + text + t[pv.cwin.end:])
+		pv.readline.Pos = pv.cwin.start + len(text)
 		pv.Dirty()
 	}
 	pv.cwin.Close()
@@ -178,7 +179,7 @@ func (pv *PromptView) UseCompletions(start, end int, completions []string, expan
 	text := string(pv.readline.Text)
 
 	newText, completions := filterPrefix(text[start:end], completions)
-	log.Printf("usecomp %q %q %q", expand, newText, completions)
+	// log.Printf("usecomp %q %q %q", expand, newText, completions)
 
 	if expand {
 		text = text[:start] + newText + text[end:]
@@ -268,11 +269,15 @@ func (cw *CompletionWindow) cycle(delta int) {
 	cw.win.Dirty()
 }
 
+func (cw *CompletionWindow) accept() {
+	cw.pv.OnCompletion(cw.completions[cw.sel])
+}
+
 func (cw *CompletionWindow) Key(key keys.Key) bool {
 	switch key.Spec() {
 	case "Tab":
 		if len(cw.completions) == 1 {
-			cw.pv.OnCompletion(cw.completions[0][cw.start:])
+			cw.accept()
 		} else {
 			cw.cycle(1)
 		}
@@ -284,7 +289,7 @@ func (cw *CompletionWindow) Key(key keys.Key) bool {
 		cw.cycle(-1)
 		return true
 	case "Enter":
-		cw.pv.OnCompletion(cw.completions[cw.sel][cw.start:])
+		cw.accept()
 		return true
 	case "Esc":
 		cw.pv.OnCompletion("")
