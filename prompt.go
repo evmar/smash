@@ -181,10 +181,10 @@ func (pv *PromptView) UseCompletions(start, end int, completions []string, expan
 	log.Printf("usecomp %q %q %q", expand, newText, completions)
 
 	if expand {
-		pos := start + len(newText)
 		text = text[:start] + newText + text[end:]
+		end = start + len(newText)
 		pv.readline.Text = []byte(text)
-		pv.readline.Pos = pos
+		pv.readline.Pos = end
 		pv.Dirty()
 	}
 
