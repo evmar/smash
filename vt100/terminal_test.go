@@ -265,3 +265,12 @@ func TestInsertLine(t *testing.T) {
 	mustRun(t, term, "\nX")
 	assert.Equal(t, "foo\n\nXar\nbaz\n", term.ToString())
 }
+
+func TestBinary(t *testing.T) {
+	term := NewTerminal()
+	// Don't choke on non-UTF8 inputs.
+	// TODO: maybe render them with some special character to represent
+	// mojibake.
+	mustRun(t, term, "\xc8\x00\x64\x00")
+	assert.Equal(t, "@@d@", term.ToString())
+}

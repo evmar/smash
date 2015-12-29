@@ -162,19 +162,16 @@ func (t *Terminal) Read(r io.ByteScanner) error {
 		t.Col += 8 - (t.Col % 8)
 		t.fixPosition()
 		t.Mu.Unlock()
-	case c > '~':
+	case c >= ' ' && c <= '~':
+		t.writeRune(rune(c), t.Attr)
+	default:
 		r.UnreadByte()
 		return t.readUTF8(r)
-	case c >= ' ' && c <= '~':
-		t.writeRune(rune(c))
-	default:
-		log.Printf("term: unhandled %#x", c)
-		c = '#'
 	}
 	return nil
 }
 
-func (t *Terminal) writeRune(r rune) {
+func (t *Terminal) writeRune(r rune, attr Attr) {
 	t.Mu.Lock()
 	if t.Col == t.Width {
 		t.Row++
@@ -182,7 +179,7 @@ func (t *Terminal) writeRune(r rune) {
 	}
 	t.Col++
 	t.fixPosition()
-	t.Lines[t.Row][t.Col-1] = Cell{r, t.Attr}
+	t.Lines[t.Row][t.Col-1] = Cell{r, attr}
 	t.Mu.Unlock()
 }
 
@@ -191,6 +188,8 @@ func (t *Terminal) readUTF8(r io.ByteScanner) error {
 	if err != nil {
 		return err
 	}
+
+	attr := t.Attr
 
 	var uc rune
 	n := 0
@@ -202,7 +201,12 @@ func (t *Terminal) readUTF8(r io.ByteScanner) error {
 		uc = rune(c & 0x0F)
 		n = 3
 	default:
-		return fmt.Errorf("term: unhandled utf8 start %#v", c)
+		if c&0xF0 == 0xF0 {
+			log.Printf("term: not yet implemented: utf8 start %#v", c)
+		}
+		attr.SetInverse(true)
+		t.writeRune('@', attr)
+		return nil
 	}
 
 	for i := 1; i < n; i++ {
@@ -211,11 +215,14 @@ func (t *Terminal) readUTF8(r io.ByteScanner) error {
 			return err
 		}
 		if c&0xC0 != 0x80 {
-			return fmt.Errorf("term: unhandled utf8 continuation %#v", c)
+			log.Printf("term: not yet implemented: utf8 continuation %#v", c)
+			attr.SetInverse(true)
+			uc = '@'
+			break
 		}
 		uc = uc<<6 | rune(c&0x3F)
 	}
-	t.writeRune(uc)
+	t.writeRune(uc, attr)
 	return nil
 }
 
