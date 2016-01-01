@@ -9,7 +9,8 @@ set -x
 
 REPO=github.com/martine/gocairo
 
-cd $GOPATH
+mkdir -p $GOPATH/src
+cd $GOPATH/src
 git clone --depth=1 git://$REPO $REPO
 cd $REPO
 
