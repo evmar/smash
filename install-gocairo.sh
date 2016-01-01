@@ -12,9 +12,14 @@ REPO=github.com/martine/gocairo
 cd $GOPATH
 git clone --depth=1 git://$REPO $REPO
 cd $REPO
-echo $GOPATH
-pwd
-go get -u
+
+# install c2go.
+# This doesn't work:
+#   go get -u
+# Fails with:
+#   package _/home/travis/gopath/github.com/martine/gocairo: unrecognized import path "_/home/travis/gopath/github.com/martine/gocairo"
+go get "rsc.io/c2go/cc"
+
 rm cairo/cairo.go  # to force rerunning the generate script
 make
 
