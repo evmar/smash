@@ -14,6 +14,7 @@ git clone --depth=1 git://$REPO $REPO
 cd $REPO
 echo $GOPATH
 pwd
+go get -u
 rm cairo/cairo.go  # to force rerunning the generate script
 make
 
