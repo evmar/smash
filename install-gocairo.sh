@@ -8,7 +8,7 @@
 REPO=github.com/martine/gocairo
 
 cd $GOPATH
-git clone --depth=1 $REPO $REPO
+git clone --depth=1 git://$REPO $REPO
 cd $REPO
 make
 
