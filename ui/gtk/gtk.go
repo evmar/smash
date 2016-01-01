@@ -1,3 +1,5 @@
+// +build !headless
+
 package gtk
 
 /*
@@ -7,12 +9,13 @@ package gtk
 */
 import "C"
 import (
-	"github.com/martine/smash/keys"
-	"github.com/martine/smash/ui"
 	"time"
 	"unsafe"
 
 	"github.com/martine/gocairo/cairo"
+
+	"github.com/martine/smash/keys"
+	"github.com/martine/smash/ui"
 )
 
 type UI struct {

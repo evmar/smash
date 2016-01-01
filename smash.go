@@ -5,7 +5,6 @@ import (
 	"log"
 	"os"
 	"runtime/pprof"
-	"github.com/martine/smash/ui/gtk"
 )
 
 var cpuprofile = flag.String("cpuprofile", "", "write cpu profile to file")
@@ -27,24 +26,7 @@ func main() {
 		defer pprof.StopCPUProfile()
 	}
 
-	ui := gtk.Init()
-	win := &Window{
-		ui:   ui,
-		font: NewMonoFont(),
-	}
-	win.win = ui.NewWindow(win, true)
-	// Use the font once to get its metrics.
-	cr := win.win.GetCairo()
-	win.font.Use(cr, false)
-	w, h := win.font.cw*80, win.font.ch*24
-	win.win.SetSize(w, h)
-	var err error
-	win.view, err = NewLogView(win, h)
-	if err != nil {
-		panic(err)
-	}
-	win.win.Show()
-	ui.Loop()
+	smashMain()
 
 	// For some reason, things wait a bit on shutdown.
 	// Maybe some sort of finalizers running?
