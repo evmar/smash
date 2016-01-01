@@ -69,6 +69,10 @@ func (t *testCompleter) Complete(input string) (int, []string, error) {
 	return t.complete(input)
 }
 
+func (t *testCompleter) Chdir(string) error {
+	return nil
+}
+
 func TestComplete(t *testing.T) {
 	c := &testCompleter{}
 	s := NewShell("", nil, c)

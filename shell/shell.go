@@ -113,8 +113,10 @@ func (s *Shell) builtinCd(argv []string) (string, error) {
 	if !st.IsDir() {
 		return "", fmt.Errorf("%q: not a directory", dir)
 	}
-	if err := s.completer.Chdir(dir); err != nil {
-		return "", err
+	if s.completer != nil {
+		if err := s.completer.Chdir(dir); err != nil {
+			return "", err
+		}
 	}
 	s.Cwd = dir
 	return "", nil

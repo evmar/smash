@@ -32,6 +32,10 @@ func (tpd *testPromptDelegate) Complete(input string) (int, []string, error) {
 	}
 }
 
+func (tpd *testPromptDelegate) Chdir(input string) error {
+	return nil
+}
+
 func TestFilter(t *testing.T) {
 	text, comps := filterPrefix("", []string{})
 	assert.Equal(t, text, "")
