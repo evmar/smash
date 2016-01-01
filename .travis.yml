@@ -8,5 +8,5 @@ addons:
     - libcairo2-dev
 install:
   - ./install-gocairo.sh
-  - go get -tags headless ./...
+  - go get -tags headless .
 script: go test -tags headless ./...
