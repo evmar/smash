@@ -9,7 +9,7 @@ REPO=github.com/martine/gocairo
 
 mkdir -p $GOPATH/src
 cd $GOPATH/src
-git clone --depth=1 git://$REPO $REPO
+git clone --depth=1 --quiet git://$REPO $REPO
 cd $REPO
 
 # install c2go.
