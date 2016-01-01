@@ -1,9 +1,11 @@
+sudo: false
 language: go
 go:
   - 1.5
-before_install:
-  - sudo apt-get update -qq
-  - sudo apt-get install -qq libcairo2-dev
+addons:
+  apt:
+    packages:
+    - libcairo2-dev
 install:
   - ./install-gocairo.sh
   - go get ./...
