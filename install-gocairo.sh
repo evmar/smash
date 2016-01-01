@@ -1,7 +1,5 @@
 #!/bin/sh
 
-set -x
-
 # This script installs gocairo by running its makefile.
 # This is different than "go install ..." because the makefile
 # generates the binding code based on the symbols available in
