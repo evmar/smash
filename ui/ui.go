@@ -1,7 +1,7 @@
 package ui
 
 import (
-	"smash/keys"
+	"github.com/martine/smash/keys"
 
 	"github.com/martine/gocairo/cairo"
 )

@@ -5,11 +5,11 @@ import (
 
 	"github.com/martine/gocairo/cairo"
 
-	"smash/keys"
-	"smash/readline"
-	"smash/shell"
-	"smash/ui"
-	"smash/vt100"
+	"github.com/martine/smash/keys"
+	"github.com/martine/smash/readline"
+	"github.com/martine/smash/shell"
+	"github.com/martine/smash/ui"
+	"github.com/martine/smash/vt100"
 	"strings"
 )
 

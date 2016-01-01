@@ -1,9 +1,9 @@
 package main
 
 import (
-	"smash/readline"
-	"smash/shell"
-	"smash/ui/fake"
+	"github.com/martine/smash/readline"
+	"github.com/martine/smash/shell"
+	"github.com/martine/smash/ui/fake"
 	"testing"
 
 	"github.com/stretchr/testify/assert"

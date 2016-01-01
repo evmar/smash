@@ -5,7 +5,7 @@ import (
 	"log"
 	"os"
 	"runtime/pprof"
-	"smash/ui/gtk"
+	"github.com/martine/smash/ui/gtk"
 )
 
 var cpuprofile = flag.String("cpuprofile", "", "write cpu profile to file")

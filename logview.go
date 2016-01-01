@@ -6,11 +6,11 @@ import (
 
 	"github.com/martine/gocairo/cairo"
 
-	"smash/bash"
-	"smash/keys"
-	"smash/readline"
-	"smash/shell"
-	"smash/ui"
+	"github.com/martine/smash/bash"
+	"github.com/martine/smash/keys"
+	"github.com/martine/smash/readline"
+	"github.com/martine/smash/shell"
+	"github.com/martine/smash/ui"
 )
 
 type LogEntry struct {

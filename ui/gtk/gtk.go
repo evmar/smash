@@ -7,8 +7,8 @@ package gtk
 */
 import "C"
 import (
-	"smash/keys"
-	"smash/ui"
+	"github.com/martine/smash/keys"
+	"github.com/martine/smash/ui"
 	"time"
 	"unsafe"
 

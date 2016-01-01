@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"unicode"
 
-	"smash/keys"
+	"github.com/martine/smash/keys"
 )
 
 type Command func(rl *ReadLine, key keys.Key)

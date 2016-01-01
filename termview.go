@@ -12,8 +12,8 @@ import (
 	"github.com/kr/pty"
 	"github.com/martine/gocairo/cairo"
 
-	"smash/keys"
-	"smash/vt100"
+	"github.com/martine/smash/keys"
+	"github.com/martine/smash/vt100"
 )
 
 type TermView struct {

@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
-	"smash/shell"
+	"github.com/martine/smash/shell"
 )
 
 func main() {

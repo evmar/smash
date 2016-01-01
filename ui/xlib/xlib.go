@@ -18,9 +18,9 @@ import (
 
 	"github.com/martine/gocairo/cairo"
 
-	"smash/base"
-	"smash/keys"
-	"smash/ui"
+	"github.com/martine/smash/base"
+	"github.com/martine/smash/keys"
+	"github.com/martine/smash/ui"
 )
 
 const EINTR syscall.Errno = 4

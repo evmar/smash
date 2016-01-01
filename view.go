@@ -1,8 +1,8 @@
 package main
 
 import (
-	"smash/keys"
-	"smash/ui"
+	"github.com/martine/smash/keys"
+	"github.com/martine/smash/ui"
 
 	"github.com/martine/gocairo/cairo"
 )

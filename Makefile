@@ -1,10 +1,10 @@
 .PHONY: all test godoc cov
 
 all:
-	go install -race smash
+	go install -race .
 
 test:
-	go test smash/...
+	go test ./...
 
 godoc:
 	godoc -http=:6060 &

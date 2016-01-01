@@ -1,7 +1,7 @@
 package fake
 
 import (
-	"smash/ui"
+	"github.com/martine/smash/ui"
 
 	"github.com/martine/gocairo/cairo"
 )
