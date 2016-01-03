@@ -1,6 +1,8 @@
 smash, a terminal emulator experiment  
 Copyright 2015 Evan Martin.
 
+[![Build Status](https://travis-ci.org/martine/smash.svg)](https://travis-ci.org/martine/smash)
+
 All day long I work using a shell under a terminal emulator -- a
 combination of software that hasn't changed much in 30 years.  Why?  I
 use the command line because it is powerful and expressive and because
