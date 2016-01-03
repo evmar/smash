@@ -10,7 +10,8 @@ fundamental idea.
 
 Smash is an attempt to improve the textual user interface while
 preserving the the good parts.  Reasonable people can disagree over
-what exactly that means.  Ideas are welcome.
+what exactly that means.  If this whole idea makes you upset please
+see the first question in the [FAQ](FAQ.md).
 
 ## Features
 
