@@ -1,3 +1,5 @@
+// +build !headless
+
 #include <gtk/gtk.h>
 
 #include "smashgtk.h"
