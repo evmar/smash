@@ -62,6 +62,23 @@ func (a *Attr) SetBackColor(color int) {
 	(*Bits)(a).Set(4, 4, uint(color))
 }
 
+func (a Attr) String() string {
+	fields := []string{}
+	if a.Inverse() {
+		fields = append(fields, "inverse")
+	}
+	if a.Bright() {
+		fields = append(fields, "bright")
+	}
+	if fg := a.Color(); fg != 0 {
+		fields = append(fields, fmt.Sprintf("fg:%d", fg))
+	}
+	if bg := a.BackColor(); bg != 0 {
+		fields = append(fields, fmt.Sprintf("bg:%d", bg))
+	}
+	return fmt.Sprintf("Attr{%s}", strings.Join(fields, ","))
+}
+
 func showCell(ch byte) string {
 	if ch >= ' ' && ch <= '~' {
 		return fmt.Sprintf("'%c'", ch)
