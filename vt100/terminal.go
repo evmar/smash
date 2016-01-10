@@ -62,6 +62,19 @@ func (a *Attr) SetBackColor(color int) {
 	(*Bits)(a).Set(4, 4, uint(color))
 }
 
+func (a Attr) Validate() error {
+	if c := a.Color(); c < 0 || c > 8 {
+		return fmt.Errorf("%s: bad color", a)
+	}
+	if c := a.BackColor(); c < 0 || c > 8 {
+		return fmt.Errorf("%s: bad back color", a)
+	}
+	if uint16(a)&0xFC00 != 0 {
+		return fmt.Errorf("%s: extra bits", uint16(a))
+	}
+	return nil
+}
+
 func (a Attr) String() string {
 	fields := []string{}
 	if a.Inverse() {
@@ -79,7 +92,7 @@ func (a Attr) String() string {
 	return fmt.Sprintf("Attr{%s}", strings.Join(fields, ","))
 }
 
-func showCell(ch byte) string {
+func showChar(ch byte) string {
 	if ch >= ' ' && ch <= '~' {
 		return fmt.Sprintf("'%c'", ch)
 	} else {
@@ -90,6 +103,10 @@ func showCell(ch byte) string {
 type Cell struct {
 	Ch   rune
 	Attr Attr
+}
+
+func (c Cell) String() string {
+	return fmt.Sprintf("Cell{%q, %s}", c.Ch, c.Attr)
 }
 
 type FeatureLog map[string]int
@@ -259,7 +276,7 @@ func (t *Terminal) readEscape(r io.ByteScanner) error {
 		case 'B': // US ASCII
 			// ignore
 		default:
-			t.TODOs.Add("g0 charset %s", showCell(c))
+			t.TODOs.Add("g0 charset %s", showChar(c))
 		}
 	case c == '=':
 		t.TODOs.Add("application keypad")
@@ -307,7 +324,7 @@ func (t *Terminal) readEscape(r io.ByteScanner) error {
 		}
 		t.Mu.Unlock()
 	default:
-		log.Printf("term: unknown escape %s", showCell(c))
+		log.Printf("term: unknown escape %s", showChar(c))
 	}
 	return nil
 }
@@ -317,6 +334,20 @@ func readArgs(args []int, values ...*int) {
 		if i < len(args) {
 			*val = args[i]
 		}
+	}
+}
+
+// mapColor converts a CSI color (e.g. 0=black, 1=red) to the term
+// representation (0=default, 1=black).
+func mapColor(color int, arg int) int {
+	switch {
+	case color == 8:
+		log.Printf("term: bad color %d", arg)
+		return 0
+	case color == 9:
+		return 0
+	default:
+		return color + 1
 	}
 }
 
@@ -521,20 +552,10 @@ L:
 				t.Attr.SetInverse(true)
 			case arg == 27:
 				t.Attr.SetInverse(false)
-			case arg >= 30 && arg <= 40:
-				color := arg - 30
-				if color == 9 {
-					t.Attr.SetColor(0)
-				} else {
-					t.Attr.SetColor(color + 1)
-				}
-			case arg >= 40 && arg <= 50:
-				color := arg - 40
-				if color == 9 {
-					t.Attr.SetBackColor(0)
-				} else {
-					t.Attr.SetBackColor(color + 1)
-				}
+			case arg >= 30 && arg < 40:
+				t.Attr.SetColor(mapColor(arg-30, arg))
+			case arg >= 40 && arg < 50:
+				t.Attr.SetBackColor(mapColor(arg-40, arg))
 			default:
 				log.Printf("term: unknown color %v", args)
 			}
@@ -578,7 +599,7 @@ L:
 			t.TODOs.Add("set scrolling region %v", args)
 		}
 	default:
-		log.Printf("term: unknown CSI %v %s", args, showCell(c))
+		log.Printf("term: unknown CSI %v %s", args, showChar(c))
 	}
 	return nil
 }
@@ -590,7 +611,7 @@ func (t *Terminal) expect(r io.ByteScanner, exp byte) (bool, error) {
 	}
 	ok := c == exp
 	if !ok {
-		log.Printf("expect %s failed, got %s", showCell(exp), showCell(c))
+		log.Printf("expect %s failed, got %s", showChar(exp), showChar(c))
 	}
 	return ok, nil
 }
@@ -624,7 +645,7 @@ func (t *Terminal) readTo(r io.ByteScanner, end byte) ([]byte, error) {
 		}
 		buf = append(buf, c)
 	}
-	return nil, fmt.Errorf("term: readTo(%s) overlong", showCell(end))
+	return nil, fmt.Errorf("term: readTo(%s) overlong", showChar(end))
 }
 
 func (t *Terminal) DisplayString(input string) {
@@ -650,4 +671,17 @@ func (t *Terminal) ToString() string {
 		}
 	}
 	return str
+}
+
+func (t *Terminal) Validate() error {
+	t.Mu.Lock()
+	defer t.Mu.Unlock()
+	for row, l := range t.Lines {
+		for col, c := range l {
+			if err := c.Attr.Validate(); err != nil {
+				return fmt.Errorf("%d:%d: %s", row, col, err)
+			}
+		}
+	}
+	return nil
 }

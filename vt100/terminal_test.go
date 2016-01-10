@@ -285,4 +285,5 @@ func TestAllColors(t *testing.T) {
 	mustRun(t, term, buf.String())
 	x20 := "xxxxxxxxxx" + "xxxxxxxxxx"
 	assert.Equal(t, x20, term.ToString())
+	assert.Nil(t, term.Validate())
 }
