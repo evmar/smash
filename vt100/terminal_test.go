@@ -3,6 +3,7 @@ package vt100
 import (
 	"bufio"
 	"bytes"
+	"fmt"
 	"io"
 	"strings"
 	"testing"
@@ -273,4 +274,15 @@ func TestBinary(t *testing.T) {
 	// mojibake.
 	mustRun(t, term, "\xc8\x00\x64\x00")
 	assert.Equal(t, "@@d@", term.ToString())
+}
+
+func TestAllColors(t *testing.T) {
+	buf := &bytes.Buffer{}
+	for i := 30; i < 50; i++ {
+		fmt.Fprintf(buf, "\x1b[%dmx", i)
+	}
+	term := NewTerminal()
+	mustRun(t, term, buf.String())
+	x20 := "xxxxxxxxxx" + "xxxxxxxxxx"
+	assert.Equal(t, x20, term.ToString())
 }

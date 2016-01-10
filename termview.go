@@ -87,6 +87,7 @@ func drawTerminalLine(cr *cairo.Context, mf *MonoFont, y int, line []vt100.Cell)
 			}
 		}
 
+		log.Printf("%#v, %#v", attr, attr.Color())
 		fg := ansiColor(attr.Color(), attr.Bright(), &black)
 		bg := ansiColor(attr.BackColor(), false, &white)
 		if attr.Inverse() {
