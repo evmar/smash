@@ -461,7 +461,11 @@ L:
 			t.Lines[t.Row] = t.Lines[t.Row][:t.Col]
 			t.Mu.Unlock()
 		case 1:
-			t.TODOs.Add("erase to left")
+			t.Mu.Lock()
+			for i := 0; i < t.Col; i++ {
+				t.Lines[t.Row][i] = Cell{' ', 0}
+			}
+			t.Mu.Unlock()
 		case 2:
 			t.TODOs.Add("erase all line")
 		default:

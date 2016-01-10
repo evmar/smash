@@ -93,6 +93,8 @@ func TestEraseLine(t *testing.T) {
 	term.Col -= 2
 	mustRun(t, term, "\x1b[K")
 	assert.Equal(t, "hel", term.ToString())
+	mustRun(t, term, "\x1b[1K")
+	assert.Equal(t, "   ", term.ToString())
 }
 
 func TestEraseAll(t *testing.T) {
