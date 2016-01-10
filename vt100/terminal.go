@@ -425,6 +425,13 @@ L:
 		t.Col -= dx
 		t.fixPosition()
 		t.Mu.Unlock()
+	case c == 'G': // cursor character absolute
+		x := 1
+		readArgs(args, &x)
+		t.Mu.Lock()
+		t.Col = x - 1
+		t.fixPosition()
+		t.Mu.Unlock()
 	case c == 'H': // move to position
 		row := 1
 		col := 1
