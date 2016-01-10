@@ -422,6 +422,10 @@ L:
 			t.Mu.Lock()
 			t.Lines[t.Row] = t.Lines[t.Row][:t.Col]
 			t.Mu.Unlock()
+		case 1:
+			t.TODOs.Add("erase to left")
+		case 2:
+			t.TODOs.Add("erase all line")
 		default:
 			log.Printf("term: unknown erase in line %v", args)
 		}
@@ -448,6 +452,8 @@ L:
 		copy(l[t.Col:], l[t.Col+arg:])
 		t.Lines[t.Row] = l[:len(l)-arg]
 		t.Mu.Unlock()
+	case c == 'X': // erase characters
+		t.TODOs.Add("erase characters %v", args)
 	case !gtflag && c == 'c': // send device attributes (primary)
 		t.TODOs.Add("send device attributes (primary) %v", args)
 	case gtflag && c == 'c': // send device attributes (secondary)
