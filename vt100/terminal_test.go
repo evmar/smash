@@ -97,9 +97,12 @@ func TestEraseLine(t *testing.T) {
 	assert.Equal(t, "   ", term.ToString())
 }
 
-func TestEraseAll(t *testing.T) {
+func TestEraseDisplay(t *testing.T) {
 	term := NewTerminal()
-	mustRun(t, term, "hello\x1b[2J")
+	mustRun(t, term, "hellofoo\b\b\b")
+	mustRun(t, term, "\x1b[J")
+	assert.Equal(t, "hello", term.ToString())
+	mustRun(t, term, "\x1b[2J")
 	assert.Equal(t, "", term.ToString())
 }
 

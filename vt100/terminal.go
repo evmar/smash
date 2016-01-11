@@ -445,9 +445,17 @@ L:
 		arg := 0
 		readArgs(args, &arg)
 		switch arg {
+		case 0: // erase to end
+			t.Mu.Lock()
+			t.Lines = t.Lines[:t.Row+1]
+			t.Lines[t.Row] = t.Lines[t.Row][:t.Col]
+			t.Mu.Unlock()
 		case 2: // erase all
 			t.Mu.Lock()
 			t.Lines = t.Lines[:0]
+			t.Row = 0
+			t.Col = 0
+			t.fixPosition()
 			t.Mu.Unlock()
 		default:
 			log.Printf("term: unknown erase in display %v", args)
