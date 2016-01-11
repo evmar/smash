@@ -1,5 +1,18 @@
 * feature ideas
 ** mouse position cursor
-* vt100 sequences
+* vt100 impl
+** links
 http://invisible-island.net/xterm/ctlseqs/ctlseqs.html
 http://www.vt100.net/docs/vt100-ug/contents.html
+
+** alternate screens
+The idea is that you can swap to full-screen mode for apps like vi,
+then go back to scrollback mode when you exit.  Users seem to dislike
+it though -- maybe we should impl it in some special way.
+** mtr TODOs
+2016/01/10 10:51:51 TODO: alternate screen buffer true
+2016/01/10 10:51:51 TODO: reset mode 4 true
+2016/01/10 10:51:51 TODO: wraparound mode
+2016/01/10 10:51:51 TODO: erase characters [15]
+2016/01/10 10:51:58 TODO: application cursor keys mode
+2016/01/10 10:51:58 TODO: normal keypad
