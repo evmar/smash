@@ -19,16 +19,26 @@ import (
 )
 
 type UI struct {
+	cKey CKey
 	// Functions enqueued to do work on the main goroutine.
 	enqueued chan func()
 }
 
+func (ui *UI) CKey() *CKey {
+	return &ui.cKey
+}
+
 type Window struct {
+	cKey   CKey
 	gtkWin *C.GtkWidget
 	// Store the delegate here so this interface isn't gc'd.
 	delegate ui.WinDelegate
 
 	anims map[ui.Anim]bool
+}
+
+func (win *Window) CKey() *CKey {
+	return &win.cKey
 }
 
 func Init() *UI {
@@ -39,8 +49,8 @@ func Init() *UI {
 }
 
 //export smashGoIdle
-func smashGoIdle(data unsafe.Pointer) int {
-	ui := (*UI)(data)
+func smashGoIdle(key unsafe.Pointer) int {
+	ui := globalPointerStore.Get(key).(*UI)
 	for {
 		select {
 		case f := <-ui.enqueued:
@@ -59,7 +69,7 @@ func (ui *UI) Enqueue(f func()) {
 	// it's easier to just put the function in a channel that pulls it
 	// back out on the other thread.
 	ui.enqueued <- f
-	C.g_idle_add(C.GSourceFunc(C.smash_idle_cb), C.gpointer(ui))
+	C.g_idle_add(C.GSourceFunc(C.smash_idle_cb), globalPointerStore.Key(ui))
 }
 
 func (_ *UI) NewWindow(delegate ui.WinDelegate, toplevel bool) ui.Win {
@@ -71,7 +81,7 @@ func (_ *UI) NewWindow(delegate ui.WinDelegate, toplevel bool) ui.Win {
 	if toplevel {
 		ctoplevel = C.int(1)
 	}
-	win.gtkWin = C.smash_gtk_new_window(unsafe.Pointer(&win.delegate), ctoplevel)
+	win.gtkWin = C.smash_gtk_new_window(globalPointerStore.Key(win), ctoplevel)
 	return win
 }
 
@@ -89,7 +99,7 @@ func (w *Window) Dirty() {
 
 //export smashGoTick
 func smashGoTick(data unsafe.Pointer) bool {
-	win := (*Window)(data)
+	win := globalPointerStore.Get(data).(*Window)
 	// TODO: use gdk_frame_clock_get_frame_time here instead of Go time.
 	now := time.Now()
 	for anim := range win.anims {
@@ -131,21 +141,21 @@ func (w *Window) Close() {
 
 func (w *Window) AddAnimation(anim ui.Anim) {
 	if len(w.anims) == 0 {
-		C.smash_start_ticks(unsafe.Pointer(w), w.gtkWin)
+		C.smash_start_ticks(globalPointerStore.Key(w), w.gtkWin)
 	}
 	w.anims[anim] = true
 }
 
 //export smashGoDraw
-func smashGoDraw(delegateP unsafe.Pointer, crP unsafe.Pointer) {
-	delegate := (*ui.WinDelegate)(delegateP)
+func smashGoDraw(winKey unsafe.Pointer, crP unsafe.Pointer) {
+	win := globalPointerStore.Get(winKey).(*Window)
 	cr := cairo.BorrowContext(crP)
-	(*delegate).Draw(cr)
+	win.delegate.Draw(cr)
 }
 
 //export smashGoKey
-func smashGoKey(delegateP unsafe.Pointer, gkey *C.GdkEventKey) {
-	delegate := (*ui.WinDelegate)(delegateP)
+func smashGoKey(winKey unsafe.Pointer, gkey *C.GdkEventKey) {
+	win := globalPointerStore.Get(winKey).(*Window)
 
 	switch gkey.keyval {
 	case C.GDK_KEY_Shift_L, C.GDK_KEY_Shift_R,
@@ -165,5 +175,5 @@ func smashGoKey(delegateP unsafe.Pointer, gkey *C.GdkEventKey) {
 	if gkey.state&C.GDK_MOD1_MASK != 0 {
 		key.Mods |= keys.ModMeta
 	}
-	(*delegate).Key(key)
+	win.delegate.Key(key)
 }
