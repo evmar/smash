@@ -204,6 +204,19 @@ impl Term {
 
 fn translate_key(ev: &gdk::EventKey) -> Vec<u8> {
     let keyval = ev.get_keyval();
+    match keyval {
+        gdk::enums::key::Caps_Lock |
+    gdk::enums::key::Control_L |
+    gdk::enums::key::Control_R |
+    gdk::enums::key::Shift_L |
+    gdk::enums::key::Shift_R |
+    gdk::enums::key::Alt_L |
+    gdk::enums::key::Alt_R |
+    gdk::enums::key::Meta_L |
+    gdk::enums::key::Meta_R => return vec![],
+        _ => {}
+    }
+    
     match ev.get_state() {
         gdk::enums::modifier_type::ControlMask => {
             if keyval < 128 {
@@ -216,6 +229,14 @@ fn translate_key(ev: &gdk::EventKey) -> Vec<u8> {
                 }
             }
         }
+        gdk::enums::modifier_type::Mod1Mask => {
+            match keyval as u8 as char {
+                c if c >= 'a' && c <= 'z' => {
+                    return vec![27, c as u8];
+                }
+                _ => {}
+            }
+        }
         s if s == gdk::ModifierType::empty() || s == gdk::enums::modifier_type::ShiftMask => {
             match keyval {
                 7 | 8 | 10 | 13 => return vec![keyval as u8],
@@ -223,15 +244,6 @@ fn translate_key(ev: &gdk::EventKey) -> Vec<u8> {
                 gdk::enums::key::Tab => return vec![9],
                 gdk::enums::key::Return => return vec!['\n' as u8],
                 gdk::enums::key::Escape => return vec![27],
-                gdk::enums::key::Caps_Lock |
-                gdk::enums::key::Control_L |
-                gdk::enums::key::Control_R |
-                gdk::enums::key::Shift_L |
-                gdk::enums::key::Shift_R |
-                gdk::enums::key::Alt_L |
-                gdk::enums::key::Alt_R |
-                gdk::enums::key::Meta_L |
-                gdk::enums::key::Meta_R => return vec![],
                 c if c >= (' ' as u32) && c < 0x7F => {
                     return vec![c as u8];
                 }
