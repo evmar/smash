@@ -197,77 +197,6 @@ impl<'a> VTReader<'a> {
 
         let cmd = self.r.next().unwrap() as char;
         match cmd {
-            'c' if gt => {
-                // send device attributes (secondary)
-                self.w.write("\x1b[41;0;0c".as_bytes()).unwrap();
-            }
-            'h' | 'l' if question => {
-                // set = cmd == 'h'
-                match args[0] {
-                    1 => self.todo("application cursor keys mode"),
-                    12 => self.todo("start blinking cursor"),
-                    25 => self.todo("show/hide cursor"),
-                    1049 => {
-                        self.todo("save cursor");
-                        self.todo("alternate screen buffer");
-                    }
-                    arg => self.todo(format!("?h arg {}", arg)),
-                }
-            }
-            'h' | 'l' => {
-                self.todo(format!("re/set mode {}", args[0]))
-            }
-            'm' => {
-                // character attributes
-                let mut vt = self.vt.lock().unwrap();
-                if args.len() == 0 {
-                    vt.attr.val = 0;
-                }
-                for attr in args {
-                    match *attr {
-                        0 => vt.attr.val = 0,
-                        1 => vt.attr.set_bold(),
-                        7 => vt.attr.set_inverse(true),
-                        27 => vt.attr.set_inverse(false),
-                        v if v >= 30 && v < 39 => vt.attr.set_fg(Some(v - 30)),
-                        39 => vt.attr.set_fg(None),
-                        v if v >= 40 && v < 49 => vt.attr.set_bg(Some(v - 30)),
-                        49 => vt.attr.set_bg(None),
-                        _ => {
-                            self.todo(format!("set attr {}", attr));
-                        }
-                    }
-                }
-            }
-            'n' => {
-                // device status report
-                if args.len() == 1 {
-                    match args[0] {
-                        5 => {
-                            // status report
-                            self.todo("status report");
-                        }
-                        6 => {
-                            // report cursor position
-                            self.todo("cursor pos");
-                        }
-                        _ => {
-                            self.todo(format!("device status {}", args[0]));
-                        }
-                    }
-                }
-            }
-            'r' => {
-                // set scrolling region
-                let vt = self.vt.lock().unwrap();
-                let top = *args.get(0).unwrap_or(&1);
-                let bottom = *args.get(1).unwrap_or(&vt.height);
-                if top == 1 && bottom == vt.height {
-                    // full window
-                } else {
-                    self.todo(format!("set scrolling region: {}:{}", top, bottom));
-                }
-            }
             '@' => {
                 // insert blanks
                 let count = *args.get(0).unwrap_or(&1);
@@ -351,6 +280,77 @@ impl<'a> VTReader<'a> {
                 }
                 let newlen = line.len() - count;
                 line.truncate(newlen - count);
+            }
+            'c' if gt => {
+                // send device attributes (secondary)
+                self.w.write("\x1b[41;0;0c".as_bytes()).unwrap();
+            }
+            'h' | 'l' if question => {
+                // set = cmd == 'h'
+                match args[0] {
+                    1 => self.todo("application cursor keys mode"),
+                    12 => self.todo("start blinking cursor"),
+                    25 => self.todo("show/hide cursor"),
+                    1049 => {
+                        self.todo("save cursor");
+                        self.todo("alternate screen buffer");
+                    }
+                    arg => self.todo(format!("?h arg {}", arg)),
+                }
+            }
+            'h' | 'l' => {
+                self.todo(format!("re/set mode {}", args[0]))
+            }
+            'm' => {
+                // character attributes
+                let mut vt = self.vt.lock().unwrap();
+                if args.len() == 0 {
+                    vt.attr.val = 0;
+                }
+                for attr in args {
+                    match *attr {
+                        0 => vt.attr.val = 0,
+                        1 => vt.attr.set_bold(),
+                        7 => vt.attr.set_inverse(true),
+                        27 => vt.attr.set_inverse(false),
+                        v if v >= 30 && v < 39 => vt.attr.set_fg(Some(v - 30)),
+                        39 => vt.attr.set_fg(None),
+                        v if v >= 40 && v < 49 => vt.attr.set_bg(Some(v - 30)),
+                        49 => vt.attr.set_bg(None),
+                        _ => {
+                            self.todo(format!("set attr {}", attr));
+                        }
+                    }
+                }
+            }
+            'n' => {
+                // device status report
+                if args.len() == 1 {
+                    match args[0] {
+                        5 => {
+                            // status report
+                            self.todo("status report");
+                        }
+                        6 => {
+                            // report cursor position
+                            self.todo("cursor pos");
+                        }
+                        _ => {
+                            self.todo(format!("device status {}", args[0]));
+                        }
+                    }
+                }
+            }
+            'r' => {
+                // set scrolling region
+                let vt = self.vt.lock().unwrap();
+                let top = *args.get(0).unwrap_or(&1);
+                let bottom = *args.get(1).unwrap_or(&vt.height);
+                if top == 1 && bottom == vt.height {
+                    // full window
+                } else {
+                    self.todo(format!("set scrolling region: {}:{}", top, bottom));
+                }
             }
             c => self.todo(format!("unhandled CSI {}", c)),
         }
