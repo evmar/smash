@@ -244,10 +244,15 @@ impl<'a> VTReader<'a> {
                 let mut vt = self.vt.lock().unwrap();
                 match *args.get(0).unwrap_or(&0) {
                     2 => {
-                        let top = vt.top;
-                        vt.lines.truncate(top + 1);
-                        vt.row = top;
-                        vt.col = 0;
+                        let (top, height) = (vt.top, vt.height);
+                        let end = if top + height > vt.lines.len() {
+                            vt.lines.len()
+                        } else {
+                            top + height
+                        };
+                        for line in vt.lines[top..end].iter_mut() {
+                            line.clear();
+                        }
                     }
                     x => self.todo(format!("erase in display {}", x)),
                 }
