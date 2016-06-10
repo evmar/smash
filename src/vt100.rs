@@ -212,8 +212,8 @@ impl<'a> VTReader<'a> {
                     arg => self.todo(format!("?h arg {}", arg)),
                 }
             }
-            'l' if question => {
-                self.todo("dec private mode");
+            'h' | 'l' => {
+                self.todo(format!("re/set mode {}", args[0]))
             }
             'm' => {
                 // character attributes
@@ -273,6 +273,12 @@ impl<'a> VTReader<'a> {
                 if vt.row > dy {
                     vt.row -= dy;
                 }
+            }
+            'B' => {
+                // cursor down
+                let dy = *args.get(0).unwrap_or(&1);
+                let mut vt = self.vt.lock().unwrap();
+                vt.row += dy;
             }
             'C' => {
                 // cursor forward
