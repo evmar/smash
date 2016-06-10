@@ -66,6 +66,8 @@ impl Attr {
 }
 
 #[derive(Debug)]
+#[derive(Copy)]
+#[derive(Clone)]
 pub struct Cell {
     pub ch: char,
     pub attr: Attr,
@@ -266,6 +268,15 @@ impl<'a> VTReader<'a> {
                     self.todo(format!("set scrolling region: {}:{}", top, bottom));
                 }
             }
+            '@' => {
+                // insert blanks
+                let count = *args.get(0).unwrap_or(&1);
+                let mut vt = self.vt.lock().unwrap();
+                for _ in 0..count {
+                    vt.ensure_pos();
+                    vt.col += 1;
+                }
+            }
             'A' => {
                 // cursor up
                 let dy = *args.get(0).unwrap_or(&1);
@@ -327,7 +338,21 @@ impl<'a> VTReader<'a> {
                     }
                 }
             }
-            c => panic!("unhandled CSI {}", c),
+            'P' => {
+                let count = *args.get(0).unwrap_or(&1);
+                let mut vt = self.vt.lock().unwrap();
+                let (row, col) = (vt.row, vt.col);
+                let line = &mut vt.lines[row];
+                for i in 0..count {
+                    if col + count + i >= line.len() {
+                        break;
+                    }
+                    line[col + i] = line[col + count + i];
+                }
+                let newlen = line.len() - count;
+                line.truncate(newlen - count);
+            }
+            c => self.todo(format!("unhandled CSI {}", c)),
         }
     }
 
