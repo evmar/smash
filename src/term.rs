@@ -223,6 +223,7 @@ fn translate_key(ev: &gdk::EventKey) -> Vec<u8> {
                 gdk::enums::key::Tab => return vec![9],
                 gdk::enums::key::Return => return vec!['\n' as u8],
                 gdk::enums::key::Escape => return vec![27],
+                gdk::enums::key::Caps_Lock |
                 gdk::enums::key::Control_L |
                 gdk::enums::key::Control_R |
                 gdk::enums::key::Shift_L |
