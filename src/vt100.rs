@@ -401,10 +401,10 @@ impl<'a> VTReader<'a> {
     fn read_utf8(&mut self) -> u32 {
         let c = self.r.next().unwrap();
         let (n, mut rune) = {
-            if c & 0b11100000 == 0b11000000 {
-                (1, (c & 0b00011111) as u32)
-            } else if c & 0b11110000 == 0b11100000 {
-                (2, (c & 0b00001111) as u32)
+            if c >> 5 == 0b110 {
+                (1, (c & 0b11111) as u32)
+            } else if c >> 4 == 0b1110 {
+                (2, (c & 0b1111) as u32)
             } else {
                 return '?' as u32;
             }
@@ -412,8 +412,8 @@ impl<'a> VTReader<'a> {
 
         for _ in 0..n {
             let c = self.r.next().unwrap();
-            if c & 0b11000000 == 0b10000000 {
-                rune = rune << 6 | (c & 0b00111111) as u32;
+            if c >> 6 == 0b10 {
+                rune = rune << 6 | (c & 0b111111) as u32;
             } else {
                 self.r.back();
                 return '?' as u32;
