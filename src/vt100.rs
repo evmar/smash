@@ -298,9 +298,7 @@ impl<'a> VTReader<'a> {
                     arg => self.todo(format!("?h arg {}", arg)),
                 }
             }
-            'h' | 'l' => {
-                self.todo(format!("re/set mode {}", args[0]))
-            }
+            'h' | 'l' => self.todo(format!("re/set mode {}", args[0])),
             'm' => {
                 // character attributes
                 let mut vt = self.vt.lock().unwrap();

@@ -56,9 +56,7 @@ pub struct Term {
 impl Term {
     pub fn new(font_extents: cairo::FontExtents, dirty: Box<Fn() + Send + Sync>) -> Term {
         let (mut rf, stdin) = pty::bash();
-        let stdin2 = unsafe {
-            fs::File::from_raw_fd(stdin.as_raw_fd())
-        };
+        let stdin2 = unsafe { fs::File::from_raw_fd(stdin.as_raw_fd()) };
 
         let term = Term {
             font_metrics: font_extents,
@@ -206,17 +204,17 @@ fn translate_key(ev: &gdk::EventKey) -> Vec<u8> {
     let keyval = ev.get_keyval();
     match keyval {
         gdk::enums::key::Caps_Lock |
-    gdk::enums::key::Control_L |
-    gdk::enums::key::Control_R |
-    gdk::enums::key::Shift_L |
-    gdk::enums::key::Shift_R |
-    gdk::enums::key::Alt_L |
-    gdk::enums::key::Alt_R |
-    gdk::enums::key::Meta_L |
-    gdk::enums::key::Meta_R => return vec![],
+        gdk::enums::key::Control_L |
+        gdk::enums::key::Control_R |
+        gdk::enums::key::Shift_L |
+        gdk::enums::key::Shift_R |
+        gdk::enums::key::Alt_L |
+        gdk::enums::key::Alt_R |
+        gdk::enums::key::Meta_L |
+        gdk::enums::key::Meta_R => return vec![],
         _ => {}
     }
-    
+
     match ev.get_state() {
         gdk::enums::modifier_type::ControlMask => {
             if keyval < 128 {
