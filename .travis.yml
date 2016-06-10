@@ -1,2 +1,6 @@
+addons:
+  apt:
+    packages:
+    - libpango1.0-dev
 sudo: false
 language: rust
