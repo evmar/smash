@@ -4,7 +4,7 @@ dist: trusty
 
 before_install:
   - sudo apt-get update -qq
-  - sudo apt-get install -qq libatk1.0-dev
+  - sudo apt-get install -qq libatk1.0-dev libpango1.0-dev
 
 language: rust
 cache: cargo
