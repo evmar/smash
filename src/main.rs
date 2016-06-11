@@ -28,7 +28,7 @@ thread_local!(
 );
 
 struct State {
-    win: gtk::Window,
+    // win: gtk::Window,
     term: Term,
     dirty: Arc<Mutex<bool>>,
 }
@@ -81,7 +81,7 @@ fn wmain() {
         Term::new(font_extents, Box::new(move || mark_dirty(&dirty)))
     };
     let state = Rc::new(RefCell::new(State {
-        win: win.clone(),
+        // win: win.clone(),
         dirty: dirty,
         term: term,
     }));
