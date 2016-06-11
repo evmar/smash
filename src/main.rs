@@ -73,7 +73,7 @@ fn wmain() {
     };
 
     win.resize(80 * font_extents.max_x_advance as i32,
-               24 * font_extents.height as i32);
+               25 * font_extents.height as i32);
 
     let dirty = Arc::new(Mutex::new(false));
     let term = {

@@ -3,6 +3,7 @@ extern crate libc;
 use std::ffi::CString;
 use std::fs;
 use std::os::unix::io::FromRawFd;
+use std::os::unix::io::AsRawFd;
 use std::ptr;
 
 pub fn bash() -> (fs::File, fs::File) {
@@ -26,5 +27,20 @@ pub fn bash() -> (fs::File, fs::File) {
                 return (fs::File::from_raw_fd(fd), fs::File::from_raw_fd(fd));
             }
         }
+    }
+}
+
+pub fn set_size(f: &fs::File, rows: u16, cols: u16) {
+    let winsize = libc::winsize {
+        ws_row: rows,
+        ws_col: cols,
+        ws_xpixel: 0,
+        ws_ypixel: 0,
+    };
+    let err = unsafe {
+        libc::ioctl(f.as_raw_fd(), libc::TIOCSWINSZ, &winsize)
+    };
+    if err < 0 {
+        println!("TIOCSWINSZ {:?}", err);
     }
 }

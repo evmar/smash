@@ -56,6 +56,7 @@ pub struct Term {
 impl Term {
     pub fn new(font_extents: cairo::FontExtents, dirty: Box<Fn() + Send + Sync>) -> Term {
         let (mut rf, stdin) = pty::bash();
+        pty::set_size(&stdin, 25, 80);
         let stdin2 = unsafe { fs::File::from_raw_fd(stdin.as_raw_fd()) };
 
         let term = Term {

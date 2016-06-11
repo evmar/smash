@@ -91,7 +91,7 @@ impl VT {
     pub fn new() -> VT {
         VT {
             lines: Vec::new(),
-            height: 24,
+            height: 25,
             top: 0,
             row: 0,
             col: 0,
@@ -397,6 +397,13 @@ impl<'a> VTReader<'a> {
             '[' => self.read_csi(),
             ']' => self.read_osc(),
             '>' => self.todo("normal keypad"),
+            'M' => {
+                // move up/insert line
+                let mut vt = self.vt.lock().unwrap();
+                vt.ensure_pos();
+                let top = vt.top;
+                vt.lines.insert(top, Box::new(Vec::new()));
+            }
             c => panic!("notimpl: esc {}", c),
         }
     }
