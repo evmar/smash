@@ -1,18 +1,19 @@
 extern crate cairo;
 extern crate gdk;
 
-use std::sync::Mutex;
-use std::sync::Arc;
-use std::str;
-use std::thread;
-use vt100;
-use pty;
-use std::time;
-use std::fs;
 use gtk::prelude::*;
+use std::fs;
 use std::io::Write;
 use std::os::unix::io::AsRawFd;
 use std::os::unix::io::FromRawFd;
+use std::str;
+use std::sync::Arc;
+use std::sync::Mutex;
+use std::thread;
+use std::time;
+
+use pty;
+use vt100;
 
 type Color = (u8, u8, u8);
 const DEFAULT_BG: Color = (0xf7, 0xf7, 0xf7);
