@@ -77,6 +77,8 @@ pub struct VT {
     pub lines: Vec<Box<Vec<Cell>>>,
     /// The number of lines visible on screen.
     pub height: usize,
+    /// The number of columns visible on screen.
+    pub width: usize,
     /// The index of the first visible line on screen.
     pub top: usize,
     /// The index of the line the cursor is on, relative to the lines buffer.
@@ -92,6 +94,7 @@ impl VT {
         VT {
             lines: Vec::new(),
             height: 25,
+            width: 80,
             top: 0,
             row: 0,
             col: 0,
@@ -466,7 +469,11 @@ impl<'a> VTReader<'a> {
                     ch: c,
                     attr: vt.attr.clone(),
                 };
-                vt.col += 1
+                vt.col += 1;
+                if vt.col >= vt.width {
+                    vt.row += 1;
+                    vt.col = 0;
+                }
             }
             c if c as u8 >= 0x80 => {
                 self.r.back();
