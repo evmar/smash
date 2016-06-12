@@ -230,25 +230,16 @@ fn translate_key(ev: &gdk::EventKey) -> Vec<u8> {
             }
         }
         gdk::enums::modifier_type::Mod1Mask => {
-            match keyval as u8 as char {
-                c if c >= 'a' && c <= 'z' => {
-                    return vec![27, c as u8];
-                }
+            match gdk::keyval_to_unicode(keyval) {
+                Some(u) if u < 128 as char => return vec![27, u as u8],
                 _ => {}
             }
         }
         s if s == gdk::ModifierType::empty() || s == gdk::enums::modifier_type::ShiftMask => {
-            match keyval {
-                7 | 8 | 10 | 13 => return vec![keyval as u8],
-                gdk::enums::key::BackSpace => return vec![8],
-                gdk::enums::key::Tab => return vec![9],
-                gdk::enums::key::Return => return vec!['\n' as u8],
-                gdk::enums::key::Escape => return vec![27],
-                c if c >= (' ' as u32) && c < 0x7F => {
-                    return vec![c as u8];
-                }
+            match gdk::keyval_to_unicode(keyval) {
+                Some(u) if u < 128 as char => return vec![u as u8],
                 _ => {}
-            };
+            }
         }
         _ => {}
     }
