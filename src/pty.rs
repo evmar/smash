@@ -37,9 +37,7 @@ pub fn set_size(f: &fs::File, rows: u16, cols: u16) {
         ws_xpixel: 0,
         ws_ypixel: 0,
     };
-    let err = unsafe {
-        libc::ioctl(f.as_raw_fd(), libc::TIOCSWINSZ, &winsize)
-    };
+    let err = unsafe { libc::ioctl(f.as_raw_fd(), libc::TIOCSWINSZ, &winsize) };
     if err < 0 {
         println!("TIOCSWINSZ {:?}", err);
     }
