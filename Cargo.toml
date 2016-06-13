@@ -12,3 +12,6 @@ libc = "0.2.11"
 [dependencies.gtk]
 version = "0.0.7"
 features = ["v3_8", "embed-lgpl-docs"]
+
+[profile.release]
+debug = true

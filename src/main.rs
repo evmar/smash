@@ -13,8 +13,9 @@ use std::cell::RefCell;
 use std::clone::Clone;
 use std::rc::Rc;
 use std::sync::Arc;
-use std::sync::Mutex;
 use term::Term;
+use std::sync::atomic;
+use std::sync::atomic::AtomicBool;
 
 // This file is full of nasty hacks because the Rust GTK bindings are
 // still a work in progress.  In particular, callbacks are tricky (because
@@ -30,7 +31,7 @@ thread_local!(
 struct State {
     // win: gtk::Window,
     term: Term,
-    dirty: Arc<Mutex<bool>>,
+    dirty: Arc<AtomicBool>,
 }
 
 impl State {
@@ -39,14 +40,16 @@ impl State {
     }
 }
 
-fn mark_dirty(dirty: &Arc<Mutex<bool>>) {
-    let mut dirty = dirty.lock().unwrap();
-    if *dirty {
+fn mark_dirty(dirty: &Arc<AtomicBool>) {
+    let was_dirty = dirty.compare_and_swap(false, true, atomic::Ordering::Relaxed);
+    if was_dirty {
         return;
     }
-    *dirty = true;
 
-    glib::idle_add(|| {
+    // Enqueue a repaint, but put a bit of delay in it; this allows this thread
+    // to do a bit more work before the paint happens.
+    // TODO: ensure this actually matters in profiles.
+    glib::timeout_add(10, || {
         TLS_WIN.with(|w| {
             if let Some(ref w) = *w.borrow() {
                 w.queue_draw();
@@ -75,7 +78,7 @@ fn wmain() {
     win.resize(80 * font_extents.max_x_advance as i32,
                25 * font_extents.height as i32);
 
-    let dirty = Arc::new(Mutex::new(false));
+    let dirty = Arc::new(AtomicBool::new(false));
     let term = {
         let dirty = dirty.clone();
         Term::new(font_extents, Box::new(move || mark_dirty(&dirty)))
@@ -96,8 +99,8 @@ fn wmain() {
         let state = state.clone();
         win.connect_draw(move |_, cr| {
             let mut state = state.borrow_mut();
-            *state.dirty.lock().unwrap() = false;
             state.draw(cr);
+            state.dirty.store(false, atomic::Ordering::Relaxed);
             Inhibit(false)
         });
     }

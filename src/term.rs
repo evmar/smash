@@ -143,7 +143,7 @@ impl Term {
 
     pub fn draw(&mut self, cr: &cairo::Context) {
         let now = time::Instant::now();
-        if false {
+        if true {
             println!("paint after {:?}",
                      duration_in_ms(now.duration_since(self.last_paint)));
         }

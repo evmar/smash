@@ -104,7 +104,7 @@ impl VT {
 
     pub fn ensure_pos(&mut self) -> &mut Cell {
         while self.row >= self.lines.len() {
-            self.lines.push(Box::new(Vec::new()));
+            self.lines.push(Box::new(Vec::with_capacity(self.width)));
         }
         let mut row = &mut self.lines[self.row];
         while self.col >= row.len() {
