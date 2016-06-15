@@ -46,7 +46,8 @@ impl Attr {
     pub fn set_fg(&mut self, color: Option<usize>) {
         let val = match color {
             None => 0,
-            Some(c) => c + 1,
+            Some(c) if c < 8 => c + 1,
+            Some(c) => panic!("bad color {}", c)
         };
         self.val = self.val & 0xFFF0 | val as u16;
     }
@@ -59,7 +60,8 @@ impl Attr {
     pub fn set_bg(&mut self, color: Option<usize>) {
         let val = match color {
             None => 0,
-            Some(c) => c + 1,
+            Some(c) if c < 8 => c + 1,
+            Some(c) => panic!("bad color {}", c)
         };
         self.val = self.val & 0xFF0F | ((val as u16) << 4);
     }
@@ -332,7 +334,7 @@ impl<'a> VTReader<'a> {
                         27 => vt.attr.set_inverse(false),
                         v if v >= 30 && v < 39 => vt.attr.set_fg(Some(v - 30)),
                         39 => vt.attr.set_fg(None),
-                        v if v >= 40 && v < 49 => vt.attr.set_bg(Some(v - 30)),
+                        v if v >= 40 && v < 49 => vt.attr.set_bg(Some(v - 40)),
                         49 => vt.attr.set_bg(None),
                         _ => {
                             self.todo(format!("set attr {}", attr));
