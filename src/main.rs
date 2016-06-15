@@ -41,7 +41,7 @@ impl State {
 }
 
 fn mark_dirty(dirty: &Arc<AtomicBool>) {
-    let was_dirty = dirty.compare_and_swap(false, true, atomic::Ordering::Relaxed);
+    let was_dirty = dirty.compare_and_swap(false, true, atomic::Ordering::SeqCst);
     if was_dirty {
         return;
     }
@@ -100,7 +100,7 @@ fn wmain() {
         win.connect_draw(move |_, cr| {
             let mut state = state.borrow_mut();
             state.draw(cr);
-            state.dirty.store(false, atomic::Ordering::Relaxed);
+            state.dirty.store(false, atomic::Ordering::SeqCst);
             Inhibit(false)
         });
     }
