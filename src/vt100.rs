@@ -103,6 +103,10 @@ impl VT {
     }
 
     pub fn ensure_pos(&mut self) -> &mut Cell {
+        if self.col >= self.width {
+            self.row += 1;
+            self.col = 0;
+        }
         while self.row >= self.lines.len() {
             self.lines.push(Box::new(Vec::with_capacity(self.width)));
         }
@@ -265,10 +269,13 @@ impl<'a> VTReader<'a> {
                     0 => {
                         // Erase to Right.
                         let mut vt = self.vt.lock().unwrap();
-                        vt.ensure_pos();
-                        let row = vt.row;
-                        let col = vt.col;
-                        vt.lines[row].truncate(col);
+                        if vt.row < vt.lines.len() {
+                            let row = vt.row;
+                            if vt.col < vt.lines[row].len() {
+                                let col = vt.col;
+                                vt.lines[row].truncate(col);
+                            }
+                        }
                     }
                     mode => {
                         self.todo(format!("erase in line {:?}", mode));
@@ -470,10 +477,6 @@ impl<'a> VTReader<'a> {
                     attr: vt.attr.clone(),
                 };
                 vt.col += 1;
-                if vt.col >= vt.width {
-                    vt.row += 1;
-                    vt.col = 0;
-                }
             }
             c if c as u8 >= 0x80 => {
                 self.r.back();
