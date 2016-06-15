@@ -177,7 +177,7 @@ impl Term {
             cr.restore();
         }
 
-        {
+        if !vt.hide_cursor {
             cr.save();
             cr.translate(0.0, ((vt.row - vt.top) as f64 * self.font_metrics.height));
             let (ch, mut attr) = {

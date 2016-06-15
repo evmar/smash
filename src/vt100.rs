@@ -85,6 +85,8 @@ pub struct VT {
     pub row: usize,
     /// The column the cursor is on.
     pub col: usize,
+    /// True if the cursor shouldn't be displayed.
+    pub hide_cursor: bool,
     /// The current display attributes, to be used when text is added.
     pub attr: Attr,
 }
@@ -98,6 +100,7 @@ impl VT {
             top: 0,
             row: 0,
             col: 0,
+            hide_cursor: false,
             attr: Attr { val: 0 },
         }
     }
@@ -301,11 +304,12 @@ impl<'a> VTReader<'a> {
                 self.w.write("\x1b[41;0;0c".as_bytes()).unwrap();
             }
             'h' | 'l' if question => {
-                // set = cmd == 'h'
+                let set = cmd == 'h';
+                let mut vt = self.vt.lock().unwrap();
                 match args[0] {
                     1 => self.todo("application cursor keys mode"),
                     12 => self.todo("start blinking cursor"),
-                    25 => self.todo("show/hide cursor"),
+                    25 => vt.hide_cursor = !set,
                     1049 => {
                         self.todo("save cursor");
                         self.todo("alternate screen buffer");
