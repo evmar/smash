@@ -287,6 +287,12 @@ impl<'a> VTReader<'a> {
                     }
                 }
             }
+            'L' => {
+                let mut vt = self.vt.lock().unwrap();
+                vt.ensure_pos();
+                let row = vt.row;
+                vt.lines.insert(row, Box::new(Vec::new()));
+            }
             'P' => {
                 let count = *args.get(0).unwrap_or(&1);
                 let mut vt = self.vt.lock().unwrap();
@@ -304,6 +310,11 @@ impl<'a> VTReader<'a> {
             'c' if gt => {
                 // send device attributes (secondary)
                 self.w.write("\x1b[41;0;0c".as_bytes()).unwrap();
+            }
+            'd' => {
+                let mut vt = self.vt.lock().unwrap();
+                let row = *args.get(0).unwrap_or(&1) - 1;
+                vt.row = vt.top + row;
             }
             'h' | 'l' if question => {
                 let set = cmd == 'h';
