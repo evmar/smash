@@ -56,9 +56,9 @@ pub struct Term {
 
 impl Term {
     pub fn new(font_extents: cairo::FontExtents, dirty: Box<Fn() + Send + Sync>) -> Term {
-        let (mut rf, stdin) = pty::bash();
-        pty::set_size(&stdin, 25, 80);
-        let stdin2 = unsafe { fs::File::from_raw_fd(stdin.as_raw_fd()) };
+        let (rf, wf) = pty::bash();
+        pty::set_size(&rf, 25, 80);
+        let stdin = unsafe { fs::File::from_raw_fd(wf.as_raw_fd()) };
 
         let term = Term {
             font_metrics: font_extents,
@@ -72,7 +72,7 @@ impl Term {
             let vt = term.vt.clone();
             let dirty = term.dirty.clone();
             thread::spawn(move || {
-                let mut r = vt100::VTReader::new(&*vt, &mut rf, stdin2);
+                let mut r = vt100::VTReader::new(&*vt, rf, wf);
                 while r.read() {
                     dirty();
                 }

@@ -6,15 +6,15 @@ const EIO: libc::c_int = 5;
 
 /// ByteScanner supports reading a byte at a time from an io::Read
 /// as well as backing up by one byte.  Internally it buffers.
-pub struct ByteScanner<'a, R: 'a + Read> {
+pub struct ByteScanner<R: Read> {
     buf: [u8; 4 << 10],
     ofs: usize,
     len: usize,
-    r: &'a mut R,
+    r: R,
 }
 
-impl<'a, R: Read> ByteScanner<'a, R> {
-    pub fn new(r: &'a mut R) -> ByteScanner<'a, R> {
+impl<R: Read> ByteScanner<R> {
+    pub fn new(r: R) -> ByteScanner<R> {
         ByteScanner {
             buf: [0; 4 << 10],
             ofs: 0,
@@ -55,7 +55,7 @@ impl<'a, R: Read> ByteScanner<'a, R> {
 }
 
 /// Non-consuming iterator implementation.
-impl<'z, 'a, R: Read> Iterator for &'z mut ByteScanner<'a, R> {
+impl<'a, R: Read> Iterator for &'a mut ByteScanner<R> {
     type Item = u8;
     fn next(&mut self) -> Option<u8> {
         (*self).next()

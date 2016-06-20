@@ -47,7 +47,7 @@ impl Attr {
         let val = match color {
             None => 0,
             Some(c) if c < 8 => c + 1,
-            Some(c) => panic!("bad color {}", c)
+            Some(c) => panic!("bad color {}", c),
         };
         self.val = self.val & 0xFFF0 | val as u16;
     }
@@ -61,7 +61,7 @@ impl Attr {
         let val = match color {
             None => 0,
             Some(c) if c < 8 => c + 1,
-            Some(c) => panic!("bad color {}", c)
+            Some(c) => panic!("bad color {}", c),
         };
         self.val = self.val & 0xFF0F | ((val as u16) << 4);
     }
@@ -145,12 +145,12 @@ impl VT {
 pub struct VTReader<'a> {
     todo: HashSet<String>,
     vt: &'a Mutex<VT>,
-    r: ByteScanner<'a, fs::File>,
+    r: ByteScanner<fs::File>,
     w: fs::File,
 }
 
 impl<'a> VTReader<'a> {
-    pub fn new(vt: &'a Mutex<VT>, r: &'a mut fs::File, w: fs::File) -> VTReader<'a> {
+    pub fn new(vt: &'a Mutex<VT>, r: fs::File, w: fs::File) -> VTReader<'a> {
         VTReader {
             todo: HashSet::new(),
             vt: vt,
