@@ -1,9 +1,23 @@
+extern crate libc;
+
 use std::fmt::Display;
 use std::fs;
+use std::io::Read;
 use std::io::Write;
 use std::collections::hash_set::HashSet;
 use std::sync::Mutex;
 use byte_scanner::ByteScanner;
+
+const EIO: libc::c_int = 5;
+
+macro_rules! probe {
+    ( $x:expr ) => {{
+        match $x {
+            Some(x) => x,
+            None => return None
+        }
+    }}
+}
 
 // xxxx xxIB AAAA CCCC
 //  I = inverse
@@ -145,16 +159,16 @@ impl VT {
 pub struct VTReader<'a> {
     todo: HashSet<String>,
     vt: &'a Mutex<VT>,
-    r: ByteScanner<fs::File>,
+    r: ByteScanner,
     w: fs::File,
 }
 
 impl<'a> VTReader<'a> {
-    pub fn new(vt: &'a Mutex<VT>, r: fs::File, w: fs::File) -> VTReader<'a> {
+    pub fn new(vt: &'a Mutex<VT>, w: fs::File) -> VTReader<'a> {
         VTReader {
             todo: HashSet::new(),
             vt: vt,
-            r: ByteScanner::new(r),
+            r: ByteScanner::new(),
             w: w,
         }
     }
@@ -166,28 +180,28 @@ impl<'a> VTReader<'a> {
         }
     }
 
-    fn read_num(&mut self) -> usize {
+    fn read_num(&mut self) -> Option<usize> {
         let mut num = 0;
         loop {
-            let c = self.r.next().unwrap();
+            let c = probe!(self.r.next());
             match c as char {
                 '0'...'9' => num = num * 10 + ((c - ('0' as u8)) as usize),
                 _ => {
                     self.r.back();
-                    return num;
+                    return Some(num);
                 }
             }
         }
     }
 
-    fn read_csi(&mut self) {
+    fn read_csi(&mut self) -> Option<()> {
         let mut question = false;
         let mut gt = false;
 
         let mut args: [usize; 2] = [0; 2];
         let mut argc = 0;
         loop {
-            match self.r.next().unwrap() as char {
+            match probe!(self.r.next()) as char {
                 '?' => question = true,
                 '>' => gt = true,
                 '0'...'9' => {
@@ -195,7 +209,7 @@ impl<'a> VTReader<'a> {
                     if argc == args.len() {
                         panic!("too many args")
                     }
-                    args[argc] = self.read_num();
+                    args[argc] = probe!(self.read_num());
                     argc += 1;
                 }
                 ';' => {}
@@ -207,7 +221,7 @@ impl<'a> VTReader<'a> {
         }
         let args = &args[..argc];
 
-        let cmd = self.r.next().unwrap() as char;
+        let cmd = probe!(self.r.next()) as char;
         match cmd {
             '@' => {
                 // insert blanks
@@ -384,17 +398,18 @@ impl<'a> VTReader<'a> {
             }
             c => self.todo(format!("unhandled CSI {}", c)),
         }
+        return Some(());
     }
 
-    fn read_osc(&mut self) {
-        let cmd = self.read_num();
-        match self.r.next().unwrap() as char {
+    fn read_osc(&mut self) -> Option<()> {
+        let cmd = probe!(self.read_num());
+        match probe!(self.r.next()) as char {
             ';' => {}
             _ => panic!("unexpected OSC"),
         }
         let mut text = String::new();
-        for c in &mut self.r {
-            match c {
+        loop {
+            match probe!(self.r.next()) {
                 0 | 7 => break,
                 c => text.push(c as char),
             }
@@ -408,12 +423,13 @@ impl<'a> VTReader<'a> {
             }
             _ => self.todo(format!("todo: osc {} {:?}", cmd, text)),
         }
+        Some(())
     }
 
-    fn read_escape(&mut self) {
-        match self.r.next().unwrap() as char {
+    fn read_escape(&mut self) -> Option<()> {
+        match probe!(self.r.next()) as char {
             '(' => {
-                match self.r.next().unwrap() as char {
+                match probe!(self.r.next()) as char {
                     'B' => {
                         // US ASCII
                     }
@@ -421,8 +437,8 @@ impl<'a> VTReader<'a> {
                 }
             }
             '=' => self.todo("application keypad"),
-            '[' => self.read_csi(),
-            ']' => self.read_osc(),
+            '[' => probe!(self.read_csi()),
+            ']' => probe!(self.read_osc()),
             '>' => self.todo("normal keypad"),
             'M' => {
                 // move up/insert line
@@ -433,39 +449,35 @@ impl<'a> VTReader<'a> {
             }
             c => panic!("notimpl: esc {}", c),
         }
+        return Some(());
     }
 
-    fn read_utf8(&mut self) -> u32 {
-        let c = self.r.next().unwrap();
+    fn read_utf8(&mut self) -> Option<u32> {
+        let c = probe!(self.r.next());
         let (n, mut rune) = {
             if c >> 5 == 0b110 {
                 (1, (c & 0b11111) as u32)
             } else if c >> 4 == 0b1110 {
                 (2, (c & 0b1111) as u32)
             } else {
-                return '?' as u32;
+                return Some('?' as u32);
             }
         };
 
         for _ in 0..n {
-            let c = self.r.next().unwrap();
+            let c = probe!(self.r.next());
             if c >> 6 == 0b10 {
                 rune = rune << 6 | (c & 0b111111) as u32;
             } else {
                 self.r.back();
-                return '?' as u32;
+                return Some('?' as u32);
             }
         }
-        rune
+        Some(rune)
     }
 
-    pub fn read(&mut self) -> bool {
-        let c = match self.r.next() {
-            None => return false,
-            Some(c) => c,
-        };
-
-        match c as char {
+    fn read_begin(&mut self) -> Option<()> {
+        match probe!(self.r.next()) as char {
             '\x07' => self.todo("bell"),
             '\x08' => {
                 let mut vt = self.vt.lock().unwrap();
@@ -486,7 +498,7 @@ impl<'a> VTReader<'a> {
                 let mut vt = self.vt.lock().unwrap();
                 vt.col = 0;
             }
-            '\x1b' => self.read_escape(),
+            '\x1b' => probe!(self.read_escape()),
             c if c >= ' ' && c <= '~' => {
                 let mut vt = self.vt.lock().unwrap();
                 *vt.ensure_pos() = Cell {
@@ -497,11 +509,33 @@ impl<'a> VTReader<'a> {
             }
             c if c as u8 >= 0x80 => {
                 self.r.back();
-                let rune = self.read_utf8();
+                let rune = probe!(self.read_utf8());
                 println!("rune {}", rune);
             }
-            _ => {
+            c => {
                 panic!("unhandled input {:?}", c);
+            }
+        }
+        Some(())
+    }
+
+    pub fn read<R: Read>(&mut self, r: &mut R) -> bool {
+        if let Err(ref err) = self.r.read(r) {
+            println!("read failed: {:?}", err);
+            if err.raw_os_error().unwrap() == EIO {
+                return false;
+            }
+            panic!("read failed: {:?}", err);
+        }
+
+        loop {
+            let mark = self.r.mark();
+            match self.read_begin() {
+                None => {
+                    self.r.pop_mark(mark);
+                    break;
+                }
+                Some(_) => {}
             }
         }
         return true;

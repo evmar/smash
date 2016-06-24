@@ -69,11 +69,12 @@ impl Term {
         };
 
         {
+            let mut rf = rf;
             let vt = term.vt.clone();
             let dirty = term.dirty.clone();
             thread::spawn(move || {
-                let mut r = vt100::VTReader::new(&*vt, rf, wf);
-                while r.read() {
+                let mut r = vt100::VTReader::new(&*vt, wf);
+                while r.read(&mut rf) {
                     dirty();
                 }
             })
