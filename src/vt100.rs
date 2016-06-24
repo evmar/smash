@@ -19,6 +19,14 @@ macro_rules! probe {
     }}
 }
 
+fn bprefix(b: u8, n: usize, prefix: u8) -> Option<u8> {
+    if b >> 8-n == prefix {
+        Some(b & ((1<<(8-n))-1))
+    } else {
+        None
+    }
+}
+
 // xxxx xxIB AAAA CCCC
 //  I = inverse
 //  B = bright
@@ -455,10 +463,10 @@ impl<'a> VTReader<'a> {
     fn read_utf8(&mut self) -> Option<u32> {
         let c = probe!(self.r.next());
         let (n, mut rune) = {
-            if c >> 5 == 0b110 {
-                (1, (c & 0b11111) as u32)
-            } else if c >> 4 == 0b1110 {
-                (2, (c & 0b1111) as u32)
+            if let Some(c) = bprefix(c, 3, 0b110) {
+                (1, c as u32)
+            } else if let Some(c) = bprefix(c, 4, 0b1110) {
+                (2, c as u32)
             } else {
                 return Some('?' as u32);
             }
@@ -466,8 +474,8 @@ impl<'a> VTReader<'a> {
 
         for _ in 0..n {
             let c = probe!(self.r.next());
-            if c >> 6 == 0b10 {
-                rune = rune << 6 | (c & 0b111111) as u32;
+            if let Some(c) = bprefix(c, 2, 0b10) {
+                rune = rune << 6 | c as u32;
             } else {
                 self.r.back();
                 return Some('?' as u32);
