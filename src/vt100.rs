@@ -468,7 +468,7 @@ impl<'a> VTReader<'a> {
             } else if let Some(c) = bprefix(c, 4, 0b1110) {
                 (2, c as u32)
             } else {
-                return Some('?' as u32);
+                panic!("read_utf8 {}", c);
             }
         };
 
@@ -478,7 +478,7 @@ impl<'a> VTReader<'a> {
                 rune = rune << 6 | c as u32;
             } else {
                 self.r.back();
-                return Some('?' as u32);
+                panic!("read_utf8 continuation {}", c);
             }
         }
         Some(rune)
@@ -511,8 +511,7 @@ impl<'a> VTReader<'a> {
                 let ch = {
                     if c as u8 >= 0x80 {
                         self.r.back();
-                        let rune = probe!(self.read_utf8());
-                        println!("rune {}", rune);
+                        let _ = probe!(self.read_utf8());
                         '?'
                     } else {
                         c
