@@ -192,10 +192,15 @@ impl<'a> VTReader<'a> {
 
         let mut vt = self.vt.lock().unwrap();
         let mut mark;
+        let todo = &mut self.todo;
         loop {
             mark = self.r.mark();
             let mut vtr = VTRead {
-                todo: &mut self.todo,
+                todo: |msg: String| {
+                    if todo.insert(msg.clone()) {
+                        println!("TODO: {}", msg)
+                    }
+                },
                 vt: &mut vt,
                 r: &mut self.r,
                 w: &self.w,
@@ -212,21 +217,21 @@ impl<'a> VTReader<'a> {
     }
 }
 
-pub struct VTRead<'a> {
-    todo: &'a mut HashSet<String>,
+pub struct VTRead<'a, T>
+    where T: FnMut(String)
+{
+    todo: T,
     vt: &'a mut VT,
     r: &'a mut ByteScanner,
     w: &'a fs::File,
 }
 
-impl<'a> VTRead<'a> {
+impl<'a, T> VTRead<'a, T>
+    where T: FnMut(String)
+{
     fn todo<S: Into<String> + Display>(&mut self, msg: S) {
-        let msg = msg.into();
-        if self.todo.insert(msg.clone()) {
-            println!("TODO: {}", msg)
-        }
+        (self.todo)(msg.into());
     }
-
     fn read_num(&mut self) -> Option<usize> {
         let mut num = 0;
         loop {
