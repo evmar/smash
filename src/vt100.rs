@@ -20,8 +20,8 @@ macro_rules! probe {
 }
 
 fn bprefix(b: u8, n: usize, prefix: u8) -> Option<u8> {
-    if b >> 8-n == prefix {
-        Some(b & ((1<<(8-n))-1))
+    if b >> 8 - n == prefix {
+        Some(b & ((1 << (8 - n)) - 1))
     } else {
         None
     }
@@ -507,18 +507,24 @@ impl<'a> VTReader<'a> {
                 vt.col = 0;
             }
             '\x1b' => probe!(self.read_escape()),
-            c if c >= ' ' && c <= '~' => {
+            c if c >= ' ' => {
+                let ch = {
+                    if c as u8 >= 0x80 {
+                        self.r.back();
+                        let rune = probe!(self.read_utf8());
+                        println!("rune {}", rune);
+                        '?'
+                    } else {
+                        c
+                    }
+                };
+
                 let mut vt = self.vt.lock().unwrap();
                 *vt.ensure_pos() = Cell {
-                    ch: c,
+                    ch: ch,
                     attr: vt.attr.clone(),
                 };
                 vt.col += 1;
-            }
-            c if c as u8 >= 0x80 => {
-                self.r.back();
-                let rune = probe!(self.read_utf8());
-                println!("rune {}", rune);
             }
             c => {
                 panic!("unhandled input {:?}", c);
@@ -547,5 +553,25 @@ impl<'a> VTReader<'a> {
             }
         }
         return true;
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::fs;
+    use std::io::Read;
+    use std::sync::Mutex;
+
+    #[test]
+    fn utf8() {
+        let devnull = fs::OpenOptions::new().write(true).open("/dev/null").unwrap();
+        let vt = Mutex::new(VT::new());
+        let mut r = VTReader::new(&vt, devnull);
+
+        let buf = [0xE6, 0x97, 0xA5 /* 日 */, 0xE6, 0x9C, 0xAC /* 本 */, 0xE8, 0xAA,
+                   0x9E /* 語 */];
+        r.read(&mut &buf[..]);
+        assert_eq!(vt.lock().unwrap().col, 3);
     }
 }
