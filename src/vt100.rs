@@ -181,6 +181,45 @@ impl<'a> VTReader<'a> {
         }
     }
 
+    pub fn read<R: Read>(&mut self, r: &mut R) -> bool {
+        if let Err(ref err) = self.r.read(r) {
+            println!("read failed: {:?}", err);
+            if err.raw_os_error().unwrap() == EIO {
+                return false;
+            }
+            panic!("read failed: {:?}", err);
+        }
+
+        let mut vt = self.vt.lock().unwrap();
+        let mut mark;
+        loop {
+            mark = self.r.mark();
+            let mut vtr = VTRead {
+                todo: &mut self.todo,
+                vt: &mut vt,
+                r: &mut self.r,
+                w: &self.w,
+            };
+            match vtr.read() {
+                None => {
+                    break;
+                }
+                Some(_) => {}
+            }
+        }
+        self.r.pop_mark(mark);
+        return true;
+    }
+}
+
+pub struct VTRead<'a> {
+    todo: &'a mut HashSet<String>,
+    vt: &'a mut VT,
+    r: &'a mut ByteScanner,
+    w: &'a fs::File,
+}
+
+impl<'a> VTRead<'a> {
     fn todo<S: Into<String> + Display>(&mut self, msg: S) {
         let msg = msg.into();
         if self.todo.insert(msg.clone()) {
@@ -234,57 +273,50 @@ impl<'a> VTReader<'a> {
             '@' => {
                 // insert blanks
                 let count = *args.get(0).unwrap_or(&1);
-                let mut vt = self.vt.lock().unwrap();
                 for _ in 0..count {
-                    vt.ensure_pos();
-                    vt.col += 1;
+                    self.vt.ensure_pos();
+                    self.vt.col += 1;
                 }
             }
             'A' => {
                 // cursor up
                 let dy = *args.get(0).unwrap_or(&1);
-                let mut vt = self.vt.lock().unwrap();
-                if vt.row > dy {
-                    vt.row -= dy;
+                if self.vt.row > dy {
+                    self.vt.row -= dy;
                 }
             }
             'B' => {
                 // cursor down
                 let dy = *args.get(0).unwrap_or(&1);
-                let mut vt = self.vt.lock().unwrap();
-                vt.row += dy;
+                self.vt.row += dy;
             }
             'C' => {
                 // cursor forward
                 let dx = *args.get(0).unwrap_or(&1);
-                let mut vt = self.vt.lock().unwrap();
-                vt.col += dx;
+                self.vt.col += dx;
             }
             'D' => {
                 // cursor back
                 let dx = *args.get(0).unwrap_or(&1);
-                let mut vt = self.vt.lock().unwrap();
-                if vt.col > dx {
-                    vt.col -= dx;
+                if self.vt.col > dx {
+                    self.vt.col -= dx;
                 }
             }
             'H' => {
-                let mut vt = self.vt.lock().unwrap();
                 let row = *args.get(0).unwrap_or(&1) - 1;
-                vt.row = vt.top + row;
-                vt.col = *args.get(1).unwrap_or(&1) - 1;
+                self.vt.row = self.vt.top + row;
+                self.vt.col = *args.get(1).unwrap_or(&1) - 1;
             }
             'J' => {
-                let mut vt = self.vt.lock().unwrap();
                 match *args.get(0).unwrap_or(&0) {
                     2 => {
-                        let (top, height) = (vt.top, vt.height);
-                        let end = if top + height > vt.lines.len() {
-                            vt.lines.len()
+                        let (top, height) = (self.vt.top, self.vt.height);
+                        let end = if top + height > self.vt.lines.len() {
+                            self.vt.lines.len()
                         } else {
                             top + height
                         };
-                        for line in vt.lines[top..end].iter_mut() {
+                        for line in self.vt.lines[top..end].iter_mut() {
                             line.clear();
                         }
                     }
@@ -295,12 +327,11 @@ impl<'a> VTReader<'a> {
                 match *args.get(0).unwrap_or(&0) {
                     0 => {
                         // Erase to Right.
-                        let mut vt = self.vt.lock().unwrap();
-                        if vt.row < vt.lines.len() {
-                            let row = vt.row;
-                            if vt.col < vt.lines[row].len() {
-                                let col = vt.col;
-                                vt.lines[row].truncate(col);
+                        if self.vt.row < self.vt.lines.len() {
+                            let row = self.vt.row;
+                            if self.vt.col < self.vt.lines[row].len() {
+                                let col = self.vt.col;
+                                self.vt.lines[row].truncate(col);
                             }
                         }
                     }
@@ -310,16 +341,14 @@ impl<'a> VTReader<'a> {
                 }
             }
             'L' => {
-                let mut vt = self.vt.lock().unwrap();
-                vt.ensure_pos();
-                let row = vt.row;
-                vt.lines.insert(row, Box::new(Vec::new()));
+                self.vt.ensure_pos();
+                let row = self.vt.row;
+                self.vt.lines.insert(row, Box::new(Vec::new()));
             }
             'P' => {
                 let count = *args.get(0).unwrap_or(&1);
-                let mut vt = self.vt.lock().unwrap();
-                let (row, col) = (vt.row, vt.col);
-                let line = &mut vt.lines[row];
+                let (row, col) = (self.vt.row, self.vt.col);
+                let line = &mut self.vt.lines[row];
                 for i in 0..count {
                     if col + count + i >= line.len() {
                         break;
@@ -334,17 +363,15 @@ impl<'a> VTReader<'a> {
                 self.w.write("\x1b[41;0;0c".as_bytes()).unwrap();
             }
             'd' => {
-                let mut vt = self.vt.lock().unwrap();
                 let row = *args.get(0).unwrap_or(&1) - 1;
-                vt.row = vt.top + row;
+                self.vt.row = self.vt.top + row;
             }
             'h' | 'l' if question => {
                 let set = cmd == 'h';
-                let mut vt = self.vt.lock().unwrap();
                 match args[0] {
                     1 => self.todo("application cursor keys mode"),
                     12 => self.todo("start blinking cursor"),
-                    25 => vt.hide_cursor = !set,
+                    25 => self.vt.hide_cursor = !set,
                     1049 => {
                         self.todo("save cursor");
                         self.todo("alternate screen buffer");
@@ -355,20 +382,19 @@ impl<'a> VTReader<'a> {
             'h' | 'l' => self.todo(format!("re/set mode {}", args[0])),
             'm' => {
                 // character attributes
-                let mut vt = self.vt.lock().unwrap();
                 if args.len() == 0 {
-                    vt.attr.val = 0;
+                    self.vt.attr.val = 0;
                 }
                 for attr in args {
                     match *attr {
-                        0 => vt.attr.val = 0,
-                        1 => vt.attr.set_bold(),
-                        7 => vt.attr.set_inverse(true),
-                        27 => vt.attr.set_inverse(false),
-                        v if v >= 30 && v < 39 => vt.attr.set_fg(Some(v - 30)),
-                        39 => vt.attr.set_fg(None),
-                        v if v >= 40 && v < 49 => vt.attr.set_bg(Some(v - 40)),
-                        49 => vt.attr.set_bg(None),
+                        0 => self.vt.attr.val = 0,
+                        1 => self.vt.attr.set_bold(),
+                        7 => self.vt.attr.set_inverse(true),
+                        27 => self.vt.attr.set_inverse(false),
+                        v if v >= 30 && v < 39 => self.vt.attr.set_fg(Some(v - 30)),
+                        39 => self.vt.attr.set_fg(None),
+                        v if v >= 40 && v < 49 => self.vt.attr.set_bg(Some(v - 40)),
+                        49 => self.vt.attr.set_bg(None),
                         _ => {
                             self.todo(format!("set attr {}", attr));
                         }
@@ -395,10 +421,9 @@ impl<'a> VTReader<'a> {
             }
             'r' => {
                 // set scrolling region
-                let vt = self.vt.lock().unwrap();
                 let top = *args.get(0).unwrap_or(&1);
-                let bottom = *args.get(1).unwrap_or(&vt.height);
-                if top == 1 && bottom == vt.height {
+                let bottom = *args.get(1).unwrap_or(&self.vt.height);
+                if top == 1 && bottom == self.vt.height {
                     // full window
                 } else {
                     self.todo(format!("set scrolling region: {}:{}", top, bottom));
@@ -450,10 +475,9 @@ impl<'a> VTReader<'a> {
             '>' => self.todo("normal keypad"),
             'M' => {
                 // move up/insert line
-                let mut vt = self.vt.lock().unwrap();
-                vt.ensure_pos();
-                let top = vt.top;
-                vt.lines.insert(top, Box::new(Vec::new()));
+                self.vt.ensure_pos();
+                let top = self.vt.top;
+                self.vt.lines.insert(top, Box::new(Vec::new()));
             }
             c => panic!("notimpl: esc {}", c),
         }
@@ -484,27 +508,23 @@ impl<'a> VTReader<'a> {
         Some(rune)
     }
 
-    fn read_begin(&mut self) -> Option<()> {
+    fn read(&mut self) -> Option<()> {
         match probe!(self.r.next()) as char {
             '\x07' => self.todo("bell"),
             '\x08' => {
-                let mut vt = self.vt.lock().unwrap();
-                if vt.col > 0 {
-                    vt.col -= 1;
+                if self.vt.col > 0 {
+                    self.vt.col -= 1;
                 }
             }
             '\x09' => {
-                let mut vt = self.vt.lock().unwrap();
-                vt.col += 8 - (vt.col % 8);
+                self.vt.col += 8 - (self.vt.col % 8);
             }
             '\n' => {
-                let mut vt = self.vt.lock().unwrap();
-                vt.row += 1;
-                vt.col = 0;
+                self.vt.row += 1;
+                self.vt.col = 0;
             }
             '\r' => {
-                let mut vt = self.vt.lock().unwrap();
-                vt.col = 0;
+                self.vt.col = 0;
             }
             '\x1b' => probe!(self.read_escape()),
             c if c >= ' ' => {
@@ -518,40 +538,17 @@ impl<'a> VTReader<'a> {
                     }
                 };
 
-                let mut vt = self.vt.lock().unwrap();
-                *vt.ensure_pos() = Cell {
+                *self.vt.ensure_pos() = Cell {
                     ch: ch,
-                    attr: vt.attr.clone(),
+                    attr: self.vt.attr.clone(),
                 };
-                vt.col += 1;
+                self.vt.col += 1;
             }
             c => {
                 panic!("unhandled input {:?}", c);
             }
         }
         Some(())
-    }
-
-    pub fn read<R: Read>(&mut self, r: &mut R) -> bool {
-        if let Err(ref err) = self.r.read(r) {
-            println!("read failed: {:?}", err);
-            if err.raw_os_error().unwrap() == EIO {
-                return false;
-            }
-            panic!("read failed: {:?}", err);
-        }
-
-        loop {
-            let mark = self.r.mark();
-            match self.read_begin() {
-                None => {
-                    self.r.pop_mark(mark);
-                    break;
-                }
-                Some(_) => {}
-            }
-        }
-        return true;
     }
 }
 
