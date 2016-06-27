@@ -1,6 +1,8 @@
 extern crate cairo;
 extern crate gdk;
 
+use view::View;
+
 pub struct ReadLine {
     buf: String,
     ofs: usize,
@@ -31,17 +33,25 @@ impl ReadLineView {
     pub fn new() -> ReadLineView {
         ReadLineView { rl: ReadLine::new() }
     }
-    pub fn draw(&mut self, cr: &cairo::Context) {
+}
+impl View for ReadLineView {
+    fn draw(&mut self, cr: &cairo::Context) {
         cr.set_source_rgb(0.0, 0.0, 0.0);
         cr.select_font_face("sans",
                             cairo::enums::FontSlant::Normal,
                             cairo::enums::FontWeight::Normal);
         cr.set_font_size(18.0);
-        cr.move_to(20.0, 20.0);
-        cr.show_text(self.rl.buf.as_str());
+
+        cr.translate(20.0, 20.0);
+        let str = self.rl.buf.as_str();
+        cr.show_text(str);
+
+        let ext = cr.text_extents(&str[0..self.rl.ofs]);
+        cr.rectangle(ext.width + 2.0, -ext.height, 5.0, ext.height);
+        cr.fill();
     }
 
-    pub fn key(&mut self, ev: &gdk::EventKey) {
+    fn key(&mut self, ev: &gdk::EventKey) {
         match ev.get_state() {
             s if s == gdk::ModifierType::empty() || s == gdk::enums::modifier_type::ShiftMask => {
                 match gdk::keyval_to_unicode(ev.get_keyval()) {
