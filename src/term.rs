@@ -15,6 +15,7 @@ use std::time;
 use pty;
 use vt100;
 use view;
+use view::View;
 
 type Color = (u8, u8, u8);
 const DEFAULT_BG: Color = (0xf7, 0xf7, 0xf7);
@@ -142,8 +143,10 @@ impl Term {
         use_color(cr, fg);
         cr.show_text(text);
     }
+}
 
-    pub fn draw(&mut self, cr: &cairo::Context) {
+impl View for Term {
+    fn draw(&mut self, cr: &cairo::Context) {
         let now = time::Instant::now();
         if false {
             println!("paint after {:?}",
@@ -197,8 +200,7 @@ impl Term {
             cr.restore();
         }
     }
-
-    pub fn key(&mut self, ev: &gdk::EventKey) {
+    fn key(&mut self, ev: &gdk::EventKey) {
         let buf = translate_key(&ev);
         self.stdin.write(&buf).unwrap();
     }

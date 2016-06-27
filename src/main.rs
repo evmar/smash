@@ -11,6 +11,8 @@ use std::clone::Clone;
 use std::rc::Rc;
 use std::sync::Arc;
 use smash::term::Term;
+use smash::view;
+use smash::view::View;
 use std::sync::atomic;
 use std::sync::atomic::AtomicBool;
 
@@ -32,9 +34,13 @@ struct State {
     dirty: Arc<AtomicBool>,
 }
 
-impl State {
+impl View for State {
     fn draw(&mut self, cr: &cairo::Context) {
         self.term.draw(cr);
+        self.dirty.store(false, atomic::Ordering::SeqCst);
+    }
+    fn key(&mut self, ev: &gdk::EventKey) {
+        self.term.key(ev);
     }
 }
 
@@ -58,13 +64,15 @@ fn mark_dirty(dirty: &Arc<AtomicBool>) {
 }
 
 fn wmain() {
-    let win = gtk::Window::new(gtk::WindowType::Toplevel);
-    TLS_WIN.with(|w| *w.borrow_mut() = Some(win.clone()));
+    let win = view::Win::new();
 
-    win.realize();
+    let gtkwin = win.borrow_mut().gtkwin.clone();
+    TLS_WIN.with(|w| *w.borrow_mut() = Some(gtkwin.clone()));
+
+    gtkwin.realize();
 
     let font_extents = {
-        match win.get_window() {
+        match gtkwin.get_window() {
             Some(ref win) => {
                 let ctx = cairo::Context::create_from_window(&win);
                 Term::get_font_metrics(&ctx)
@@ -73,8 +81,8 @@ fn wmain() {
         }
     };
 
-    win.resize(80 * font_extents.max_x_advance as i32,
-               25 * font_extents.height as i32);
+    gtkwin.resize(80 * font_extents.max_x_advance as i32,
+                  25 * font_extents.height as i32);
 
     let dirty = Arc::new(AtomicBool::new(false));
     let term = {
@@ -87,31 +95,8 @@ fn wmain() {
         term: term,
     }));
 
-    win.set_app_paintable(true);
-    win.connect_delete_event(|_, _| {
-        gtk::main_quit();
-        Inhibit(false)
-    });
-
-    {
-        let state = state.clone();
-        win.connect_draw(move |_, cr| {
-            let mut state = state.borrow_mut();
-            state.draw(cr);
-            state.dirty.store(false, atomic::Ordering::SeqCst);
-            Inhibit(false)
-        });
-    }
-
-    {
-        let state = state.clone();
-        win.connect_key_press_event(move |_, ev| {
-            state.borrow_mut().term.key(ev);
-            Inhibit(false)
-        });
-    }
-
-    win.show_all();
+    win.borrow_mut().child = state;
+    gtkwin.show_all();
 
     gtk::main();
 }
