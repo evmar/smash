@@ -2,6 +2,7 @@ mod term;
 mod vt100;
 mod pty;
 mod byte_scanner;
+mod readline;
 
 extern crate gtk;
 extern crate gdk;
@@ -22,7 +23,8 @@ use std::sync::atomic::AtomicBool;
 // they must have static lifetime), and getting callbacks across threads
 // is impossible without using thread-local storage.
 
-// http://stackoverflow.com/questions/31966497/howto-idiomatic-rust-for-callbacks-with-gtk-rust-gnome
+// http://stackoverflow.com/questions/31966497/
+//     howto-idiomatic-rust-for-callbacks-with-gtk-rust-gnome
 
 thread_local!(
     static TLS_WIN: RefCell<Option<gtk::Window>> = RefCell::new(None)
