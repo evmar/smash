@@ -1,3 +1,5 @@
+extern crate cairo;
+extern crate gdk;
 
 pub struct ReadLine {
     buf: String,
@@ -5,31 +7,53 @@ pub struct ReadLine {
 }
 
 impl ReadLine {
-    fn new() -> ReadLine {
+    pub fn new() -> ReadLine {
         ReadLine {
             buf: String::new(),
             ofs: 0,
         }
     }
 
-    fn insert(&mut self, uni: u32) {
-        self.buf.insert(self.ofs, uni as u8 as char);
+    pub fn insert(&mut self, uni: char) {
+        self.buf.insert(self.ofs, uni);
         self.ofs += 1;
     }
 
-    fn get(&self) -> String {
+    pub fn get(&self) -> String {
         self.buf.clone()
     }
+}
 
-    // fn key(&mut self, ev: &gdk::EventKey) {
-    //     let uni = gdk::keyval_to_unicode(ev.get_keyval());
-    //     match ev.get_state() {
-    //         s if s == gdk::ModifierType::empty() ||
-    // s == gdk::enums::modifier_type::ShiftMask => {
-    //             self.buf.insert(self.ofs, uni as char);
-    //         }
-    //     }
-    // }
+pub struct ReadLineView {
+    pub rl: ReadLine,
+}
+impl ReadLineView {
+    pub fn new() -> ReadLineView {
+        ReadLineView { rl: ReadLine::new() }
+    }
+    pub fn draw(&mut self, cr: &cairo::Context) {
+        cr.set_source_rgb(0.0, 0.0, 0.0);
+        cr.select_font_face("sans",
+                            cairo::enums::FontSlant::Normal,
+                            cairo::enums::FontWeight::Normal);
+        cr.set_font_size(18.0);
+        cr.move_to(20.0, 20.0);
+        cr.show_text(self.rl.buf.as_str());
+    }
+
+    pub fn key(&mut self, ev: &gdk::EventKey) {
+        match ev.get_state() {
+            s if s == gdk::ModifierType::empty() || s == gdk::enums::modifier_type::ShiftMask => {
+                match gdk::keyval_to_unicode(ev.get_keyval()) {
+                    Some(c) if c >= ' ' => {
+                        self.rl.insert(c);
+                    }
+                    _ => {}
+                }
+            }
+            _ => {}
+        }
+    }
 }
 
 #[cfg(test)]

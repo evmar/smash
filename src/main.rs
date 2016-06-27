@@ -1,8 +1,4 @@
-mod term;
-mod vt100;
-mod pty;
-mod byte_scanner;
-mod readline;
+extern crate smash;
 
 extern crate gtk;
 extern crate gdk;
@@ -14,7 +10,7 @@ use std::cell::RefCell;
 use std::clone::Clone;
 use std::rc::Rc;
 use std::sync::Arc;
-use term::Term;
+use smash::term::Term;
 use std::sync::atomic;
 use std::sync::atomic::AtomicBool;
 
