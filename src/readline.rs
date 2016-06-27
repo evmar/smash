@@ -41,13 +41,17 @@ impl View for ReadLineView {
                             cairo::enums::FontSlant::Normal,
                             cairo::enums::FontWeight::Normal);
         cr.set_font_size(18.0);
+        let ext = cr.font_extents();
 
-        cr.translate(20.0, 20.0);
+        cr.translate(0.0, ext.height);
         let str = self.rl.buf.as_str();
         cr.show_text(str);
 
-        let ext = cr.text_extents(&str[0..self.rl.ofs]);
-        cr.rectangle(ext.width + 2.0, -ext.height, 5.0, ext.height);
+        let text_ext = cr.text_extents(&str[0..self.rl.ofs]);
+        cr.rectangle(text_ext.width + 2.0,
+                     -ext.ascent,
+                     3.0,
+                     ext.ascent + ext.descent);
         cr.fill();
     }
 
