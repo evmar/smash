@@ -9,11 +9,16 @@ use gtk::prelude::*;
 fn main() {
     gtk::init().unwrap();
 
+    let win = Win::new();
+
     let rl = Rc::new(RefCell::new(ReadLineView::new()));
     rl.borrow_mut().rl.insert('a');
 
-    let win = Win::new(rl);
-    win.gtkwin.show_all();
+    {
+        let mut win = win.borrow_mut();
+        win.child = rl;
+        win.gtkwin.show_all();
+    }
 
     gtk::main();
 }
