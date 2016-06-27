@@ -36,11 +36,13 @@ impl ReadLine {
 pub struct ReadLineView {
     pub rl: ReadLine,
 }
+
 impl ReadLineView {
     pub fn new() -> ReadLineView {
         ReadLineView { rl: ReadLine::new() }
     }
 }
+
 impl View for ReadLineView {
     fn draw(&mut self, cr: &cairo::Context) {
         cr.set_source_rgb(0.0, 0.0, 0.0);
