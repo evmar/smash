@@ -57,3 +57,18 @@ impl Win {
         win
     }
 }
+
+pub fn is_modifier_key_event(ev: &gdk::EventKey) -> bool {
+    match ev.get_keyval() {
+        gdk::enums::key::Caps_Lock |
+        gdk::enums::key::Control_L |
+        gdk::enums::key::Control_R |
+        gdk::enums::key::Shift_L |
+        gdk::enums::key::Shift_R |
+        gdk::enums::key::Alt_L |
+        gdk::enums::key::Alt_R |
+        gdk::enums::key::Meta_L |
+        gdk::enums::key::Meta_R => true,
+        _ => false,
+    }
+}

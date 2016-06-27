@@ -1,6 +1,7 @@
 extern crate cairo;
 extern crate gdk;
 
+use view;
 use view::View;
 
 pub struct ReadLine {
@@ -65,6 +66,9 @@ impl View for ReadLineView {
     }
 
     fn key(&mut self, ev: &gdk::EventKey) {
+        if view::is_modifier_key_event(ev) {
+            return;
+        }
         match ev.get_state() {
             s if s == gdk::ModifierType::empty() || s == gdk::enums::modifier_type::ShiftMask => {
                 if let Some(uni) = gdk::keyval_to_unicode(ev.get_keyval()) {

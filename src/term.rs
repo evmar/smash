@@ -14,6 +14,7 @@ use std::time;
 
 use pty;
 use vt100;
+use view;
 
 type Color = (u8, u8, u8);
 const DEFAULT_BG: Color = (0xf7, 0xf7, 0xf7);
@@ -204,19 +205,10 @@ impl Term {
 }
 
 fn translate_key(ev: &gdk::EventKey) -> Vec<u8> {
-    let keyval = ev.get_keyval();
-    match keyval {
-        gdk::enums::key::Caps_Lock |
-        gdk::enums::key::Control_L |
-        gdk::enums::key::Control_R |
-        gdk::enums::key::Shift_L |
-        gdk::enums::key::Shift_R |
-        gdk::enums::key::Alt_L |
-        gdk::enums::key::Alt_R |
-        gdk::enums::key::Meta_L |
-        gdk::enums::key::Meta_R => return vec![],
-        _ => {}
+    if view::is_modifier_key_event(ev) {
+        return vec![];
     }
+    let keyval = ev.get_keyval();
 
     match ev.get_state() {
         gdk::enums::modifier_type::ControlMask => {
