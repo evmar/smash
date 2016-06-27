@@ -21,6 +21,13 @@ impl ReadLine {
         self.ofs += 1;
     }
 
+    pub fn backspace(&mut self) {
+        if self.ofs > 0 {
+            self.buf.remove(self.ofs - 1);
+            self.ofs -= 1;
+        }
+    }
+
     pub fn get(&self) -> String {
         self.buf.clone()
     }
@@ -58,15 +65,28 @@ impl View for ReadLineView {
     fn key(&mut self, ev: &gdk::EventKey) {
         match ev.get_state() {
             s if s == gdk::ModifierType::empty() || s == gdk::enums::modifier_type::ShiftMask => {
-                match gdk::keyval_to_unicode(ev.get_keyval()) {
-                    Some(c) if c >= ' ' => {
-                        self.rl.insert(c);
+                if let Some(uni) = gdk::keyval_to_unicode(ev.get_keyval()) {
+                    match uni {
+                        '\x08' => {
+                            self.rl.backspace();
+                            return;
+                        }
+                        uni if uni >= ' ' => {
+                            self.rl.insert(uni);
+                            return;
+                        }
+                        _ => {
+                            println!("bad uni: {:?}", uni);
+                        }
                     }
-                    _ => {}
                 }
             }
             _ => {}
         }
+        let key = ev.as_ref();
+        println!("unhandled key: state:{:?} val:{:?}",
+                 key.state,
+                 gdk::keyval_name(key.keyval));
     }
 }
 
