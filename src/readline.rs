@@ -103,9 +103,9 @@ mod tests {
     #[test]
     fn append() {
         let mut rl = ReadLine::new();
-        rl.insert('a' as u32);
+        rl.insert('a');
         assert_eq!("a", rl.get());
-        rl.insert('b' as u32);
+        rl.insert('b');
         assert_eq!("ab", rl.get());
     }
 }
