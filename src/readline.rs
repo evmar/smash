@@ -62,7 +62,7 @@ impl View for ReadLineView {
         cr.show_text(str);
 
         let text_ext = cr.text_extents(&str[0..self.rl.ofs]);
-        cr.rectangle(text_ext.width + 2.0,
+        cr.rectangle(text_ext.x_advance,
                      -ext.ascent,
                      3.0,
                      ext.ascent + ext.descent);
