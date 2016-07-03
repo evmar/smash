@@ -8,7 +8,6 @@ use gtk::prelude::*;
 use gdk::prelude::*;
 use std::cell::RefCell;
 use std::clone::Clone;
-use std::rc::Rc;
 use std::sync::Arc;
 use smash::term::Term;
 use smash::view;
@@ -89,13 +88,13 @@ fn wmain() {
         let dirty = dirty.clone();
         Term::new(font_extents, Box::new(move || mark_dirty(&dirty)))
     };
-    let state = Rc::new(RefCell::new(State {
+    let state = State {
         // win: win.clone(),
         dirty: dirty,
         term: term,
-    }));
+    };
 
-    win.borrow_mut().child = state;
+    win.borrow_mut().child = Box::new(state);
     gtkwin.show_all();
 
     gtk::main();

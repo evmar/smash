@@ -5,6 +5,10 @@ use gtk::prelude::*;
 use std::rc::Rc;
 use std::cell::RefCell;
 
+pub struct Context {
+    pub dirty: bool,
+}
+
 pub trait View {
     fn draw(&mut self, cr: &cairo::Context);
     fn key(&mut self, ev: &gdk::EventKey);
@@ -16,9 +20,12 @@ impl View for NullView {
     fn key(&mut self, _: &gdk::EventKey) {}
 }
 
+pub type ContextRef = Rc<RefCell<Context>>;
+
 pub struct Win {
     pub gtkwin: gtk::Window,
-    pub child: Rc<RefCell<View>>,
+    pub child: Box<View>,
+    pub context: ContextRef,
 }
 
 impl Win {
@@ -32,24 +39,30 @@ impl Win {
         });
 
         let win = Rc::new(RefCell::new(Win {
+            context: Rc::new(RefCell::new(Context { dirty: false })),
             gtkwin: gtkwin.clone(),
-            child: Rc::new(RefCell::new(NullView {})),
+            child: Box::new(NullView {}),
         }));
 
         {
             let win = win.clone();
             gtkwin.connect_draw(move |_, cr| {
-                let win = win.borrow_mut();
-                win.child.borrow_mut().draw(cr);
+                let mut win = win.borrow_mut();
+                win.child.draw(cr);
+                if win.context.borrow().dirty {
+                    win.gtkwin.queue_draw();
+                }
                 Inhibit(false)
             });
         }
         {
             let win = win.clone();
             gtkwin.connect_key_press_event(move |_, ev| {
-                let win = win.borrow_mut();
-                win.child.borrow_mut().key(ev);
-                win.gtkwin.queue_draw();
+                let mut win = win.borrow_mut();
+                win.child.key(ev);
+                if win.context.borrow().dirty {
+                    win.gtkwin.queue_draw();
+                }
                 Inhibit(false)
             });
         }

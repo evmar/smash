@@ -35,12 +35,16 @@ impl ReadLine {
 }
 
 pub struct ReadLineView {
+    context: view::ContextRef,
     pub rl: ReadLine,
 }
 
 impl ReadLineView {
-    pub fn new() -> ReadLineView {
-        ReadLineView { rl: ReadLine::new() }
+    pub fn new(context: view::ContextRef) -> ReadLineView {
+        ReadLineView {
+            context: context,
+            rl: ReadLine::new(),
+        }
     }
 }
 
@@ -75,10 +79,12 @@ impl View for ReadLineView {
                     match uni {
                         '\x08' => {
                             self.rl.backspace();
+                            self.context.borrow_mut().dirty = true;
                             return;
                         }
                         uni if uni >= ' ' => {
                             self.rl.insert(uni);
+                            self.context.borrow_mut().dirty = true;
                             return;
                         }
                         _ => {

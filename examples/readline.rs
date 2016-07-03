@@ -5,20 +5,19 @@ extern crate gdk;
 use smash::readline::ReadLineView;
 use smash::view::View;
 use smash::view::Win;
-use std::rc::Rc;
-use std::cell::RefCell;
 use gtk::prelude::*;
 
 struct Padding {
-    child: Rc<RefCell<View>>,
+    child: Box<View>,
 }
+
 impl View for Padding {
     fn draw(&mut self, cr: &cairo::Context) {
         cr.translate(20.0, 20.0);
-        self.child.borrow_mut().draw(cr);
+        self.child.draw(cr);
     }
     fn key(&mut self, ev: &gdk::EventKey) {
-        self.child.borrow_mut().key(ev);
+        self.child.key(ev);
     }
 }
 
@@ -27,14 +26,14 @@ fn main() {
 
     let win = Win::new();
 
-    let rl = Rc::new(RefCell::new(ReadLineView::new()));
-    rl.borrow_mut().rl.insert('a');
+    let mut rl = ReadLineView::new(win.borrow().context.clone());
+    rl.rl.insert('a');
 
-    let padding = Padding { child: rl };
+    let padding = Padding { child: Box::new(rl) };
 
     {
         let mut win = win.borrow_mut();
-        win.child = Rc::new(RefCell::new(padding));
+        win.child = Box::new(padding);
         win.gtkwin.show_all();
     }
 
