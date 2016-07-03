@@ -181,24 +181,48 @@ fn translate_key(ev: &gdk::EventKey) -> Option<Key> {
     if view::is_modifier_key_event(ev) {
         return None;
     }
-    let key = ev.as_ref();
-    match ev.get_state() {
-        s if s == gdk::ModifierType::empty() || s == gdk::enums::modifier_type::ShiftMask => {
-            if let Some(uni) = gdk::keyval_to_unicode(ev.get_keyval()) {
-                match uni {
-                    '\x08' => return Some(Key::Special(String::from("Backspace"))),
-                    ' ' => return Some(Key::Text(String::from(" "))),
-                    uni if uni > ' ' => {
-                        return gdk::keyval_name(key.keyval).map(Key::Text);
-                    }
-                    _ => {
-                        println!("bad uni: {:?}", uni);
-                    }
+
+    let mut special = false;
+
+    let mut name = String::new();
+    if ev.get_state().contains(gdk::enums::modifier_type::ControlMask) {
+        name.push_str("C-");
+        special = true;
+    }
+    if ev.get_state().contains(gdk::enums::modifier_type::MetaMask) {
+        name.push_str("M-");
+        special = true;
+    }
+
+    match gdk::keyval_to_unicode(ev.get_keyval()) {
+        Some(uni) => {
+            match uni {
+                '\x08' => {
+                    special = true;
+                    name.push_str("Backspace");
+                }
+                ' ' => {
+                    name.push_str(" ");
+                }
+                uni if uni > ' ' => {
+                    name.push_str(&gdk::keyval_name(ev.get_keyval()).unwrap());
+                }
+                _ => {
+                    println!("bad uni: {:?}", uni);
                 }
             }
         }
-        _ => {}
+        None => {}
     }
+
+    if name.len() > 0 {
+        return Some(if special {
+            Key::Special(name)
+        } else {
+            Key::Text(name)
+        });
+    }
+
     let key = ev.as_ref();
     println!("unhandled key: state:{:?} val:{:?}",
              key.state,
