@@ -183,13 +183,12 @@ fn translate_key(ev: &gdk::EventKey) -> Option<Key> {
     }
 
     let mut special = false;
-
     let mut name = String::new();
     if ev.get_state().contains(gdk::enums::modifier_type::ControlMask) {
         name.push_str("C-");
         special = true;
     }
-    if ev.get_state().contains(gdk::enums::modifier_type::MetaMask) {
+    if ev.get_state().contains(gdk::enums::modifier_type::Mod1Mask) {
         name.push_str("M-");
         special = true;
     }
@@ -201,8 +200,19 @@ fn translate_key(ev: &gdk::EventKey) -> Option<Key> {
                     special = true;
                     name.push_str("Backspace");
                 }
+                '\x09' => {
+                    if special {
+                        name.push_str("Tab");
+                    } else {
+                        name.push_str("\x09");
+                    }
+                }
                 ' ' => {
-                    name.push_str(" ");
+                    if special {
+                        name.push_str("Space");
+                    } else {
+                        name.push_str(" ");
+                    }
                 }
                 uni if uni > ' ' => {
                     name.push_str(&gdk::keyval_name(ev.get_keyval()).unwrap());
