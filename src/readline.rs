@@ -72,14 +72,8 @@ fn make_binds_map() -> HashMap<String, String> {
         "C-f" => "forward-char",
         "C-b" => "backward-char",
 
-        "Backspace" => "backward-delete-char"
+        "BackSpace" => "backward-delete-char"
     )
-}
-
-#[derive(Debug)]
-pub enum Key {
-    Special(String),
-    Text(String),
 }
 
 impl ReadLine {
@@ -99,33 +93,36 @@ impl ReadLine {
         }
     }
 
-    pub fn key(&mut self, key: Key) -> bool {
-        match key {
-            Key::Text(text) => {
-                self.insert(&text);
-                return true;
-            }
-            Key::Special(ref name) => {
-                let f = {
-                    let command = match self.bindings.get(name) {
-                        None => {
-                            println!("no binding for {:?}", name);
-                            return false;
-                        }
-                        Some(command) => command,
-                    };
+    pub fn key(&mut self, key: &str) -> bool {
+        // This function has an odd control flow because we need to run
+        // the keybinding command without any of the hashtables holding
+        // an immutable borrow on self.
+        let f = {
+            match self.bindings.get(key) {
+                None => None,
+                Some(command) => {
                     match self.commands.get(command) {
                         None => {
                             println!("no command named {:?}", command);
                             return false;
                         }
-                        Some(f) => *f,
+                        Some(f) => Some(*f),
                     }
-                };
-                f(self);
-                return true;
+                }
             }
         };
+        if let Some(f) = f {
+            f(self);
+            return true;
+        }
+
+        if key.len() == 1 {
+            self.insert(key);
+            return true;
+        }
+
+        println!("no binding for {:?}", key);
+        return false;
     }
 
     pub fn get(&self) -> String {
@@ -170,74 +167,49 @@ impl View for ReadLineView {
 
     fn key(&mut self, ev: &gdk::EventKey) {
         if let Some(key) = translate_key(ev) {
-            if self.rl.key(key) {
+            if self.rl.key(&key) {
                 self.context.dirty();
             }
         }
     }
 }
 
-fn translate_key(ev: &gdk::EventKey) -> Option<Key> {
+fn translate_key(ev: &gdk::EventKey) -> Option<String> {
     if view::is_modifier_key_event(ev) {
         return None;
     }
 
-    let mut special = false;
     let mut name = String::new();
     if ev.get_state().contains(gdk::enums::modifier_type::ControlMask) {
         name.push_str("C-");
-        special = true;
     }
     if ev.get_state().contains(gdk::enums::modifier_type::Mod1Mask) {
         name.push_str("M-");
-        special = true;
     }
-
-    match gdk::keyval_to_unicode(ev.get_keyval()) {
-        Some(uni) => {
-            match uni {
-                '\x08' => {
-                    special = true;
-                    name.push_str("Backspace");
-                }
-                '\x09' => {
-                    if special {
-                        name.push_str("Tab");
-                    } else {
-                        name.push_str("\x09");
-                    }
-                }
-                ' ' => {
-                    if special {
-                        name.push_str("Space");
-                    } else {
-                        name.push_str(" ");
-                    }
-                }
-                uni if uni > ' ' => {
-                    name.push_str(&gdk::keyval_name(ev.get_keyval()).unwrap());
-                }
-                _ => {
-                    println!("bad uni: {:?}", uni);
-                }
-            }
+    let gdkname = match gdk::keyval_name(ev.get_keyval()) {
+        Some(n) => n,
+        None => {
+            println!("unnamed key {}", ev.get_keyval());
+            return None;
         }
-        None => {}
+    };
+    name.push_str(&gdkname);
+
+    if name == "space" {
+        name = String::from(" ");
     }
 
-    if name.len() > 0 {
-        return Some(if special {
-            Key::Special(name)
-        } else {
-            Key::Text(name)
-        });
+    // name.push_str(&gdk::keyval_name(ev.get_keyval()).unwrap());
+
+    if name.len() == 0 {
+        let key = ev.as_ref();
+        println!("unhandled key: state:{:?} val:{:?}",
+                 key.state,
+                 gdk::keyval_name(key.keyval));
+        return None;
     }
 
-    let key = ev.as_ref();
-    println!("unhandled key: state:{:?} val:{:?}",
-             key.state,
-             gdk::keyval_name(key.keyval));
-    return None;
+    return Some(name);
 }
 
 #[cfg(test)]
