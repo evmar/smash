@@ -10,12 +10,23 @@ pub trait Context {
     fn dirty(&mut self);
 }
 
-impl Context for gtk::Window {
+struct GtkContext {
+    win: gtk::Window,
+    draw_pending: bool,
+}
+
+impl Context for Rc<RefCell<GtkContext>> {
     fn clone_box(&self) -> Box<Context> {
         Box::new(self.clone())
     }
     fn dirty(&mut self) {
-        self.queue_draw();
+        let mut ctx = self.borrow_mut();
+        println!("dirty {}", ctx.draw_pending);
+        if ctx.draw_pending {
+            return;
+        }
+        ctx.draw_pending = true;
+        ctx.win.queue_draw();
     }
 }
 
@@ -46,17 +57,27 @@ impl Win {
             Inhibit(false)
         });
 
+        let context = {
+            let gtkwin = gtkwin.clone();
+            Rc::new(RefCell::new(GtkContext {
+                win: gtkwin,
+                draw_pending: false,
+            }))
+        };
+
         let win = Rc::new(RefCell::new(Win {
-            context: Box::new(gtkwin.clone()),
+            context: Box::new(context.clone()),
             gtkwin: gtkwin.clone(),
             child: Box::new(NullView {}),
         }));
 
         {
+            let context = context.clone();
             let win = win.clone();
             gtkwin.connect_draw(move |_, cr| {
                 let mut win = win.borrow_mut();
                 win.child.draw(cr);
+                context.borrow_mut().draw_pending = false;
                 Inhibit(false)
             });
         }
