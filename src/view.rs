@@ -5,30 +5,22 @@ use gtk::prelude::*;
 use std::rc::Rc;
 use std::cell::RefCell;
 
-pub trait Context {
-    fn clone_box(&self) -> Box<Context>;
-    fn dirty(&mut self);
-}
-
-struct GtkContext {
+pub struct GtkContext {
     win: gtk::Window,
     draw_pending: bool,
 }
 
-impl Context for Rc<RefCell<GtkContext>> {
-    fn clone_box(&self) -> Box<Context> {
-        Box::new(self.clone())
-    }
-    fn dirty(&mut self) {
-        let mut ctx = self.borrow_mut();
-        println!("dirty {}", ctx.draw_pending);
-        if ctx.draw_pending {
+impl GtkContext {
+    pub fn dirty(&mut self) {
+        if self.draw_pending {
             return;
         }
-        ctx.draw_pending = true;
-        ctx.win.queue_draw();
+        self.draw_pending = true;
+        self.win.queue_draw();
     }
 }
+
+pub type ContextRef = Rc<RefCell<GtkContext>>;
 
 pub trait View {
     fn draw(&mut self, cr: &cairo::Context);
@@ -42,7 +34,7 @@ impl View for NullView {
 }
 
 pub struct Win {
-    pub context: Box<Context>,
+    pub context: ContextRef,
     pub gtkwin: gtk::Window,
     pub child: Box<View>,
 }
@@ -66,7 +58,7 @@ impl Win {
         };
 
         let win = Rc::new(RefCell::new(Win {
-            context: Box::new(context.clone()),
+            context: context.clone(),
             gtkwin: gtkwin.clone(),
             child: Box::new(NullView {}),
         }));

@@ -131,12 +131,12 @@ impl ReadLine {
 }
 
 pub struct ReadLineView {
-    context: Box<view::Context>,
+    context: view::ContextRef,
     pub rl: ReadLine,
 }
 
 impl ReadLineView {
-    pub fn new(context: Box<view::Context>) -> ReadLineView {
+    pub fn new(context: view::ContextRef) -> ReadLineView {
         ReadLineView {
             context: context,
             rl: ReadLine::new(),
@@ -168,7 +168,7 @@ impl View for ReadLineView {
     fn key(&mut self, ev: &gdk::EventKey) {
         if let Some(key) = translate_key(ev) {
             if self.rl.key(&key) {
-                self.context.dirty();
+                self.context.borrow_mut().dirty();
             }
         }
     }

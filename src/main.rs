@@ -11,40 +11,29 @@ use std::sync::Arc;
 use smash::term::Term;
 use smash::view;
 use smash::view::View;
-use std::sync::atomic;
-use std::sync::atomic::AtomicBool;
 use smash::threaded_ref::ThreadedRef;
-
-// http://stackoverflow.com/questions/31966497/
-//     howto-idiomatic-rust-for-callbacks-with-gtk-rust-gnome
 
 struct State {
     // win: gtk::Window,
     term: Term,
-    dirty: Arc<AtomicBool>,
 }
 
 impl View for State {
     fn draw(&mut self, cr: &cairo::Context) {
         self.term.draw(cr);
-        self.dirty.store(false, atomic::Ordering::SeqCst);
     }
     fn key(&mut self, ev: &gdk::EventKey) {
         self.term.key(ev);
     }
 }
 
-fn mark_dirty(dirty: &Arc<AtomicBool>, win: ThreadedRef<gtk::Window>) {
-    let was_dirty = dirty.compare_and_swap(false, true, atomic::Ordering::SeqCst);
-    if was_dirty {
-        return;
-    }
-
+fn mark_dirty(context: &Arc<ThreadedRef<view::ContextRef>>) {
     // Enqueue a repaint, but put a bit of delay in it; this allows this thread
     // to do a bit more work before the paint happens.
     // TODO: ensure this actually matters in profiles.
+    let context = context.clone();
     glib::timeout_add(10, move || {
-        win.get().queue_draw();
+        context.get().borrow_mut().dirty();
         glib::Continue(false)
     });
 }
@@ -68,18 +57,15 @@ fn wmain() {
     gtkwin.resize(80 * font_extents.max_x_advance as i32,
                   25 * font_extents.height as i32);
 
-    let dirty = Arc::new(AtomicBool::new(false));
-    let dirty2 = ThreadedRef::new(gtkwin.clone());
     let term = {
-        let dirty = dirty.clone();
+        let context = Arc::new(ThreadedRef::new(win.borrow().context.clone()));
         Term::new(font_extents,
                   Box::new(move || {
-                      mark_dirty(&dirty, dirty2.clone());
+                      mark_dirty(&context);
                   }))
     };
     let state = State {
         // win: win.clone(),
-        dirty: dirty,
         term: term,
     };
 
