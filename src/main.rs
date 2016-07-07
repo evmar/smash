@@ -1,16 +1,14 @@
-extern crate smash;
-
-extern crate gtk;
+extern crate cairo;
 extern crate gdk;
 extern crate glib;
-extern crate cairo;
-use gtk::prelude::*;
+extern crate gtk;
+extern crate smash;
 use gdk::prelude::*;
-use std::clone::Clone;
-use std::sync::Arc;
+use gtk::prelude::*;
 use smash::term::Term;
-use smash::view;
 use smash::threaded_ref::ThreadedRef;
+use smash::view;
+use std::sync::Arc;
 
 fn mark_dirty(context: &Arc<ThreadedRef<view::ContextRef>>) {
     // Enqueue a repaint, but put a bit of delay in it; this allows this thread
