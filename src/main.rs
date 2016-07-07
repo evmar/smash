@@ -29,13 +29,9 @@ fn main() {
     gtkwin.realize();
 
     let font_extents = {
-        match gtkwin.get_window() {
-            Some(ref win) => {
-                let ctx = cairo::Context::create_from_window(&win);
-                Term::get_font_metrics(&ctx)
-            }
-            None => panic!("no window"),
-        }
+        let win = gtkwin.get_window().unwrap();
+        let ctx = cairo::Context::create_from_window(&win);
+        Term::get_font_metrics(&ctx)
     };
 
     gtkwin.resize(80 * font_extents.max_x_advance as i32,
