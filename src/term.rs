@@ -11,6 +11,8 @@ use std::sync::Arc;
 use std::sync::Mutex;
 use std::thread;
 use std::time;
+use std::sync::atomic;
+use std::sync::atomic::AtomicBool;
 
 use pty;
 use vt100;
@@ -48,11 +50,16 @@ fn duration_in_ms(dur: time::Duration) -> u64 {
     dur.as_secs() * 1000 + (dur.subsec_nanos() as u64 / 1000000)
 }
 
+struct DirtyState {
+    draw_pending: AtomicBool,
+    mark_dirty: Box<Fn() + Send + Sync>,
+}
+
 pub struct Term {
     pub font_metrics: cairo::FontExtents,
     vt: Arc<Mutex<vt100::VT>>,
     stdin: fs::File,
-    mark_dirty: Arc<Box<Fn() + Send + Sync>>,
+    dirty_state: Arc<DirtyState>,
     last_paint: time::Instant,
 }
 
@@ -66,18 +73,26 @@ impl Term {
             font_metrics: font_extents,
             vt: Arc::new(Mutex::new(vt100::VT::new())),
             stdin: stdin,
-            mark_dirty: Arc::new(dirty),
+            dirty_state: Arc::new(DirtyState {
+                draw_pending: AtomicBool::new(false),
+                mark_dirty: dirty,
+            }),
             last_paint: time::Instant::now(),
         };
 
         {
             let mut rf = rf;
             let vt = term.vt.clone();
-            let mark_dirty = term.mark_dirty.clone();
+            let dirty_state = term.dirty_state.clone();
             thread::spawn(move || {
                 let mut r = vt100::VTReader::new(&*vt, wf);
                 while r.read(&mut rf) {
-                    mark_dirty();
+                    let draw_pending = dirty_state.draw_pending
+                        .compare_and_swap(false, true, atomic::Ordering::SeqCst);
+                    if draw_pending {
+                        continue;
+                    }
+                    (dirty_state.mark_dirty)();
                 }
             })
         };
@@ -147,6 +162,7 @@ impl Term {
 
 impl View for Term {
     fn draw(&mut self, cr: &cairo::Context) {
+        self.dirty_state.draw_pending.store(false, atomic::Ordering::SeqCst);
         let now = time::Instant::now();
         if false {
             println!("paint after {:?}",

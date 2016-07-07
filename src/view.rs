@@ -13,6 +13,7 @@ pub struct GtkContext {
 impl GtkContext {
     pub fn dirty(&mut self) {
         if self.draw_pending {
+            println!("debounce dirty");
             return;
         }
         self.draw_pending = true;
