@@ -1,5 +1,9 @@
 extern crate thread_id;
 
+/// ThreadedRef is a reference to an object that lives only on one thread.
+/// When it's created it takes ownership of T and saves which thread it's
+/// on; later attempts to access the T will panic unless they are done on
+/// the original thread.
 pub struct ThreadedRef<T> {
     tid: usize,
     data: T,
