@@ -10,22 +10,7 @@ use std::clone::Clone;
 use std::sync::Arc;
 use smash::term::Term;
 use smash::view;
-use smash::view::View;
 use smash::threaded_ref::ThreadedRef;
-
-struct State {
-    // win: gtk::Window,
-    term: Term,
-}
-
-impl View for State {
-    fn draw(&mut self, cr: &cairo::Context) {
-        self.term.draw(cr);
-    }
-    fn key(&mut self, ev: &gdk::EventKey) {
-        self.term.key(ev);
-    }
-}
 
 fn mark_dirty(context: &Arc<ThreadedRef<view::ContextRef>>) {
     // Enqueue a repaint, but put a bit of delay in it; this allows this thread
@@ -38,7 +23,8 @@ fn mark_dirty(context: &Arc<ThreadedRef<view::ContextRef>>) {
     });
 }
 
-fn wmain() {
+fn main() {
+    gtk::init().unwrap();
     let win = view::Win::new();
 
     let gtkwin = win.borrow_mut().gtkwin.clone();
@@ -64,18 +50,9 @@ fn wmain() {
                       mark_dirty(&context);
                   }))
     };
-    let state = State {
-        // win: win.clone(),
-        term: term,
-    };
 
-    win.borrow_mut().child = Box::new(state);
+    win.borrow_mut().child = Box::new(term);
     gtkwin.show_all();
 
     gtk::main();
-}
-
-fn main() {
-    gtk::init().unwrap();
-    wmain();
 }
