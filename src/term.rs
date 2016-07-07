@@ -52,7 +52,7 @@ pub struct Term {
     pub font_metrics: cairo::FontExtents,
     vt: Arc<Mutex<vt100::VT>>,
     stdin: fs::File,
-    dirty: Arc<Box<Fn() + Send + Sync>>,
+    mark_dirty: Arc<Box<Fn() + Send + Sync>>,
     last_paint: time::Instant,
 }
 
@@ -66,18 +66,18 @@ impl Term {
             font_metrics: font_extents,
             vt: Arc::new(Mutex::new(vt100::VT::new())),
             stdin: stdin,
-            dirty: Arc::new(dirty),
+            mark_dirty: Arc::new(dirty),
             last_paint: time::Instant::now(),
         };
 
         {
             let mut rf = rf;
             let vt = term.vt.clone();
-            let dirty = term.dirty.clone();
+            let mark_dirty = term.mark_dirty.clone();
             thread::spawn(move || {
                 let mut r = vt100::VTReader::new(&*vt, wf);
                 while r.read(&mut rf) {
-                    dirty();
+                    mark_dirty();
                 }
             })
         };
