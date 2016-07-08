@@ -1,6 +1,7 @@
 extern crate cairo;
 extern crate gdk;
 extern crate gtk;
+use gdk::prelude::*;
 use gtk::prelude::*;
 use std::rc::Rc;
 use std::cell::RefCell;
@@ -84,6 +85,12 @@ impl Win {
         }
 
         win
+    }
+
+    pub fn create_cairo(&mut self) -> cairo::Context {
+        self.gtkwin.realize();
+        let gdkwin = self.gtkwin.get_window().unwrap();
+        cairo::Context::create_from_window(&gdkwin)
     }
 }
 
