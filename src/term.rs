@@ -10,16 +10,16 @@ use std::os::unix::io::FromRawFd;
 use std::str;
 use std::sync::Arc;
 use std::sync::Mutex;
+use std::sync::atomic::AtomicBool;
+use std::sync::atomic;
 use std::thread;
 use std::time;
-use std::sync::atomic;
-use std::sync::atomic::AtomicBool;
-use threaded_ref::ThreadedRef;
 
 use pty;
-use vt100;
-use view;
+use threaded_ref::ThreadedRef;
 use view::View;
+use view;
+use vt100;
 
 type Color = (u8, u8, u8);
 const DEFAULT_BG: Color = (0xf7, 0xf7, 0xf7);
