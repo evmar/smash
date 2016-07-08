@@ -1,11 +1,10 @@
 extern crate cairo;
 extern crate smash;
-extern crate gtk;
 extern crate gdk;
 use smash::readline::ReadLineView;
+use smash::view;
 use smash::view::View;
 use smash::view::Win;
-use gtk::prelude::*;
 
 struct Padding {
     child: Box<View>,
@@ -22,20 +21,20 @@ impl View for Padding {
 }
 
 fn main() {
-    gtk::init().unwrap();
+    view::init();
 
     let win = Win::new();
-
-    let mut rl = ReadLineView::new(win.borrow().context.clone());
-    rl.rl.insert("a");
-
-    let padding = Padding { child: Box::new(rl) };
-
     {
         let mut win = win.borrow_mut();
+
+        let mut rl = ReadLineView::new(win.context.clone());
+        rl.rl.insert("a");
+
+        let padding = Padding { child: Box::new(rl) };
+
         win.child = Box::new(padding);
-        win.gtkwin.show_all();
+        win.show();
     }
 
-    gtk::main();
+    view::main();
 }

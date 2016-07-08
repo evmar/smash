@@ -92,6 +92,14 @@ impl Win {
         let gdkwin = self.gtkwin.get_window().unwrap();
         cairo::Context::create_from_window(&gdkwin)
     }
+
+    pub fn resize(&mut self, width: i32, height: i32) {
+        self.gtkwin.resize(width, height);
+    }
+
+    pub fn show(&mut self) {
+        self.gtkwin.show();
+    }
 }
 
 pub fn is_modifier_key_event(ev: &gdk::EventKey) -> bool {
@@ -107,4 +115,12 @@ pub fn is_modifier_key_event(ev: &gdk::EventKey) -> bool {
         gdk::enums::key::Meta_R => true,
         _ => false,
     }
+}
+
+pub fn init() {
+    gtk::init().unwrap();
+}
+
+pub fn main() {
+    gtk::main();
 }
