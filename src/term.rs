@@ -1,5 +1,6 @@
 extern crate cairo;
 extern crate gdk;
+extern crate glib;
 
 use gtk::prelude::*;
 use std::fs;
@@ -13,6 +14,7 @@ use std::thread;
 use std::time;
 use std::sync::atomic;
 use std::sync::atomic::AtomicBool;
+use threaded_ref::ThreadedRef;
 
 use pty;
 use vt100;
@@ -50,21 +52,16 @@ fn duration_in_ms(dur: time::Duration) -> u64 {
     dur.as_secs() * 1000 + (dur.subsec_nanos() as u64 / 1000000)
 }
 
-struct DirtyState {
-    draw_pending: AtomicBool,
-    mark_dirty: Box<Fn() + Send + Sync>,
-}
-
 pub struct Term {
     pub font_metrics: cairo::FontExtents,
     vt: Arc<Mutex<vt100::VT>>,
     stdin: fs::File,
-    dirty_state: Arc<DirtyState>,
+    draw_pending: Arc<AtomicBool>,
     last_paint: time::Instant,
 }
 
 impl Term {
-    pub fn new(font_extents: cairo::FontExtents, dirty: Box<Fn() + Send + Sync>) -> Term {
+    pub fn new(context: view::ContextRef, font_extents: cairo::FontExtents) -> Term {
         let (rf, wf) = pty::bash();
         pty::set_size(&rf, 25, 80);
         let stdin = unsafe { fs::File::from_raw_fd(wf.as_raw_fd()) };
@@ -73,26 +70,32 @@ impl Term {
             font_metrics: font_extents,
             vt: Arc::new(Mutex::new(vt100::VT::new())),
             stdin: stdin,
-            dirty_state: Arc::new(DirtyState {
-                draw_pending: AtomicBool::new(false),
-                mark_dirty: dirty,
-            }),
+            draw_pending: Arc::new(AtomicBool::new(false)),
             last_paint: time::Instant::now(),
         };
 
         {
             let mut rf = rf;
             let vt = term.vt.clone();
-            let dirty_state = term.dirty_state.clone();
+            let draw_pending = term.draw_pending.clone();
+            let context = Arc::new(ThreadedRef::new(context.clone()));
             thread::spawn(move || {
                 let mut r = vt100::VTReader::new(&*vt, wf);
                 while r.read(&mut rf) {
-                    let draw_pending = dirty_state.draw_pending
-                        .compare_and_swap(false, true, atomic::Ordering::SeqCst);
-                    if draw_pending {
+                    let draw_was_pending =
+                        draw_pending.compare_and_swap(false, true, atomic::Ordering::SeqCst);
+                    if draw_was_pending {
                         continue;
                     }
-                    (dirty_state.mark_dirty)();
+
+                    // Enqueue a repaint, but put a bit of delay in it; this allows this thread
+                    // to do a bit more work before the paint happens.
+                    // TODO: ensure this actually matters in profiles.
+                    let context = context.clone();
+                    glib::timeout_add(10, move || {
+                        context.get().borrow_mut().dirty();
+                        glib::Continue(false)
+                    });
                 }
             })
         };
@@ -162,7 +165,7 @@ impl Term {
 
 impl View for Term {
     fn draw(&mut self, cr: &cairo::Context) {
-        self.dirty_state.draw_pending.store(false, atomic::Ordering::SeqCst);
+        self.draw_pending.store(false, atomic::Ordering::SeqCst);
         let now = time::Instant::now();
         if false {
             println!("paint after {:?}",
