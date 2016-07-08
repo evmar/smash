@@ -186,6 +186,15 @@ fn translate_key(ev: &gdk::EventKey) -> Option<String> {
     if ev.get_state().contains(gdk::enums::modifier_type::Mod1Mask) {
         name.push_str("M-");
     }
+
+    if name.len() == 0 {
+        if let Some(uni) = gdk::keyval_to_unicode(ev.get_keyval()) {
+            if uni >= ' ' {
+                return Some(uni.to_string());
+            }
+        }
+    }
+
     let gdkname = match gdk::keyval_name(ev.get_keyval()) {
         Some(n) => n,
         None => {
@@ -194,10 +203,6 @@ fn translate_key(ev: &gdk::EventKey) -> Option<String> {
         }
     };
     name.push_str(&gdkname);
-
-    if name == "space" {
-        name = String::from(" ");
-    }
 
     // name.push_str(&gdk::keyval_name(ev.get_keyval()).unwrap());
 
