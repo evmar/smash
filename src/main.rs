@@ -92,7 +92,7 @@ fn main() {
         };
         win.child = Box::new(LogEntry {
             prompt: Prompt::new(ReadLineView::new(win.context.clone())),
-            term: Some(Term::new(win.context.clone(), font_extents)),
+            term: Some(Term::new(win.context.clone(), font_extents, &["ls"])),
         });
         win.show();
     }

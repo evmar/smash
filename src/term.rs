@@ -61,8 +61,11 @@ pub struct Term {
 }
 
 impl Term {
-    pub fn new(context: view::ContextRef, font_extents: cairo::FontExtents) -> Term {
-        let (rf, wf) = pty::bash();
+    pub fn new(context: view::ContextRef,
+               font_extents: cairo::FontExtents,
+               command: &[&str])
+               -> Term {
+        let (rf, wf) = pty::spawn(command);
         pty::set_size(&rf, 25, 80);
         let stdin = unsafe { fs::File::from_raw_fd(wf.as_raw_fd()) };
 

@@ -16,7 +16,7 @@ fn main() {
         win.resize(80 * font_extents.max_x_advance as i32,
                    25 * font_extents.height as i32);
 
-        let term = Term::new(win.context.clone(), font_extents);
+        let term = Term::new(win.context.clone(), font_extents, &["bash"]);
 
         win.child = Box::new(term);
         win.show();
