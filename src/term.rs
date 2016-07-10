@@ -174,7 +174,6 @@ impl View for Term {
         self.last_paint = now;
 
         use_color(cr, DEFAULT_BG);
-        cr.paint();
 
         self.use_font(cr);
 

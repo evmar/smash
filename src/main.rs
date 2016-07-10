@@ -24,6 +24,7 @@ impl Prompt {
 
 impl view::View for Prompt {
     fn draw(&mut self, cr: &cairo::Context) {
+        cr.save();
         cr.set_source_rgb(0.7, 0.7, 0.7);
         cr.new_path();
         cr.move_to(5.0, 8.0);
@@ -33,6 +34,7 @@ impl view::View for Prompt {
 
         cr.translate(18.0, 5.0);
         self.rl.draw(cr);
+        cr.restore();
     }
     fn key(&mut self, ev: &gdk::EventKey) {
         self.rl.key(ev);
@@ -54,6 +56,12 @@ struct LogEntry {
 impl view::View for LogEntry {
     fn draw(&mut self, cr: &cairo::Context) {
         self.prompt.draw(cr);
+        if let Some(ref mut term) = self.term {
+            cr.save();
+            cr.translate(0.0, self.prompt.height as f64);
+            term.draw(cr);
+            cr.restore();
+        }
     }
     fn key(&mut self, ev: &gdk::EventKey) {
         if let Some(ref mut term) = self.term {
@@ -63,7 +71,8 @@ impl view::View for LogEntry {
         }
     }
     fn layout(&mut self, cr: &cairo::Context, space: Layout) -> Layout {
-        self.prompt.layout(cr, space)
+        self.prompt.layout(cr, space.clone());
+        space
     }
 }
 
@@ -77,9 +86,13 @@ fn main() {
 
     {
         let mut win = win.borrow_mut();
+        let font_extents = {
+            let ctx = win.create_cairo();
+            Term::get_font_metrics(&ctx)
+        };
         win.child = Box::new(LogEntry {
             prompt: Prompt::new(ReadLineView::new(win.context.clone())),
-            term: None,
+            term: Some(Term::new(win.context.clone(), font_extents)),
         });
         win.show();
     }

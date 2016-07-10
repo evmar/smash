@@ -44,6 +44,7 @@ impl GtkContext {
 pub type ContextRef = Rc<RefCell<GtkContext>>;
 
 #[derive(Debug)]
+#[derive(Clone)]
 pub struct Layout {
     pub width: i32,
     pub height: i32,
