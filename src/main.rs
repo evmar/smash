@@ -13,7 +13,16 @@ struct Prompt {
 
 impl view::View for Prompt {
     fn draw(&mut self, cr: &cairo::Context) {
-        cr.translate(10.0, 10.0);
+        cr.set_source_rgb(0.7, 0.7, 0.7);
+        cr.new_path();
+        cr.move_to(0.0, 5.0);
+        cr.line_to(10.0, 5.0);
+        cr.line_to(15.0, 10.0);
+        cr.line_to(10.0, 15.0);
+        cr.line_to(0.0, 15.0);
+        cr.fill();
+
+        cr.translate(18.0, 10.0);
         self.rl.draw(cr);
     }
     fn key(&mut self, ev: &gdk::EventKey) {
