@@ -145,6 +145,11 @@ impl ReadLine {
     pub fn get(&self) -> String {
         self.buf.clone()
     }
+
+    pub fn clear(&mut self) {
+        self.buf.clear();
+        self.ofs = 0;
+    }
 }
 
 pub struct ReadLineView {
@@ -199,8 +204,7 @@ impl Delegate for Rc<RefCell<ReadLineView>> {
         let rl = self.clone();
         view::add_task(Box::new(move || {
             let mut rl = rl.borrow_mut();
-            rl.rl.buf = String::new();
-            rl.rl.ofs = 0;
+            rl.rl.clear();
             rl.context.borrow_mut().dirty();
         }));
     }
