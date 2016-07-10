@@ -7,8 +7,20 @@ use std::os::unix::io::AsRawFd;
 use std::ptr;
 
 pub fn bash() -> (fs::File, fs::File) {
-    let args = ["bash\0"];
-    let mut cargs: Vec<_> = args.iter().map(|&a| a.as_ptr() as *const i8).collect();
+    spawn(&["bash"])
+}
+
+pub fn spawn(args: &[&str]) -> (fs::File, fs::File) {
+    // NUL-terminate each argument.
+    let nullargs: Vec<String> = args.iter()
+        .map(|&a| {
+            let mut a = String::from(a);
+            a.push('\0');
+            a
+        })
+        .collect();
+    // Gather pointers into the NUL-terminated argument list.
+    let mut cargs: Vec<_> = nullargs.iter().map(|ref a| a.as_ptr() as *const i8).collect();
     cargs.push(ptr::null());
 
     let mut fd: libc::c_int = 0;
