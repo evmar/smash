@@ -35,6 +35,15 @@ impl View for NullView {
     fn key(&mut self, _: &gdk::EventKey) {}
 }
 
+impl<V: View> View for Rc<RefCell<V>> {
+    fn draw(&mut self, cr: &cairo::Context) {
+        self.borrow_mut().draw(cr);
+    }
+    fn key(&mut self, ev: &gdk::EventKey) {
+        self.borrow_mut().key(ev);
+    }
+}
+
 pub struct Win {
     pub context: ContextRef,
     pub gtkwin: gtk::Window,

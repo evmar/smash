@@ -4,12 +4,19 @@ extern crate gdk;
 use view;
 use view::View;
 use std::collections::HashMap;
+use std::rc::Rc;
+use std::cell::RefCell;
+
+trait Delegate {
+    fn accept(&mut self, command: &str);
+}
 
 pub struct ReadLine {
     buf: String,
     ofs: usize,
     commands: HashMap<String, fn(&mut ReadLine)>,
     bindings: HashMap<String, String>,
+    delegate: Option<Rc<RefCell<Delegate>>>,
 }
 
 macro_rules! cmds {
@@ -45,6 +52,13 @@ fn make_command_map() -> HashMap<String, fn(&mut ReadLine)> {
     }
 }
 
+// history
+"accept-line" => rl {
+    if let Some(ref mut delegate) = rl.delegate {
+        delegate.borrow_mut().accept("foo");
+    }
+}
+
 // changing text
 "backward-delete-char" => rl {
     if rl.ofs > 0 {
@@ -72,6 +86,8 @@ fn make_binds_map() -> HashMap<String, String> {
         "C-f" => "forward-char",
         "C-b" => "backward-char",
 
+        "Return" => "accept-line",
+
         "BackSpace" => "backward-delete-char"
     )
 }
@@ -83,6 +99,7 @@ impl ReadLine {
             ofs: 0,
             commands: make_command_map(),
             bindings: make_binds_map(),
+            delegate: None,
         }
     }
 
@@ -136,11 +153,14 @@ pub struct ReadLineView {
 }
 
 impl ReadLineView {
-    pub fn new(context: view::ContextRef) -> ReadLineView {
-        ReadLineView {
+    pub fn new(context: view::ContextRef) -> Rc<RefCell<ReadLineView>> {
+        let view = Rc::new(RefCell::new(ReadLineView {
             context: context,
             rl: ReadLine::new(),
-        }
+        }));
+        let delegate = view.clone();
+        view.borrow_mut().rl.delegate = Some(delegate);
+        view
     }
 }
 
@@ -171,6 +191,13 @@ impl View for ReadLineView {
                 self.context.borrow_mut().dirty();
             }
         }
+    }
+}
+
+impl Delegate for ReadLineView {
+    fn accept(&mut self, _command: &str) {
+        self.rl.buf = String::new();
+        self.context.borrow_mut().dirty();
     }
 }
 

@@ -4,9 +4,11 @@ extern crate gdk;
 use smash::view;
 use smash::readline::ReadLineView;
 use smash::term::Term;
+use std::rc::Rc;
+use std::cell::RefCell;
 
 struct Prompt {
-    rl: ReadLineView,
+    rl: Rc<RefCell<ReadLineView>>,
 }
 
 impl view::View for Prompt {

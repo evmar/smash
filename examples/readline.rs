@@ -28,7 +28,7 @@ fn main() {
         let mut win = win.borrow_mut();
 
         let mut rl = ReadLineView::new(win.context.clone());
-        rl.rl.insert("a");
+        rl.borrow_mut().rl.insert("a");
 
         let padding = Padding { child: Box::new(rl) };
 
