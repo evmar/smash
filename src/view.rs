@@ -6,6 +6,25 @@ use gtk::prelude::*;
 use std::rc::Rc;
 use std::cell::RefCell;
 
+thread_local!(static TASKS: RefCell<Vec<Box<FnMut()>>> = RefCell::new(Vec::new()));
+
+pub fn add_task(task: Box<FnMut()>) {
+    TASKS.with(|tasks| {
+        tasks.borrow_mut().push(task);
+    });
+    gtk::idle_add(run_tasks);
+}
+
+fn run_tasks() -> gtk::Continue {
+    TASKS.with(|tasks| {
+        let mut tasks = tasks.borrow_mut();
+        for mut t in tasks.drain(..) {
+            t();
+        }
+    });
+    Continue(false)
+}
+
 pub struct GtkContext {
     win: gtk::Window,
     draw_pending: bool,

@@ -16,7 +16,7 @@ pub struct ReadLine {
     ofs: usize,
     commands: HashMap<String, fn(&mut ReadLine)>,
     bindings: HashMap<String, String>,
-    delegate: Option<Rc<RefCell<Delegate>>>,
+    delegate: Option<Box<Delegate>>,
 }
 
 macro_rules! cmds {
@@ -55,7 +55,7 @@ fn make_command_map() -> HashMap<String, fn(&mut ReadLine)> {
 // history
 "accept-line" => rl {
     if let Some(ref mut delegate) = rl.delegate {
-        delegate.borrow_mut().accept("foo");
+        delegate.accept("foo");
     }
 }
 
@@ -158,7 +158,7 @@ impl ReadLineView {
             context: context,
             rl: ReadLine::new(),
         }));
-        let delegate = view.clone();
+        let delegate = Box::new(view.clone());
         view.borrow_mut().rl.delegate = Some(delegate);
         view
     }
@@ -194,10 +194,15 @@ impl View for ReadLineView {
     }
 }
 
-impl Delegate for ReadLineView {
+impl Delegate for Rc<RefCell<ReadLineView>> {
     fn accept(&mut self, _command: &str) {
-        self.rl.buf = String::new();
-        self.context.borrow_mut().dirty();
+        let rl = self.clone();
+        view::add_task(Box::new(move || {
+            let mut rl = rl.borrow_mut();
+            rl.rl.buf = String::new();
+            rl.rl.ofs = 0;
+            rl.context.borrow_mut().dirty();
+        }));
     }
 }
 
