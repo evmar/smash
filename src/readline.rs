@@ -2,7 +2,7 @@ extern crate cairo;
 extern crate gdk;
 
 use view;
-use view::View;
+use view::{Layout, View};
 use std::collections::HashMap;
 use std::rc::Rc;
 use std::cell::RefCell;
@@ -167,18 +167,22 @@ impl ReadLineView {
         view.borrow_mut().rl.delegate = Some(delegate);
         view
     }
-}
 
-impl View for ReadLineView {
-    fn draw(&mut self, cr: &cairo::Context) {
-        cr.set_source_rgb(0.0, 0.0, 0.0);
+    fn use_font(&mut self, cr: &cairo::Context) {
         cr.select_font_face("sans",
                             cairo::enums::FontSlant::Normal,
                             cairo::enums::FontWeight::Normal);
         cr.set_font_size(18.0);
+    }
+}
+
+impl View for ReadLineView {
+    fn draw(&mut self, cr: &cairo::Context) {
+        self.use_font(cr);
+        cr.set_source_rgb(0.0, 0.0, 0.0);
         let ext = cr.font_extents();
 
-        cr.translate(0.0, ext.height);
+        cr.translate(0.0, ext.ascent);
         let str = self.rl.buf.as_str();
         cr.show_text(str);
 
@@ -195,6 +199,15 @@ impl View for ReadLineView {
             if self.rl.key(&key) {
                 self.context.borrow_mut().dirty();
             }
+        }
+    }
+
+    fn layout(&mut self, cr: &cairo::Context, space: Layout) -> Layout {
+        self.use_font(cr);
+        let ext = cr.font_extents();
+        Layout {
+            width: space.width,
+            height: ext.height.round() as i32,
         }
     }
 }

@@ -43,9 +43,34 @@ impl GtkContext {
 
 pub type ContextRef = Rc<RefCell<GtkContext>>;
 
+#[derive(Debug)]
+pub struct Layout {
+    pub width: i32,
+    pub height: i32,
+}
+
+impl Layout {
+    pub fn add(&self, w: i32, h: i32) -> Layout {
+        let layout = Layout {
+            width: self.width + w,
+            height: self.height + h,
+        };
+        if layout.width < 0 || layout.height < 0 {
+            println!("layout underflow: {:?}", layout);
+        }
+        layout
+    }
+}
+
 pub trait View {
     fn draw(&mut self, cr: &cairo::Context);
     fn key(&mut self, ev: &gdk::EventKey);
+    fn layout(&mut self, _cr: &cairo::Context, _space: Layout) -> Layout {
+        Layout {
+            width: 0,
+            height: 0,
+        }
+    }
 }
 
 pub struct NullView {}
@@ -56,10 +81,13 @@ impl View for NullView {
 
 impl<V: View> View for Rc<RefCell<V>> {
     fn draw(&mut self, cr: &cairo::Context) {
-        self.borrow_mut().draw(cr);
+        self.borrow_mut().draw(cr)
     }
     fn key(&mut self, ev: &gdk::EventKey) {
-        self.borrow_mut().key(ev);
+        self.borrow_mut().key(ev)
+    }
+    fn layout(&mut self, cr: &cairo::Context, space: Layout) -> Layout {
+        self.borrow_mut().layout(cr, space)
     }
 }
 
@@ -98,6 +126,11 @@ impl Win {
             let win = win.clone();
             gtkwin.connect_draw(move |_, cr| {
                 let mut win = win.borrow_mut();
+                win.child.layout(cr,
+                                 Layout {
+                                     width: 600,
+                                     height: 400,
+                                 });
                 win.child.draw(cr);
                 context.borrow_mut().draw_pending = false;
                 Inhibit(false)

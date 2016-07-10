@@ -219,6 +219,7 @@ impl View for Term {
             cr.restore();
         }
     }
+
     fn key(&mut self, ev: &gdk::EventKey) {
         let buf = translate_key(&ev);
         self.stdin.write(&buf).unwrap();
