@@ -168,16 +168,16 @@ pub struct VTReader<'a> {
     todo: HashSet<String>,
     vt: &'a Mutex<VT>,
     r: ByteScanner,
-    w: fs::File,
+    pty: fs::File,
 }
 
 impl<'a> VTReader<'a> {
-    pub fn new(vt: &'a Mutex<VT>, w: fs::File) -> VTReader<'a> {
+    pub fn new(vt: &'a Mutex<VT>, pty: fs::File) -> VTReader<'a> {
         VTReader {
             todo: HashSet::new(),
             vt: vt,
             r: ByteScanner::new(),
-            w: w,
+            pty: pty,
         }
     }
 
@@ -203,7 +203,7 @@ impl<'a> VTReader<'a> {
                 todo: todo,
                 vt: &mut vt,
                 r: &mut self.r,
-                w: &self.w,
+                pty: &self.pty,
             };
             match vtr.read() {
                 None => {
@@ -221,7 +221,7 @@ pub struct VTRead<'a> {
     todo: &'a mut FnMut(String),
     vt: &'a mut VT,
     r: &'a mut ByteScanner,
-    w: &'a fs::File,
+    pty: &'a fs::File,
 }
 
 impl<'a> VTRead<'a> {
@@ -361,7 +361,7 @@ impl<'a> VTRead<'a> {
             }
             'c' if gt => {
                 // send device attributes (secondary)
-                self.w.write("\x1b[41;0;0c".as_bytes()).unwrap();
+                self.pty.write("\x1b[41;0;0c".as_bytes()).unwrap();
             }
             'd' => {
                 let row = *args.get(0).unwrap_or(&1) - 1;
