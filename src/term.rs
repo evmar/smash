@@ -55,7 +55,7 @@ fn duration_in_ms(dur: time::Duration) -> u64 {
 pub struct Term {
     pub font_metrics: cairo::FontExtents,
     vt: Arc<Mutex<vt100::VT>>,
-    stdin: fs::File,
+    stdin: Option<fs::File>,
     draw_pending: Arc<AtomicBool>,
     last_paint: time::Instant,
 }
@@ -72,7 +72,7 @@ impl Term {
         let term = Term {
             font_metrics: font_extents,
             vt: Arc::new(Mutex::new(vt100::VT::new())),
-            stdin: stdin,
+            stdin: Some(stdin),
             draw_pending: Arc::new(AtomicBool::new(false)),
             last_paint: time::Instant::now(),
         };
@@ -223,8 +223,10 @@ impl View for Term {
     }
 
     fn key(&mut self, ev: &gdk::EventKey) {
-        let buf = translate_key(&ev);
-        self.stdin.write(&buf).unwrap();
+        if let Some(ref mut stdin) = self.stdin {
+            let buf = translate_key(&ev);
+            stdin.write(&buf).unwrap();
+        }
     }
 }
 

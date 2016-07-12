@@ -183,7 +183,6 @@ impl<'a> VTReader<'a> {
 
     pub fn read<R: Read>(&mut self, r: &mut R) -> bool {
         if let Err(ref err) = self.r.read(r) {
-            println!("read failed: {:?}", err);
             if err.raw_os_error().unwrap() == EIO {
                 return false;
             }
