@@ -4,7 +4,6 @@ use std::fmt::Display;
 use std::io::Read;
 use std::collections::hash_set::HashSet;
 use std::sync::Mutex;
-use std::sync::mpsc;
 use byte_scanner::ByteScanner;
 
 const EIO: libc::c_int = 5;
@@ -167,11 +166,11 @@ pub struct VTReader<'a> {
     todo: HashSet<String>,
     vt: &'a Mutex<VT>,
     r: ByteScanner,
-    stdin: mpsc::Sender<Box<[u8]>>,
+    stdin: Box<FnMut(Box<[u8]>)>,
 }
 
 impl<'a> VTReader<'a> {
-    pub fn new(vt: &'a Mutex<VT>, stdin: mpsc::Sender<Box<[u8]>>) -> VTReader<'a> {
+    pub fn new(vt: &'a Mutex<VT>, stdin: Box<FnMut(Box<[u8]>)>) -> VTReader<'a> {
         VTReader {
             todo: HashSet::new(),
             vt: vt,
@@ -202,7 +201,7 @@ impl<'a> VTReader<'a> {
                 todo: todo,
                 vt: &mut vt,
                 r: &mut self.r,
-                stdin: &mut self.stdin,
+                stdin: &mut *self.stdin,
             };
             match vtr.read() {
                 None => {
@@ -220,7 +219,7 @@ pub struct VTRead<'a> {
     todo: &'a mut FnMut(String),
     vt: &'a mut VT,
     r: &'a mut ByteScanner,
-    stdin: &'a mut mpsc::Sender<Box<[u8]>>,
+    stdin: &'a mut FnMut(Box<[u8]>),
 }
 
 impl<'a> VTRead<'a> {
@@ -360,7 +359,7 @@ impl<'a> VTRead<'a> {
             }
             'c' if gt => {
                 // send device attributes (secondary)
-                self.stdin.send(b"\x1b[41;0;0c".to_vec().into_boxed_slice()).unwrap();
+                (self.stdin)(b"\x1b[41;0;0c".to_vec().into_boxed_slice());
             }
             'd' => {
                 let row = *args.get(0).unwrap_or(&1) - 1;
@@ -557,13 +556,11 @@ mod tests {
     use super::*;
     use std::io::Read;
     use std::sync::Mutex;
-    use std::sync::mpsc;
 
     #[test]
     fn utf8() {
-        let (null, _) = mpsc::channel();
         let vt = Mutex::new(VT::new());
-        let mut r = VTReader::new(&vt, null);
+        let mut r = VTReader::new(&vt, Box::new(|_| {}));
 
         let buf = [0xE6, 0x97, 0xA5 /* 日 */, 0xE6, 0x9C, 0xAC /* 本 */, 0xE8, 0xAA,
                    0x9E /* 語 */];

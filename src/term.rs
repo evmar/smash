@@ -97,8 +97,11 @@ impl Term {
             let vt = term.vt.clone();
             let draw_pending = term.draw_pending.clone();
             let context = Arc::new(ThreadedRef::new(context.clone()));
+            let send = Box::new(move |input: Box<[u8]>| {
+                stdin_send.send(input).unwrap();
+            });
             thread::spawn(move || {
-                let mut r = vt100::VTReader::new(&*vt, stdin_send);
+                let mut r = vt100::VTReader::new(&*vt, send);
                 while r.read(&mut rf) {
                     let draw_was_pending =
                         draw_pending.compare_and_swap(false, true, atomic::Ordering::SeqCst);
