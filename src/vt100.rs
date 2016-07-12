@@ -1,11 +1,10 @@
 extern crate libc;
 
 use std::fmt::Display;
-use std::fs;
 use std::io::Read;
-use std::io::Write;
 use std::collections::hash_set::HashSet;
 use std::sync::Mutex;
+use std::sync::mpsc;
 use byte_scanner::ByteScanner;
 
 const EIO: libc::c_int = 5;
@@ -168,16 +167,16 @@ pub struct VTReader<'a> {
     todo: HashSet<String>,
     vt: &'a Mutex<VT>,
     r: ByteScanner,
-    pty: fs::File,
+    stdin: mpsc::Sender<Box<[u8]>>,
 }
 
 impl<'a> VTReader<'a> {
-    pub fn new(vt: &'a Mutex<VT>, pty: fs::File) -> VTReader<'a> {
+    pub fn new(vt: &'a Mutex<VT>, stdin: mpsc::Sender<Box<[u8]>>) -> VTReader<'a> {
         VTReader {
             todo: HashSet::new(),
             vt: vt,
             r: ByteScanner::new(),
-            pty: pty,
+            stdin: stdin,
         }
     }
 
@@ -203,7 +202,7 @@ impl<'a> VTReader<'a> {
                 todo: todo,
                 vt: &mut vt,
                 r: &mut self.r,
-                pty: &self.pty,
+                stdin: &mut self.stdin,
             };
             match vtr.read() {
                 None => {
@@ -221,7 +220,7 @@ pub struct VTRead<'a> {
     todo: &'a mut FnMut(String),
     vt: &'a mut VT,
     r: &'a mut ByteScanner,
-    pty: &'a fs::File,
+    stdin: &'a mut mpsc::Sender<Box<[u8]>>,
 }
 
 impl<'a> VTRead<'a> {
@@ -361,7 +360,7 @@ impl<'a> VTRead<'a> {
             }
             'c' if gt => {
                 // send device attributes (secondary)
-                self.pty.write("\x1b[41;0;0c".as_bytes()).unwrap();
+                self.stdin.send(b"\x1b[41;0;0c".to_vec().into_boxed_slice()).unwrap();
             }
             'd' => {
                 let row = *args.get(0).unwrap_or(&1) - 1;
@@ -556,15 +555,15 @@ impl<'a> VTRead<'a> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use std::fs;
     use std::io::Read;
     use std::sync::Mutex;
+    use std::sync::mpsc;
 
     #[test]
     fn utf8() {
-        let devnull = fs::OpenOptions::new().write(true).open("/dev/null").unwrap();
+        let (null, _) = mpsc::channel();
         let vt = Mutex::new(VT::new());
-        let mut r = VTReader::new(&vt, devnull);
+        let mut r = VTReader::new(&vt, null);
 
         let buf = [0xE6, 0x97, 0xA5 /* 日 */, 0xE6, 0x9C, 0xAC /* 本 */, 0xE8, 0xAA,
                    0x9E /* 語 */];

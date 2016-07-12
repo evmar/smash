@@ -6,11 +6,11 @@ use std::os::unix::io::FromRawFd;
 use std::os::unix::io::AsRawFd;
 use std::ptr;
 
-pub fn bash() -> (fs::File, fs::File) {
+pub fn bash() -> fs::File {
     spawn(&["bash"])
 }
 
-pub fn spawn(args: &[&str]) -> (fs::File, fs::File) {
+pub fn spawn(args: &[&str]) -> fs::File {
     // NUL-terminate each argument.
     let nullargs: Vec<String> = args.iter()
         .map(|&a| {
@@ -36,7 +36,7 @@ pub fn spawn(args: &[&str]) -> (fs::File, fs::File) {
                 panic!("notreached");
             }
             _ => {
-                return (fs::File::from_raw_fd(fd), fs::File::from_raw_fd(fd));
+                return fs::File::from_raw_fd(fd);
             }
         }
     }

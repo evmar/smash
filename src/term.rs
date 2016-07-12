@@ -14,6 +14,7 @@ use std::sync::atomic::AtomicBool;
 use std::sync::atomic;
 use std::thread;
 use std::time;
+use std::sync::mpsc;
 
 use pty;
 use threaded_ref::ThreadedRef;
@@ -55,7 +56,7 @@ fn duration_in_ms(dur: time::Duration) -> u64 {
 pub struct Term {
     pub font_metrics: cairo::FontExtents,
     vt: Arc<Mutex<vt100::VT>>,
-    stdin: Option<fs::File>,
+    stdin: mpsc::Sender<Box<[u8]>>,
     draw_pending: Arc<AtomicBool>,
     last_paint: time::Instant,
 }
@@ -65,14 +66,28 @@ impl Term {
                font_extents: cairo::FontExtents,
                command: &[&str])
                -> Term {
-        let (rf, wf) = pty::spawn(command);
+        let rf = pty::spawn(command);
         pty::set_size(&rf, 25, 80);
-        let stdin = unsafe { fs::File::from_raw_fd(wf.as_raw_fd()) };
+        let (stdin_send, stdin_recv) = mpsc::channel();
+
+        {
+            // Spawn a thread that forwards data from the channel into
+            // the pty.
+            let mut stdin = unsafe { fs::File::from_raw_fd(rf.as_raw_fd()) };
+            thread::spawn(move || {
+                loop {
+                    let buf: Box<[u8]> = stdin_recv.recv().unwrap();
+                    if stdin.write(&*buf).is_err() {
+                        break;
+                    }
+                }
+            });
+        }
 
         let term = Term {
             font_metrics: font_extents,
             vt: Arc::new(Mutex::new(vt100::VT::new())),
-            stdin: Some(stdin),
+            stdin: stdin_send.clone(),
             draw_pending: Arc::new(AtomicBool::new(false)),
             last_paint: time::Instant::now(),
         };
@@ -83,7 +98,7 @@ impl Term {
             let draw_pending = term.draw_pending.clone();
             let context = Arc::new(ThreadedRef::new(context.clone()));
             thread::spawn(move || {
-                let mut r = vt100::VTReader::new(&*vt, wf);
+                let mut r = vt100::VTReader::new(&*vt, stdin_send);
                 while r.read(&mut rf) {
                     let draw_was_pending =
                         draw_pending.compare_and_swap(false, true, atomic::Ordering::SeqCst);
@@ -223,16 +238,16 @@ impl View for Term {
     }
 
     fn key(&mut self, ev: &gdk::EventKey) {
-        if let Some(ref mut stdin) = self.stdin {
-            let buf = translate_key(&ev);
-            stdin.write(&buf).unwrap();
+        let buf = translate_key(&ev);
+        if self.stdin.send(buf).is_err() {
+            println!("can't send");
         }
     }
 }
 
-fn translate_key(ev: &gdk::EventKey) -> Vec<u8> {
+fn translate_key(ev: &gdk::EventKey) -> Box<[u8]> {
     if view::is_modifier_key_event(ev) {
-        return vec![];
+        return Box::new([]);
     }
     let keyval = ev.get_keyval();
 
@@ -241,22 +256,22 @@ fn translate_key(ev: &gdk::EventKey) -> Vec<u8> {
             if keyval < 128 {
                 match keyval as u8 as char {
                     c if c >= 'a' && c <= 'z' => {
-                        return vec![(c as u8) - ('a' as u8) + 1];
+                        return Box::new([(c as u8) - ('a' as u8) + 1]);
                     }
-                    '[' => return vec![27],
+                    '[' => return Box::new([27]),
                     _ => {}
                 }
             }
         }
         gdk::enums::modifier_type::Mod1Mask => {
             match gdk::keyval_to_unicode(keyval) {
-                Some(u) if u < 128 as char => return vec![27, u as u8],
+                Some(u) if u < 128 as char => return Box::new([27, u as u8]),
                 _ => {}
             }
         }
         s if s == gdk::ModifierType::empty() || s == gdk::enums::modifier_type::ShiftMask => {
             match gdk::keyval_to_unicode(keyval) {
-                Some(u) if u < 128 as char => return vec![u as u8],
+                Some(u) if u < 128 as char => return Box::new([u as u8]),
                 _ => {}
             }
         }
@@ -266,5 +281,5 @@ fn translate_key(ev: &gdk::EventKey) -> Vec<u8> {
              ev.get_keyval(),
              gdk::keyval_name(ev.get_keyval()),
              ev.get_state());
-    return vec!['?' as u8];
+    return Box::new(['?' as u8]);
 }
