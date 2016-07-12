@@ -1,6 +1,5 @@
 extern crate libc;
 
-use std::fmt::Display;
 use std::io::Read;
 use std::collections::hash_set::HashSet;
 use std::sync::Mutex;
@@ -223,7 +222,7 @@ pub struct VTRead<'a> {
 }
 
 impl<'a> VTRead<'a> {
-    fn todo<S: Into<String> + Display>(&mut self, msg: S) {
+    fn todo<S: Into<String>>(&mut self, msg: S) {
         (self.todo)(msg.into());
     }
     fn read_num(&mut self) -> Option<usize> {
