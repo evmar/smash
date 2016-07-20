@@ -15,6 +15,7 @@ use std::sync::atomic;
 use std::thread;
 use std::time;
 use std::sync::mpsc;
+use std::cell::RefCell;
 
 use pty;
 use threaded_ref::ThreadedRef;
@@ -184,38 +185,39 @@ impl Term {
     }
 }
 
-impl View for Term {
-    fn draw(&mut self, cr: &cairo::Context) {
-        self.draw_pending.store(false, atomic::Ordering::SeqCst);
+impl View for RefCell<Term> {
+    fn draw(&self, cr: &cairo::Context) {
+        let mut term = self.borrow_mut();
+        term.draw_pending.store(false, atomic::Ordering::SeqCst);
         let now = time::Instant::now();
         if false {
             println!("paint after {:?}",
-                     duration_in_ms(now.duration_since(self.last_paint)));
+                     duration_in_ms(now.duration_since(term.last_paint)));
         }
-        self.last_paint = now;
+        term.last_paint = now;
 
         use_color(cr, DEFAULT_BG);
 
-        self.use_font(cr);
+        term.use_font(cr);
 
-        let mut vt = self.vt.lock().unwrap();
+        let mut vt = term.vt.lock().unwrap();
         let mut buf = String::with_capacity(80);
         for (row, line) in vt.lines[vt.top..].iter().enumerate() {
             cr.save();
-            cr.translate(0.0, (row as f64 * self.font_metrics.height));
+            cr.translate(0.0, (row as f64 * term.font_metrics.height));
             let mut attr = Default::default();
             let mut x = 0.0;
             for (col, cell) in line.iter().enumerate() {
                 if cell.attr != attr {
-                    self.draw_span(cr, x, attr, &buf);
-                    x = col as f64 * self.font_metrics.max_x_advance;
+                    term.draw_span(cr, x, attr, &buf);
+                    x = col as f64 * term.font_metrics.max_x_advance;
                     attr = cell.attr.clone();
                     buf.clear();
                 }
                 buf.push(cell.ch);
             }
             if buf.len() > 0 {
-                self.draw_span(cr, x, attr, &buf);
+                term.draw_span(cr, x, attr, &buf);
                 buf.clear();
             }
             cr.restore();
@@ -223,7 +225,7 @@ impl View for Term {
 
         if !vt.hide_cursor {
             cr.save();
-            cr.translate(0.0, ((vt.row - vt.top) as f64 * self.font_metrics.height));
+            cr.translate(0.0, ((vt.row - vt.top) as f64 * term.font_metrics.height));
             let (ch, mut attr) = {
                 let cell = vt.ensure_pos();
                 (cell.ch, cell.attr)
@@ -232,17 +234,18 @@ impl View for Term {
             attr.set_inverse(!inv);
             let bytes = [ch as u8];
             let span = str::from_utf8(&bytes).unwrap();
-            self.draw_span(cr,
-                           (vt.col as f64 * self.font_metrics.max_x_advance),
+            term.draw_span(cr,
+                           (vt.col as f64 * term.font_metrics.max_x_advance),
                            attr.clone(),
                            span);
             cr.restore();
         }
     }
 
-    fn key(&mut self, ev: &gdk::EventKey) {
+    fn key(&self, ev: &gdk::EventKey) {
+        let term = self.borrow();
         let buf = translate_key(&ev);
-        if self.stdin.send(buf).is_err() {
+        if term.stdin.send(buf).is_err() {
             println!("can't send");
         }
     }

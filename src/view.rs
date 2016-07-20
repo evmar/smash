@@ -64,9 +64,9 @@ impl Layout {
 }
 
 pub trait View {
-    fn draw(&mut self, cr: &cairo::Context);
-    fn key(&mut self, ev: &gdk::EventKey);
-    fn layout(&mut self, _cr: &cairo::Context, _space: Layout) -> Layout {
+    fn draw(&self, cr: &cairo::Context);
+    fn key(&self, ev: &gdk::EventKey);
+    fn layout(&self, _cr: &cairo::Context, _space: Layout) -> Layout {
         Layout {
             width: 0,
             height: 0,
@@ -76,26 +76,14 @@ pub trait View {
 
 pub struct NullView {}
 impl View for NullView {
-    fn draw(&mut self, _: &cairo::Context) {}
-    fn key(&mut self, _: &gdk::EventKey) {}
-}
-
-impl<V: View> View for Rc<RefCell<V>> {
-    fn draw(&mut self, cr: &cairo::Context) {
-        self.borrow_mut().draw(cr)
-    }
-    fn key(&mut self, ev: &gdk::EventKey) {
-        self.borrow_mut().key(ev)
-    }
-    fn layout(&mut self, cr: &cairo::Context, space: Layout) -> Layout {
-        self.borrow_mut().layout(cr, space)
-    }
+    fn draw(&self, _: &cairo::Context) {}
+    fn key(&self, _: &gdk::EventKey) {}
 }
 
 pub struct Win {
     pub context: ContextRef,
     pub gtkwin: gtk::Window,
-    pub child: Box<View>,
+    pub child: Rc<View>,
 }
 
 impl Win {
@@ -119,14 +107,14 @@ impl Win {
         let win = Rc::new(RefCell::new(Win {
             context: context.clone(),
             gtkwin: gtkwin.clone(),
-            child: Box::new(NullView {}),
+            child: Rc::new(NullView {}),
         }));
 
         {
             let context = context.clone();
             let win = win.clone();
             gtkwin.connect_draw(move |_, cr| {
-                let mut win = win.borrow_mut();
+                let win = win.borrow();
                 win.child.layout(cr,
                                  Layout {
                                      width: 600,
@@ -140,7 +128,7 @@ impl Win {
         {
             let win = win.clone();
             gtkwin.connect_key_press_event(move |_, ev| {
-                let mut win = win.borrow_mut();
+                let win = win.borrow();
                 win.child.key(ev);
                 Inhibit(false)
             });

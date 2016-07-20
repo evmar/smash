@@ -5,17 +5,18 @@ use smash::readline::ReadLineView;
 use smash::view;
 use smash::view::View;
 use smash::view::Win;
+use std::rc::Rc;
 
 struct Padding {
-    child: Box<View>,
+    child: Rc<View>,
 }
 
 impl View for Padding {
-    fn draw(&mut self, cr: &cairo::Context) {
+    fn draw(&self, cr: &cairo::Context) {
         cr.translate(20.0, 20.0);
         self.child.draw(cr);
     }
-    fn key(&mut self, ev: &gdk::EventKey) {
+    fn key(&self, ev: &gdk::EventKey) {
         self.child.key(ev);
     }
 }
@@ -28,11 +29,9 @@ fn main() {
         let mut win = win.borrow_mut();
 
         let rl = ReadLineView::new(win.context.clone());
-        rl.borrow_mut().rl.insert("a");
+        let padding = Padding { child: rl.clone() };
 
-        let padding = Padding { child: Box::new(rl) };
-
-        win.child = Box::new(padding);
+        win.child = Rc::new(padding);
         win.show();
     }
 

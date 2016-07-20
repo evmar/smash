@@ -8,7 +8,7 @@ use std::rc::Rc;
 use std::cell::RefCell;
 
 trait Delegate {
-    fn accept(&mut self, command: &str);
+    fn accept(&self, command: &str);
 }
 
 pub struct ReadLine {
@@ -154,21 +154,20 @@ impl ReadLine {
 
 pub struct ReadLineView {
     context: view::ContextRef,
-    pub rl: ReadLine,
+    pub rl: RefCell<ReadLine>,
 }
 
 impl ReadLineView {
-    pub fn new(context: view::ContextRef) -> Rc<RefCell<ReadLineView>> {
-        let view = Rc::new(RefCell::new(ReadLineView {
+    pub fn new(context: view::ContextRef) -> Rc<ReadLineView> {
+        let view = Rc::new(ReadLineView {
             context: context,
-            rl: ReadLine::new(),
-        }));
-        let delegate = Box::new(view.clone());
-        view.borrow_mut().rl.delegate = Some(delegate);
+            rl: RefCell::new(ReadLine::new()),
+        });
+        view.rl.borrow_mut().delegate = Some(Box::new(view.clone()));
         view
     }
 
-    fn use_font(&mut self, cr: &cairo::Context) {
+    fn use_font(&self, cr: &cairo::Context) {
         cr.select_font_face("sans",
                             cairo::enums::FontSlant::Normal,
                             cairo::enums::FontWeight::Normal);
@@ -177,16 +176,18 @@ impl ReadLineView {
 }
 
 impl View for ReadLineView {
-    fn draw(&mut self, cr: &cairo::Context) {
-        self.use_font(cr);
+    fn draw(&self, cr: &cairo::Context) {
+        let rl = self;
+        rl.use_font(cr);
         cr.set_source_rgb(0.0, 0.0, 0.0);
         let ext = cr.font_extents();
 
         cr.translate(0.0, ext.ascent);
-        let str = self.rl.buf.as_str();
+        let rl = rl.rl.borrow();
+        let str = rl.buf.as_str();
         cr.show_text(str);
 
-        let text_ext = cr.text_extents(&str[0..self.rl.ofs]);
+        let text_ext = cr.text_extents(&str[0..rl.ofs]);
         cr.rectangle(text_ext.x_advance,
                      -ext.ascent,
                      3.0,
@@ -194,16 +195,18 @@ impl View for ReadLineView {
         cr.fill();
     }
 
-    fn key(&mut self, ev: &gdk::EventKey) {
+    fn key(&self, ev: &gdk::EventKey) {
+        let rl = self;
         if let Some(key) = translate_key(ev) {
-            if self.rl.key(&key) {
-                self.context.borrow_mut().dirty();
+            if rl.rl.borrow_mut().key(&key) {
+                rl.context.borrow_mut().dirty();
             }
         }
     }
 
-    fn layout(&mut self, cr: &cairo::Context, space: Layout) -> Layout {
-        self.use_font(cr);
+    fn layout(&self, cr: &cairo::Context, space: Layout) -> Layout {
+        let rl = self;
+        rl.use_font(cr);
         let ext = cr.font_extents();
         Layout {
             width: space.width,
@@ -212,13 +215,12 @@ impl View for ReadLineView {
     }
 }
 
-impl Delegate for Rc<RefCell<ReadLineView>> {
-    fn accept(&mut self, _command: &str) {
+impl Delegate for Rc<ReadLineView> {
+    fn accept(&self, _command: &str) {
         let rl = self.clone();
         view::add_task(Box::new(move || {
-            let mut rl = rl.borrow_mut();
-            rl.rl.clear();
             rl.context.borrow_mut().dirty();
+            rl.rl.borrow_mut().clear();
         }));
     }
 }
