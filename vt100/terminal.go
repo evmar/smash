@@ -5,7 +5,6 @@ import (
 	"io"
 	"log"
 	"strings"
-	"sync"
 	"unicode/utf8"
 )
 
@@ -119,8 +118,6 @@ func (f FeatureLog) Add(text string, args ...interface{}) {
 }
 
 type Terminal struct {
-	Mu sync.Mutex
-
 	Title      string
 	Lines      [][]Cell
 	Width      int
@@ -174,28 +171,20 @@ func (t *Terminal) Read(r io.ByteScanner) error {
 	case c == 0x7: // bell
 		// ignore
 	case c == 0x8: // backspace
-		t.Mu.Lock()
 		if t.Col > 0 {
 			t.Col--
 		}
-		t.Mu.Unlock()
 	case c == 0x1b:
 		return t.readEscape(r)
 	case c == '\r':
-		t.Mu.Lock()
 		t.Col = 0
-		t.Mu.Unlock()
 	case c == '\n':
-		t.Mu.Lock()
 		t.Col = 0
 		t.Row++
 		t.fixPosition()
-		t.Mu.Unlock()
 	case c == '\t':
-		t.Mu.Lock()
 		t.Col += 8 - (t.Col % 8)
 		t.fixPosition()
-		t.Mu.Unlock()
 	case c >= ' ' && c <= '~':
 		t.writeRune(rune(c), t.Attr)
 	default:
@@ -206,7 +195,6 @@ func (t *Terminal) Read(r io.ByteScanner) error {
 }
 
 func (t *Terminal) writeRune(r rune, attr Attr) {
-	t.Mu.Lock()
 	if t.Col == t.Width {
 		t.Row++
 		t.Col = 0
@@ -214,7 +202,6 @@ func (t *Terminal) writeRune(r rune, attr Attr) {
 	t.Col++
 	t.fixPosition()
 	t.Lines[t.Row][t.Col-1] = Cell{r, attr}
-	t.Mu.Unlock()
 }
 
 func (t *Terminal) readUTF8(r io.ByteScanner) error {
@@ -300,14 +287,11 @@ func (t *Terminal) readEscape(r io.ByteScanner) error {
 		}
 		switch n {
 		case 0, 1, 2:
-			t.Mu.Lock()
 			t.Title = string(text)
-			t.Mu.Unlock()
 		default:
 			log.Printf("term: bad OSC %d", n)
 		}
 	case c == 'M': // move up/insert line
-		t.Mu.Lock()
 		if t.Row == 0 {
 			// Insert line above.
 			t.Lines = append(t.Lines, nil)
@@ -322,7 +306,6 @@ func (t *Terminal) readEscape(r io.ByteScanner) error {
 			}
 			t.Row--
 		}
-		t.Mu.Unlock()
 	default:
 		log.Printf("term: unknown escape %s", showChar(c))
 	}
@@ -391,7 +374,6 @@ L:
 	case c == '@': // insert blanks
 		n := 1
 		readArgs(args, &n)
-		t.Mu.Lock()
 		for i := 0; i < n; i++ {
 			t.Lines[t.Row] = append(t.Lines[t.Row], Cell{})
 		}
@@ -399,64 +381,49 @@ L:
 		for i := 0; i < n; i++ {
 			t.Lines[t.Row][t.Col+i] = Cell{' ', 0}
 		}
-		t.Mu.Unlock()
 	case c == 'A': // cursor up
 		dy := 1
 		readArgs(args, &dy)
-		t.Mu.Lock()
 		t.Row -= dy
 		if t.Row < 0 {
 			log.Printf("term: cursor up off top of screen?")
 			t.Row = 0
 		}
 		t.fixPosition()
-		t.Mu.Unlock()
 	case c == 'C': // cursor forward
 		dx := 1
 		readArgs(args, &dx)
-		t.Mu.Lock()
 		t.Col += dx
 		t.fixPosition()
-		t.Mu.Unlock()
 	case c == 'D': // cursor back
 		dx := 1
 		readArgs(args, &dx)
-		t.Mu.Lock()
 		t.Col -= dx
 		t.fixPosition()
-		t.Mu.Unlock()
 	case c == 'G': // cursor character absolute
 		x := 1
 		readArgs(args, &x)
-		t.Mu.Lock()
 		t.Col = x - 1
 		t.fixPosition()
-		t.Mu.Unlock()
 	case c == 'H': // move to position
 		row := 1
 		col := 1
 		readArgs(args, &row, &col)
-		t.Mu.Lock()
 		t.Row = t.Top + row - 1
 		t.Col = col - 1
 		t.fixPosition()
-		t.Mu.Unlock()
 	case c == 'J': // erase in display
 		arg := 0
 		readArgs(args, &arg)
 		switch arg {
 		case 0: // erase to end
-			t.Mu.Lock()
 			t.Lines = t.Lines[:t.Row+1]
 			t.Lines[t.Row] = t.Lines[t.Row][:t.Col]
-			t.Mu.Unlock()
 		case 2: // erase all
-			t.Mu.Lock()
 			t.Lines = t.Lines[:0]
 			t.Row = 0
 			t.Col = 0
 			t.fixPosition()
-			t.Mu.Unlock()
 		default:
 			log.Printf("term: unknown erase in display %v", args)
 		}
@@ -465,15 +432,11 @@ L:
 		readArgs(args, &arg)
 		switch arg {
 		case 0: // erase to right
-			t.Mu.Lock()
 			t.Lines[t.Row] = t.Lines[t.Row][:t.Col]
-			t.Mu.Unlock()
 		case 1:
-			t.Mu.Lock()
 			for i := 0; i < t.Col; i++ {
 				t.Lines[t.Row][i] = Cell{' ', 0}
 			}
-			t.Mu.Unlock()
 		case 2:
 			t.TODOs.Add("erase all line")
 		default:
@@ -482,7 +445,6 @@ L:
 	case c == 'L': // insert lines
 		n := 1
 		readArgs(args, &n)
-		t.Mu.Lock()
 		for i := 0; i < n; i++ {
 			t.Lines = append(t.Lines, nil)
 		}
@@ -490,18 +452,15 @@ L:
 		for i := 0; i < n; i++ {
 			t.Lines[t.Row+i] = make([]Cell, 0)
 		}
-		t.Mu.Unlock()
 	case c == 'P': // erase in line
 		arg := 1
 		readArgs(args, &arg)
-		t.Mu.Lock()
 		l := t.Lines[t.Row]
 		if t.Col+arg > len(l) {
 			arg = len(l) - t.Col
 		}
 		copy(l[t.Col:], l[t.Col+arg:])
 		t.Lines[t.Row] = l[:len(l)-arg]
-		t.Mu.Unlock()
 	case c == 'X': // erase characters
 		t.TODOs.Add("erase characters %v", args)
 	case !gtflag && c == 'c': // send device attributes (primary)
@@ -523,10 +482,8 @@ L:
 	case c == 'd': // line position
 		arg := 1
 		readArgs(args, &arg)
-		t.Mu.Lock()
 		t.Row = arg - 1
 		t.fixPosition()
-		t.Mu.Unlock()
 	case !qflag && (c == 'h' || c == 'l'): // reset mode
 		reset := c == 'l'
 		arg := 0
@@ -548,9 +505,7 @@ L:
 			// Ignore; this appears in cnorm/cvvis as a way to adjust the
 			// "very visible cursor" state.
 		case 25: // show cursor
-			t.Mu.Lock()
 			t.HideCursor = !set
-			t.Mu.Unlock()
 		case 1049: // alternate screen buffer
 			t.TODOs.Add("alternate screen buffer %v", set)
 		default:
@@ -560,7 +515,6 @@ L:
 		if len(args) == 0 {
 			args = append(args, 0)
 		}
-		t.Mu.Lock()
 		for _, arg := range args {
 			switch {
 			case arg == 0:
@@ -579,7 +533,6 @@ L:
 				log.Printf("term: unknown color %v", args)
 			}
 		}
-		t.Mu.Unlock()
 	case gtflag && c == 'n': // disable modifiers
 		arg := 2
 		readArgs(args, &arg)
@@ -601,9 +554,7 @@ L:
 			_, err := t.Input.Write([]byte("\x1b[0n"))
 			return err
 		case 6:
-			t.Mu.Lock()
 			pos := fmt.Sprintf("\x1b[%d;%dR", t.Row+1, t.Col+1)
-			t.Mu.Unlock()
 			_, err := t.Input.Write([]byte(pos))
 			return err
 		default:
@@ -676,8 +627,6 @@ func (t *Terminal) DisplayString(input string) {
 }
 
 func (t *Terminal) ToString() string {
-	t.Mu.Lock()
-	defer t.Mu.Unlock()
 	var buf [6]byte
 	str := ""
 	for _, l := range t.Lines {
@@ -693,8 +642,6 @@ func (t *Terminal) ToString() string {
 }
 
 func (t *Terminal) Validate() error {
-	t.Mu.Lock()
-	defer t.Mu.Unlock()
 	for row, l := range t.Lines {
 		for col, c := range l {
 			if err := c.Attr.Validate(); err != nil {

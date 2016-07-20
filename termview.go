@@ -7,6 +7,7 @@ import (
 	"log"
 	"os"
 	"os/exec"
+	"sync"
 	"syscall"
 
 	"github.com/kr/pty"
@@ -18,7 +19,9 @@ import (
 
 type TermView struct {
 	ViewBase
-	term *vt100.Terminal
+
+	termMu sync.Mutex
+	term   *vt100.Terminal
 
 	keys io.Writer
 
@@ -109,8 +112,8 @@ func drawCursor(cr *cairo.Context, mf *MonoFont, row, col int, ch rune) {
 func (t *TermView) Draw(cr *cairo.Context) {
 	t.mf.Use(cr, false)
 
-	t.term.Mu.Lock()
-	defer t.term.Mu.Unlock()
+	t.termMu.Lock()
+	defer t.termMu.Unlock()
 
 	offset := t.term.Top * t.mf.ch
 	offset = 0
@@ -189,8 +192,8 @@ func (t *TermView) Scroll(dy int) {
 }
 
 func (t *TermView) Height() int {
-	t.term.Mu.Lock()
-	defer t.term.Mu.Unlock()
+	t.termMu.Lock()
+	defer t.termMu.Unlock()
 	lines := len(t.term.Lines)
 	if lines > 0 && len(t.term.Lines[lines-1]) == 0 {
 		// Drop the trailing newline.
@@ -207,6 +210,20 @@ type logReader struct {
 func (lr *logReader) Read(buf []byte) (int, error) {
 	n, err := lr.Reader.Read(buf)
 	lr.log.Write(buf[:n])
+	return n, err
+}
+
+// unlockingReader wraps Reader by unlocking a mutex when blocked in a
+// read.
+type unlockingReader struct {
+	mu *sync.Mutex
+	r  io.Reader
+}
+
+func (ur *unlockingReader) Read(buf []byte) (int, error) {
+	ur.mu.Unlock()
+	n, err := ur.r.Read(buf)
+	ur.mu.Lock()
 	return n, err
 }
 
@@ -230,6 +247,8 @@ func (t *TermView) Finish() {
 // runCommand executes a subprocess in a TermView and reads its output.
 // It should be run in a separate goroutine.
 func (t *TermView) runCommand(cmd *exec.Cmd) {
+	t.termMu.Lock()
+	defer t.termMu.Unlock()
 	f, err := pty.Start(cmd)
 	if err != nil {
 		t.term.DisplayString(err.Error())
@@ -238,18 +257,17 @@ func (t *TermView) runCommand(cmd *exec.Cmd) {
 	}
 	defer f.Close()
 
-	t.term.Mu.Lock()
 	t.term.Height = 24
 	t.term.Input = f
-	t.term.Mu.Unlock()
 
 	logf, err := os.Create("log")
 	check(err)
 	defer logf.Close()
 
 	t.keys = f
-	lr := &logReader{f, logf}
-	r := bufio.NewReader(lr)
+	logr := &logReader{f, logf}
+	lockr := &unlockingReader{r: logr, mu: &t.termMu}
+	r := bufio.NewReader(lockr)
 
 	for err == nil {
 		err = t.term.Read(r)
