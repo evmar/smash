@@ -1,4 +1,4 @@
-package main
+package smash
 
 type Color struct {
 	R, G, B byte

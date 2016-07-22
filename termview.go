@@ -1,4 +1,4 @@
-package main
+package smash
 
 import (
 	"bufio"
@@ -261,7 +261,9 @@ func (t *TermView) runCommand(cmd *exec.Cmd) {
 	t.term.Input = f
 
 	logf, err := os.Create("log")
-	check(err)
+	if err != nil {
+		panic(err)
+	}
 	defer logf.Close()
 
 	t.keys = f
@@ -285,6 +287,8 @@ func (t *TermView) runCommand(cmd *exec.Cmd) {
 		}
 	}
 	if err != io.EOF {
-		check(err)
+		if err != nil {
+			panic(err)
+		}
 	}
 }

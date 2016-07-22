@@ -1,10 +1,10 @@
 // +build !headless
 
-package main
+package smash
 
 import "github.com/martine/smash/ui/gtk"
 
-func smashMain() {
+func SmashMain() {
 	ui := gtk.Init()
 	win := &Window{
 		ui:   ui,

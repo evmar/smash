@@ -1,7 +1,7 @@
 // +build headless
 
-package main
+package smash
 
-func smashMain() {
+func SmashMain() {
 	panic("todo: headless")
 }

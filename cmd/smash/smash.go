@@ -5,6 +5,8 @@ import (
 	"log"
 	"os"
 	"runtime/pprof"
+
+	"github.com/martine/smash"
 )
 
 var cpuprofile = flag.String("cpuprofile", "", "write cpu profile to file")
@@ -26,7 +28,7 @@ func main() {
 		defer pprof.StopCPUProfile()
 	}
 
-	smashMain()
+	smash.SmashMain()
 
 	// For some reason, things wait a bit on shutdown.
 	// Maybe some sort of finalizers running?
