@@ -36,8 +36,14 @@ type Window struct {
 	ui  ui.UI
 	win ui.Win
 
-	view View
+	View View
 	font *MonoFont
+}
+
+func NewWindow(ui ui.UI) *Window {
+	win := &Window{ui: ui, font: NewMonoFont()}
+	win.win = ui.NewWindow(win, true)
+	return win
 }
 
 func (win *Window) GetWindow() *Window {
@@ -51,15 +57,15 @@ func (win *Window) Mapped() {
 func (w *Window) Draw(cr *cairo.Context) {
 	cr.SetSourceRGB(1, 1, 1)
 	cr.Paint()
-	w.view.Draw(cr)
+	w.View.Draw(cr)
 }
 
 func (w *Window) Key(key keys.Key) bool {
-	return w.view.Key(key)
+	return w.View.Key(key)
 }
 
 func (w *Window) Scroll(dy int) {
-	w.view.Scroll(dy)
+	w.View.Scroll(dy)
 }
 
 func (w *Window) Dirty() {
@@ -68,4 +74,8 @@ func (w *Window) Dirty() {
 
 func (w *Window) Enqueue(f func()) {
 	w.ui.Enqueue(f)
+}
+
+func (w *Window) Show() {
+	w.win.Show()
 }
