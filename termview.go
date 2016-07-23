@@ -39,6 +39,13 @@ func NewTermView(parent View) *TermView {
 	}
 }
 
+func (t *TermView) Measure(rows, cols int) (width, height int) {
+	win := t.GetWindow()
+	cr := win.win.GetCairo()
+	win.font.Use(cr, false)
+	return win.font.cw * 80, win.font.ch * 24
+}
+
 func ansiColor(c int, bright bool, def *Color) *Color {
 	if c == 0 {
 		return def

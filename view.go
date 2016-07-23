@@ -50,6 +50,10 @@ func (win *Window) GetWindow() *Window {
 	return win
 }
 
+func (win *Window) GetUiWindow() ui.Win {
+	return win.win
+}
+
 func (win *Window) Mapped() {
 	panic("x")
 }
