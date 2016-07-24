@@ -16,11 +16,11 @@ import (
 	"syscall"
 	"unsafe"
 
-	"github.com/martine/gocairo/cairo"
+	"github.com/evmar/gocairo/cairo"
 
-	"github.com/martine/smash/base"
-	"github.com/martine/smash/keys"
-	"github.com/martine/smash/ui"
+	"github.com/evmar/smash/base"
+	"github.com/evmar/smash/keys"
+	"github.com/evmar/smash/ui"
 )
 
 const EINTR syscall.Errno = 4

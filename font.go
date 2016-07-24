@@ -1,6 +1,6 @@
 package smash
 
-import "github.com/martine/gocairo/cairo"
+import "github.com/evmar/gocairo/cairo"
 
 type MonoFont struct {
 	Name string

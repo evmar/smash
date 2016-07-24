@@ -1,10 +1,10 @@
 package smash
 
 import (
-	"github.com/martine/smash/keys"
-	"github.com/martine/smash/ui/fake"
+	"github.com/evmar/smash/keys"
+	"github.com/evmar/smash/ui/fake"
 
-	"github.com/martine/gocairo/cairo"
+	"github.com/evmar/gocairo/cairo"
 )
 
 type testViewHost struct {

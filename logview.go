@@ -4,13 +4,13 @@ import (
 	"os/exec"
 	"time"
 
-	"github.com/martine/gocairo/cairo"
+	"github.com/evmar/gocairo/cairo"
 
-	"github.com/martine/smash/bash"
-	"github.com/martine/smash/keys"
-	"github.com/martine/smash/readline"
-	"github.com/martine/smash/shell"
-	"github.com/martine/smash/ui"
+	"github.com/evmar/smash/bash"
+	"github.com/evmar/smash/keys"
+	"github.com/evmar/smash/readline"
+	"github.com/evmar/smash/shell"
+	"github.com/evmar/smash/ui"
 )
 
 type LogEntry struct {

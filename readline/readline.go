@@ -3,7 +3,7 @@ package readline
 import (
 	"log"
 
-	"github.com/martine/smash/keys"
+	"github.com/evmar/smash/keys"
 )
 
 type Config struct {

@@ -2,7 +2,7 @@
 
 package smash
 
-import "github.com/martine/smash/ui/gtk"
+import "github.com/evmar/smash/ui/gtk"
 
 func SmashMain() {
 	ui := gtk.Init()

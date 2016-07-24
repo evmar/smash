@@ -1,9 +1,9 @@
 package ui
 
 import (
-	"github.com/martine/smash/keys"
+	"github.com/evmar/smash/keys"
 
-	"github.com/martine/gocairo/cairo"
+	"github.com/evmar/gocairo/cairo"
 )
 
 type Win interface {

@@ -1,10 +1,10 @@
 package smash
 
 import (
-	"github.com/martine/smash/keys"
-	"github.com/martine/smash/ui"
+	"github.com/evmar/smash/keys"
+	"github.com/evmar/smash/ui"
 
-	"github.com/martine/gocairo/cairo"
+	"github.com/evmar/gocairo/cairo"
 )
 
 type View interface {

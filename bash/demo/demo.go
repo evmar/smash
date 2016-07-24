@@ -6,7 +6,7 @@ import (
 	"log"
 	"os"
 
-	"github.com/martine/smash/bash"
+	"github.com/evmar/smash/bash"
 )
 
 func main() {

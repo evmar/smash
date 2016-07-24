@@ -3,13 +3,13 @@ package smash
 import (
 	"log"
 
-	"github.com/martine/gocairo/cairo"
+	"github.com/evmar/gocairo/cairo"
 
-	"github.com/martine/smash/keys"
-	"github.com/martine/smash/readline"
-	"github.com/martine/smash/shell"
-	"github.com/martine/smash/ui"
-	"github.com/martine/smash/vt100"
+	"github.com/evmar/smash/keys"
+	"github.com/evmar/smash/readline"
+	"github.com/evmar/smash/shell"
+	"github.com/evmar/smash/ui"
+	"github.com/evmar/smash/vt100"
 	"strings"
 )
 

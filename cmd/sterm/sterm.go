@@ -3,8 +3,8 @@ package main
 import (
 	"os/exec"
 
-	"github.com/martine/smash"
-	"github.com/martine/smash/ui/gtk"
+	"github.com/evmar/smash"
+	"github.com/evmar/smash/ui/gtk"
 )
 
 func main() {

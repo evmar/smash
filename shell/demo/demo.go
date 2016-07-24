@@ -3,9 +3,9 @@ package main
 import (
 	"bufio"
 	"fmt"
+	"github.com/evmar/smash/shell"
 	"os"
 	"os/exec"
-	"github.com/martine/smash/shell"
 )
 
 func main() {

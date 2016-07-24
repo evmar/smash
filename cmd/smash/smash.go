@@ -6,7 +6,7 @@ import (
 	"os"
 	"runtime/pprof"
 
-	"github.com/martine/smash"
+	"github.com/evmar/smash"
 )
 
 var cpuprofile = flag.String("cpuprofile", "", "write cpu profile to file")

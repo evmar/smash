@@ -1,7 +1,7 @@
 package readline
 
 import (
-	"github.com/martine/smash/keys"
+	"github.com/evmar/smash/keys"
 	"testing"
 
 	"github.com/stretchr/testify/assert"

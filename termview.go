@@ -10,11 +10,11 @@ import (
 	"sync"
 	"syscall"
 
+	"github.com/evmar/gocairo/cairo"
 	"github.com/kr/pty"
-	"github.com/martine/gocairo/cairo"
 
-	"github.com/martine/smash/keys"
-	"github.com/martine/smash/vt100"
+	"github.com/evmar/smash/keys"
+	"github.com/evmar/smash/vt100"
 )
 
 type TermView struct {
