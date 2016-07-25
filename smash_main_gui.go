@@ -8,7 +8,7 @@ func SmashMain() {
 	ui := gtk.Init()
 	win := &Window{
 		ui:   ui,
-		font: NewFont(),
+		font: NewMonoFont(),
 	}
 	win.win = ui.NewWindow(win, true)
 	// Use the font once to get its metrics.
