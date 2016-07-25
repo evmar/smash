@@ -5,12 +5,13 @@ import (
 
 	"github.com/evmar/gocairo/cairo"
 
+	"strings"
+
 	"github.com/evmar/smash/keys"
 	"github.com/evmar/smash/readline"
 	"github.com/evmar/smash/shell"
 	"github.com/evmar/smash/ui"
 	"github.com/evmar/smash/vt100"
-	"strings"
 )
 
 type PromptDelegate interface {
@@ -22,7 +23,7 @@ type PromptView struct {
 	ViewBase
 	delegate PromptDelegate
 
-	mf *MonoFont
+	mf *Font
 
 	shell    *shell.Shell
 	readline *readline.ReadLine
@@ -34,7 +35,7 @@ type CompletionWindow struct {
 	pv  *PromptView
 	win ui.Win
 
-	font *MonoFont
+	font *Font
 
 	width, height int
 

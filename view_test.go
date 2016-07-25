@@ -12,7 +12,7 @@ type testViewHost struct {
 }
 
 func NewTestViewHost(ui *fake.UI) *testViewHost {
-	font := NewMonoFont()
+	font := NewFont()
 	font.fakeMetrics()
 	return &testViewHost{
 		win: Window{

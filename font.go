@@ -2,7 +2,7 @@ package smash
 
 import "github.com/evmar/gocairo/cairo"
 
-type MonoFont struct {
+type Font struct {
 	Name string
 	Size int
 
@@ -12,8 +12,8 @@ type MonoFont struct {
 	descent int
 }
 
-func NewMonoFont() *MonoFont {
-	return &MonoFont{
+func NewFont() *Font {
+	return &Font{
 		Name: "monospace",
 		Size: 16,
 	}
@@ -21,30 +21,30 @@ func NewMonoFont() *MonoFont {
 
 // fakeMetrics fills in the font metrics with plausible fake values.
 // Useful in tests.
-func (m *MonoFont) fakeMetrics() {
-	m.cw = 10
-	m.ch = 18
-	m.descent = 5
+func (f *Font) fakeMetrics() {
+	f.cw = 10
+	f.ch = 18
+	f.descent = 5
 }
 
 // metricsFromCairo fills in the font metrics with the font metrics as
 // measured on a cairo Context.
-func (m *MonoFont) metricsFromCairo(cr *cairo.Context) {
+func (f *Font) metricsFromCairo(cr *cairo.Context) {
 	ext := cairo.FontExtents{}
 	cr.FontExtents(&ext)
-	m.cw = int(ext.MaxXAdvance)
-	m.ch = int(ext.Height)
-	m.descent = int(ext.Descent)
+	f.cw = int(ext.MaxXAdvance)
+	f.ch = int(ext.Height)
+	f.descent = int(ext.Descent)
 }
 
-func (m *MonoFont) Use(cr *cairo.Context, bold bool) {
+func (f *Font) Use(cr *cairo.Context, bold bool) {
 	weight := cairo.FontWeightNormal
 	if bold {
 		weight = cairo.FontWeightBold
 	}
-	cr.SelectFontFace(m.Name, cairo.FontSlantNormal, weight)
-	cr.SetFontSize(float64(m.Size))
-	if m.cw == 0 {
-		m.metricsFromCairo(cr)
+	cr.SelectFontFace(f.Name, cairo.FontSlantNormal, weight)
+	cr.SetFontSize(float64(f.Size))
+	if f.cw == 0 {
+		f.metricsFromCairo(cr)
 	}
 }

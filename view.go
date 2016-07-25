@@ -37,11 +37,11 @@ type Window struct {
 	win ui.Win
 
 	View View
-	font *MonoFont
+	font *Font
 }
 
 func NewWindow(ui ui.UI) *Window {
-	win := &Window{ui: ui, font: NewMonoFont()}
+	win := &Window{ui: ui, font: NewFont()}
 	win.win = ui.NewWindow(win, true)
 	return win
 }

@@ -25,7 +25,7 @@ type TermView struct {
 
 	keys io.Writer
 
-	mf *MonoFont
+	mf *Font
 
 	Running bool
 	OnExit  func()
@@ -60,7 +60,7 @@ func setColor(cr *cairo.Context, color *Color) {
 	cr.SetSourceRGB(float64(color.R)/0xff, float64(color.G)/0xff, float64(color.B)/0xff)
 }
 
-func drawText(cr *cairo.Context, mf *MonoFont, x, y int, fg, bg *Color, line string) {
+func drawText(cr *cairo.Context, mf *Font, x, y int, fg, bg *Color, line string) {
 	if bg != nil {
 		setColor(cr, bg)
 		cr.Rectangle(float64(x), float64(y),
@@ -76,7 +76,7 @@ func drawText(cr *cairo.Context, mf *MonoFont, x, y int, fg, bg *Color, line str
 // drawTerminalLine draws one line of a terminal buffer, handling
 // layout of text spans of multiple attributes as well as rendering
 // the cursor.
-func drawTerminalLine(cr *cairo.Context, mf *MonoFont, y int, line []vt100.Cell) {
+func drawTerminalLine(cr *cairo.Context, mf *Font, y int, line []vt100.Cell) {
 	var sbuf [100]byte
 	buf := sbuf[:]
 
@@ -112,7 +112,7 @@ func drawTerminalLine(cr *cairo.Context, mf *MonoFont, y int, line []vt100.Cell)
 	}
 }
 
-func drawCursor(cr *cairo.Context, mf *MonoFont, row, col int, ch rune) {
+func drawCursor(cr *cairo.Context, mf *Font, row, col int, ch rune) {
 	drawText(cr, mf, col*mf.cw, row*mf.ch, &white, &black, string(ch))
 }
 
