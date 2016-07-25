@@ -54,7 +54,6 @@ var commands = map[string]Command{
 
 	// History
 	"accept-line": func(rl *ReadLine, key keys.Key) {
-		rl.Pos = -1
 		input := rl.String()
 		if rl.Accept(input) {
 			rl.Config.History = append(rl.Config.History, input)
