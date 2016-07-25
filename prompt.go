@@ -28,7 +28,12 @@ type PromptView struct {
 	shell    *shell.Shell
 	readline *readline.ReadLine
 
-	cwin *CompletionWindow
+	marker PromptMarker
+	cwin   *CompletionWindow
+}
+
+type PromptMarker struct {
+	Width, Height int
 }
 
 type CompletionWindow struct {
@@ -47,13 +52,20 @@ type CompletionWindow struct {
 func NewPromptView(parent View, delegate PromptDelegate, config *readline.Config, shell *shell.Shell) *PromptView {
 	font := &Font{
 		Name: "sans",
-		Size: 18,
+		Size: 16,
 	}
+	cr := parent.GetWindow().win.GetCairo()
+	font.Use(cr, false)
+
 	pv := &PromptView{
 		ViewBase: ViewBase{Parent: parent},
 		delegate: delegate,
 		font:     font,
 		shell:    shell,
+		marker: PromptMarker{
+			Width:  20,
+			Height: font.ch - font.descent,
+		},
 		readline: config.NewReadLine(),
 	}
 	pv.readline.Accept = delegate.OnPromptAccept
@@ -85,6 +97,13 @@ func (pv *PromptView) DrawMono(cr *cairo.Context) {
 }
 
 func (pv *PromptView) Draw(cr *cairo.Context) {
+	pv.marker.Draw(cr)
+
+	cr.Save()
+	defer cr.Restore()
+
+	cr.Translate(float64(pv.marker.Width), 0)
+
 	pv.font.Use(cr, false)
 	cr.SetSourceRGB(0, 0, 0)
 	cr.MoveTo(0, float64(pv.font.ch-pv.font.descent))
@@ -93,7 +112,7 @@ func (pv *PromptView) Draw(cr *cairo.Context) {
 	if pv.readline.Pos >= 0 {
 		var ext cairo.TextExtents
 		cr.TextExtents(string(pv.readline.Text[:pv.readline.Pos]), &ext)
-		cr.Rectangle(ext.Width, 0, 3, float64(pv.font.ch))
+		cr.Rectangle(ext.Width, 0, 3, float64(pv.font.ch-2))
 		cr.Fill()
 	}
 }
@@ -222,6 +241,22 @@ func (pv *PromptView) ShowCompletions(start, end int, completions []string) {
 		pv.cwin.Close()
 	}
 	pv.cwin = NewCompletionWindow(pv, x, y, start, end, completions)
+}
+
+func (m *PromptMarker) Draw(cr *cairo.Context) {
+	cr.Save()
+	defer cr.Restore()
+
+	gray := 0.5
+	pad := 2.0
+	size := (float64(m.Height) - pad) / 2
+	cr.Translate(5, pad)
+	cr.SetSourceRGB(gray, gray, gray)
+	cr.NewPath()
+	cr.MoveTo(0, 0)
+	cr.RelLineTo(size, size)
+	cr.RelLineTo(-size, size)
+	cr.Fill()
 }
 
 func NewCompletionWindow(pv *PromptView, x, y int, start, end int, completions []string) *CompletionWindow {
