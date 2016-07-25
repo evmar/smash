@@ -23,7 +23,7 @@ type PromptView struct {
 	ViewBase
 	delegate PromptDelegate
 
-	mf *Font
+	font *Font
 
 	shell    *shell.Shell
 	readline *readline.ReadLine
@@ -48,7 +48,7 @@ func NewPromptView(parent View, delegate PromptDelegate, config *readline.Config
 	pv := &PromptView{
 		ViewBase: ViewBase{Parent: parent},
 		delegate: delegate,
-		mf:       parent.GetWindow().font,
+		font:     parent.GetWindow().font,
 		shell:    shell,
 		readline: config.NewReadLine(),
 	}
@@ -58,9 +58,9 @@ func NewPromptView(parent View, delegate PromptDelegate, config *readline.Config
 }
 
 func (pv *PromptView) Draw(cr *cairo.Context) {
-	pv.mf.Use(cr, false)
+	pv.font.Use(cr, false)
 
-	cr.MoveTo(0, float64(pv.mf.ch-pv.mf.descent))
+	cr.MoveTo(0, float64(pv.font.ch-pv.font.descent))
 	var line []vt100.Cell
 	line = append(line, vt100.Cell{Ch: '$'})
 	line = append(line, vt100.Cell{Ch: ' '})
@@ -69,19 +69,19 @@ func (pv *PromptView) Draw(cr *cairo.Context) {
 	for _, c := range pv.readline.Text {
 		line = append(line, vt100.Cell{Ch: rune(c), Attr: bold})
 	}
-	drawTerminalLine(cr, pv.mf, 0, line)
+	drawTerminalLine(cr, pv.font, 0, line)
 
 	if pv.readline.Pos >= 0 {
 		ch := rune(0)
 		if pv.readline.Pos < len(pv.readline.Text) {
 			ch = rune(pv.readline.Text[pv.readline.Pos])
 		}
-		drawCursor(cr, pv.mf, 0, pv.readline.Pos+2, ch)
+		drawCursor(cr, pv.font, 0, pv.readline.Pos+2, ch)
 	}
 }
 
 func (pv *PromptView) Height() int {
-	return pv.mf.ch
+	return pv.font.ch
 }
 
 func (pv *PromptView) Key(key keys.Key) bool {
@@ -197,8 +197,8 @@ func (pv *PromptView) UseCompletions(start, end int, completions []string, expan
 
 func (pv *PromptView) ShowCompletions(start, end int, completions []string) {
 	x, y := pv.delegate.GetPromptAbsolutePosition(pv)
-	x += (len("$ ") + start) * pv.mf.cw
-	y -= pv.mf.ch
+	x += (len("$ ") + start) * pv.font.cw
+	y -= pv.font.ch
 
 	if pv.cwin != nil {
 		pv.cwin.Close()
