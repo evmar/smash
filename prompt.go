@@ -87,13 +87,13 @@ func (pv *PromptView) DrawMono(cr *cairo.Context) {
 func (pv *PromptView) Draw(cr *cairo.Context) {
 	pv.font.Use(cr, false)
 	cr.SetSourceRGB(0, 0, 0)
-	cr.MoveTo(0, 50) //float64(pv.font.ch-pv.font.descent))
+	cr.MoveTo(0, float64(pv.font.ch-pv.font.descent))
 	cr.ShowText(string(pv.readline.Text))
 
 	if pv.readline.Pos >= 0 {
 		var ext cairo.TextExtents
 		cr.TextExtents(string(pv.readline.Text[:pv.readline.Pos]), &ext)
-		cr.Rectangle(ext.Width, float64(50-pv.font.ch), 3, float64(pv.font.ch))
+		cr.Rectangle(ext.Width, 0, 3, float64(pv.font.ch))
 		cr.Fill()
 	}
 }
