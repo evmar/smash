@@ -45,10 +45,14 @@ type CompletionWindow struct {
 }
 
 func NewPromptView(parent View, delegate PromptDelegate, config *readline.Config, shell *shell.Shell) *PromptView {
+	font := &Font{
+		Name: "sans",
+		Size: 18,
+	}
 	pv := &PromptView{
 		ViewBase: ViewBase{Parent: parent},
 		delegate: delegate,
-		font:     parent.GetWindow().font,
+		font:     font,
 		shell:    shell,
 		readline: config.NewReadLine(),
 	}
@@ -57,7 +61,7 @@ func NewPromptView(parent View, delegate PromptDelegate, config *readline.Config
 	return pv
 }
 
-func (pv *PromptView) Draw(cr *cairo.Context) {
+func (pv *PromptView) DrawMono(cr *cairo.Context) {
 	pv.font.Use(cr, false)
 
 	cr.MoveTo(0, float64(pv.font.ch-pv.font.descent))
@@ -77,6 +81,20 @@ func (pv *PromptView) Draw(cr *cairo.Context) {
 			ch = rune(pv.readline.Text[pv.readline.Pos])
 		}
 		drawCursor(cr, pv.font, 0, pv.readline.Pos+2, ch)
+	}
+}
+
+func (pv *PromptView) Draw(cr *cairo.Context) {
+	pv.font.Use(cr, false)
+	cr.SetSourceRGB(0, 0, 0)
+	cr.MoveTo(0, 50) //float64(pv.font.ch-pv.font.descent))
+	cr.ShowText(string(pv.readline.Text))
+
+	if pv.readline.Pos >= 0 {
+		var ext cairo.TextExtents
+		cr.TextExtents(string(pv.readline.Text[:pv.readline.Pos]), &ext)
+		cr.Rectangle(ext.Width, float64(50-pv.font.ch), 3, float64(pv.font.ch))
+		cr.Fill()
 	}
 }
 
