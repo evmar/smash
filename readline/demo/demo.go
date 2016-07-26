@@ -24,7 +24,7 @@ func main() {
 	prompt := smash.NewPromptView(win, &del{}, readline.NewConfig(), nil)
 	win.View = prompt
 
-	win.GetUiWindow().SetSize(600, 100)
+	win.GetUiWindow().SetSize(400, prompt.Height())
 
 	win.Show()
 	ui.Loop()
