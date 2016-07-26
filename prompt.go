@@ -53,7 +53,7 @@ type CompletionWindow struct {
 func NewPromptView(parent View, delegate PromptDelegate, config *readline.Config, shell *shell.Shell) *PromptView {
 	font := &Font{
 		Name: "sans",
-		Size: 16,
+		Size: 20,
 	}
 	cr := parent.GetWindow().win.GetCairo()
 	font.Use(cr, false)
@@ -253,12 +253,12 @@ func (m *PromptMarker) Draw(cr *cairo.Context) {
 	gray := 0.5
 	pad := 2.0
 	size := (float64(m.Height) - pad) / 2
-	cr.Translate(5, pad)
+	cr.Translate(5, pad*2)
 	cr.SetSourceRGB(gray, gray, gray)
 	cr.NewPath()
 	cr.MoveTo(0, 0)
-	cr.RelLineTo(size, size)
-	cr.RelLineTo(-size, size)
+	cr.RelLineTo(size, size-pad)
+	cr.RelLineTo(-size, size-pad)
 	cr.Fill()
 }
 
