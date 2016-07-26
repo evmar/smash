@@ -28,6 +28,7 @@ type PromptView struct {
 	shell    *shell.Shell
 	readline *readline.ReadLine
 
+	pad    int
 	marker PromptMarker
 	cwin   *CompletionWindow
 }
@@ -62,6 +63,7 @@ func NewPromptView(parent View, delegate PromptDelegate, config *readline.Config
 		delegate: delegate,
 		font:     font,
 		shell:    shell,
+		pad:      2,
 		marker: PromptMarker{
 			Width:  20,
 			Height: font.ch - font.descent,
@@ -97,10 +99,11 @@ func (pv *PromptView) DrawMono(cr *cairo.Context) {
 }
 
 func (pv *PromptView) Draw(cr *cairo.Context) {
-	pv.marker.Draw(cr)
-
 	cr.Save()
 	defer cr.Restore()
+
+	cr.Translate(float64(pv.pad), float64(pv.pad))
+	pv.marker.Draw(cr)
 
 	cr.Translate(float64(pv.marker.Width), 0)
 
@@ -118,7 +121,7 @@ func (pv *PromptView) Draw(cr *cairo.Context) {
 }
 
 func (pv *PromptView) Height() int {
-	return pv.font.ch
+	return pv.font.ch + pv.pad*2
 }
 
 func (pv *PromptView) Key(key keys.Key) bool {
