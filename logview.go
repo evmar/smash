@@ -65,6 +65,7 @@ func (lv *LogView) addEntry() {
 
 func (lv *LogView) OnPromptAccept(input string) bool {
 	e := lv.Entries[len(lv.Entries)-1]
+	e.prompt.readline.Pos = -1
 	argv, builtin := lv.shell.Run(input)
 	if argv == nil && builtin == nil {
 		// Empty input.
