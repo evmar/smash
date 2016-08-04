@@ -56,10 +56,13 @@ pub struct LogEntry {
 }
 
 impl LogEntry {
-    pub fn new(context: view::ContextRef, font_extents: &cairo::FontExtents) -> LogEntry {
+    pub fn new(context: view::ContextRef,
+               font_extents: &cairo::FontExtents,
+               done: Box<Fn()>)
+               -> LogEntry {
         LogEntry {
             prompt: Prompt::new(ReadLineView::new(context.clone())),
-            term: Some(RefCell::new(Term::new(context.clone(), *font_extents, &["ls"]))),
+            term: Some(RefCell::new(Term::new(context.clone(), *font_extents, &["ls"], done))),
         }
     }
 }
@@ -88,6 +91,42 @@ impl view::View for LogEntry {
     }
 }
 
-// struct Log {
-//     entries: Vec<LogEntry>,
-// }
+pub struct Log {
+    entries: Vec<LogEntry>,
+    done: bool,
+}
+
+impl Log {
+    pub fn new(context: view::ContextRef, font_extents: &cairo::FontExtents) -> Rc<RefCell<Log>> {
+        let log = Rc::new(RefCell::new(Log {
+            entries: Vec::new(),
+            done: false,
+        }));
+        let e = {
+            let log = log.clone();
+            LogEntry::new(context,
+                          font_extents,
+                          Box::new(move || {
+                              log.borrow_mut().done = true;
+                              println!("done");
+                          }))
+        };
+        log.borrow_mut().entries.push(e);
+        log
+    }
+}
+
+impl view::View for RefCell<Log> {
+    fn draw(&self, cr: &cairo::Context) {
+        let entries = &self.borrow().entries;
+        entries[0].draw(cr)
+    }
+    fn key(&self, ev: &gdk::EventKey) {
+        let entries = &self.borrow().entries;
+        entries[0].key(ev)
+    }
+    fn layout(&self, cr: &cairo::Context, space: Layout) -> Layout {
+        let entries = &self.borrow().entries;
+        entries[0].layout(cr, space)
+    }
+}

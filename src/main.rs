@@ -17,7 +17,7 @@ fn main() {
             let ctx = win.create_cairo();
             Term::get_font_metrics(&ctx)
         };
-        win.child = Rc::new(log::LogEntry::new(win.context.clone(), &font_extents));
+        win.child = log::Log::new(win.context.clone(), &font_extents);
         win.show();
     }
 

@@ -65,7 +65,8 @@ pub struct Term {
 impl Term {
     pub fn new(context: view::ContextRef,
                font_extents: cairo::FontExtents,
-               command: &[&str])
+               command: &[&str],
+               on_exit: Box<Fn()>)
                -> Term {
         let rf = pty::spawn(command);
         pty::set_size(&rf, 25, 80);
@@ -101,6 +102,7 @@ impl Term {
             let send = Box::new(move |input: Box<[u8]>| {
                 stdin_send.send(input).unwrap();
             });
+            let on_exit = ThreadedRef::new(on_exit);
             thread::spawn(move || {
                 let mut r = vt100::VTReader::new(&*vt, send);
                 while r.read(&mut rf) {
@@ -119,6 +121,11 @@ impl Term {
                         glib::Continue(false)
                     });
                 }
+                glib::idle_add(move || {
+                    let on_exit = on_exit.get();
+                    on_exit();
+                    glib::Continue(false)
+                });
             })
         };
 
