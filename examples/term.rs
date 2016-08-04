@@ -18,7 +18,10 @@ fn main() {
         win.resize(80 * font_extents.max_x_advance as i32,
                    25 * font_extents.height as i32);
 
-        let term = Term::new(win.context.clone(), font_extents, &["bash"]);
+        let term = Term::new(win.dirty_cb.clone(),
+                             font_extents,
+                             &["bash"],
+                             Box::new(|| {}));
 
         win.child = Rc::new(RefCell::new(term));
         win.show();

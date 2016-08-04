@@ -56,13 +56,10 @@ pub struct LogEntry {
 }
 
 impl LogEntry {
-    pub fn new(context: view::ContextRef,
-               font_extents: &cairo::FontExtents,
-               done: Box<Fn()>)
-               -> LogEntry {
+    pub fn new(dirty: Rc<Fn()>, font_extents: &cairo::FontExtents, done: Box<Fn()>) -> LogEntry {
         LogEntry {
-            prompt: Prompt::new(ReadLineView::new(context.clone())),
-            term: Some(RefCell::new(Term::new(context.clone(), *font_extents, &["ls"], done))),
+            prompt: Prompt::new(ReadLineView::new(dirty.clone())),
+            term: Some(RefCell::new(Term::new(dirty, *font_extents, &["ls"], done))),
         }
     }
 }
@@ -97,14 +94,14 @@ pub struct Log {
 }
 
 impl Log {
-    pub fn new(context: view::ContextRef, font_extents: &cairo::FontExtents) -> Rc<RefCell<Log>> {
+    pub fn new(dirty: Rc<Fn()>, font_extents: &cairo::FontExtents) -> Rc<RefCell<Log>> {
         let log = Rc::new(RefCell::new(Log {
             entries: Vec::new(),
             done: false,
         }));
         let e = {
             let log = log.clone();
-            LogEntry::new(context,
+            LogEntry::new(dirty,
                           font_extents,
                           Box::new(move || {
                               log.borrow_mut().done = true;

@@ -28,7 +28,7 @@ fn main() {
     {
         let mut win = win.borrow_mut();
 
-        let rl = ReadLineView::new(win.context.clone());
+        let rl = ReadLineView::new(win.dirty_cb.clone());
         let padding = Padding { child: rl.clone() };
 
         win.child = Rc::new(padding);

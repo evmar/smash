@@ -5,6 +5,7 @@ use gdk::prelude::*;
 use gtk::prelude::*;
 use std::rc::Rc;
 use std::cell::RefCell;
+use std::cell::Cell;
 
 thread_local!(static TASKS: RefCell<Vec<Box<FnMut()>>> = RefCell::new(Vec::new()));
 
@@ -24,24 +25,6 @@ fn run_tasks() -> gtk::Continue {
     });
     Continue(false)
 }
-
-pub struct GtkContext {
-    win: gtk::Window,
-    draw_pending: bool,
-}
-
-impl GtkContext {
-    pub fn dirty(&mut self) {
-        if self.draw_pending {
-            println!("debounce dirty");
-            return;
-        }
-        self.draw_pending = true;
-        self.win.queue_draw();
-    }
-}
-
-pub type ContextRef = Rc<RefCell<GtkContext>>;
 
 #[derive(Debug)]
 #[derive(Clone)]
@@ -81,7 +64,7 @@ impl View for NullView {
 }
 
 pub struct Win {
-    pub context: ContextRef,
+    pub dirty_cb: Rc<Fn()>,
     pub gtkwin: gtk::Window,
     pub child: Rc<View>,
 }
@@ -96,22 +79,27 @@ impl Win {
             Inhibit(false)
         });
 
-        let context = {
+        let draw_pending = Rc::new(Cell::new(false));
+        let dirty_cb = {
             let gtkwin = gtkwin.clone();
-            Rc::new(RefCell::new(GtkContext {
-                win: gtkwin,
-                draw_pending: false,
-            }))
+            let draw_pending = draw_pending.clone();
+            Rc::new(move || {
+                if draw_pending.get() {
+                    println!("debounce dirty");
+                    return;
+                }
+                draw_pending.set(true);
+                gtkwin.queue_draw();
+            })
         };
 
         let win = Rc::new(RefCell::new(Win {
-            context: context.clone(),
+            dirty_cb: dirty_cb,
             gtkwin: gtkwin.clone(),
             child: Rc::new(NullView {}),
         }));
 
         {
-            let context = context.clone();
             let win = win.clone();
             gtkwin.connect_draw(move |_, cr| {
                 let win = win.borrow();
@@ -121,7 +109,7 @@ impl Win {
                                      height: 400,
                                  });
                 win.child.draw(cr);
-                context.borrow_mut().draw_pending = false;
+                draw_pending.set(false);
                 Inhibit(false)
             });
         }

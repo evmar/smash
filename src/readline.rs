@@ -153,14 +153,14 @@ impl ReadLine {
 }
 
 pub struct ReadLineView {
-    context: view::ContextRef,
+    dirty: Rc<Fn()>,
     pub rl: RefCell<ReadLine>,
 }
 
 impl ReadLineView {
-    pub fn new(context: view::ContextRef) -> Rc<ReadLineView> {
+    pub fn new(dirty: Rc<Fn()>) -> Rc<ReadLineView> {
         let view = Rc::new(ReadLineView {
-            context: context,
+            dirty: dirty,
             rl: RefCell::new(ReadLine::new()),
         });
         view.rl.borrow_mut().delegate = Some(Box::new(view.clone()));
@@ -199,7 +199,7 @@ impl View for ReadLineView {
         let rl = self;
         if let Some(key) = translate_key(ev) {
             if rl.rl.borrow_mut().key(&key) {
-                rl.context.borrow_mut().dirty();
+                (rl.dirty)();
             }
         }
     }
@@ -219,7 +219,7 @@ impl Delegate for Rc<ReadLineView> {
     fn accept(&self, _command: &str) {
         let rl = self.clone();
         view::add_task(Box::new(move || {
-            rl.context.borrow_mut().dirty();
+            (rl.dirty)();
             rl.rl.borrow_mut().clear();
         }));
     }

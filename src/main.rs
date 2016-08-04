@@ -4,7 +4,6 @@ extern crate gdk;
 use smash::log;
 use smash::view;
 use smash::term::Term;
-use std::rc::Rc;
 
 
 fn main() {
@@ -17,7 +16,7 @@ fn main() {
             let ctx = win.create_cairo();
             Term::get_font_metrics(&ctx)
         };
-        win.child = log::Log::new(win.context.clone(), &font_extents);
+        win.child = log::Log::new(win.dirty_cb.clone(), &font_extents);
         win.show();
     }
 

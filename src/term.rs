@@ -16,6 +16,7 @@ use std::thread;
 use std::time;
 use std::sync::mpsc;
 use std::cell::RefCell;
+use std::rc::Rc;
 
 use pty;
 use threaded_ref::ThreadedRef;
@@ -63,7 +64,7 @@ pub struct Term {
 }
 
 impl Term {
-    pub fn new(context: view::ContextRef,
+    pub fn new(dirty: Rc<Fn()>,
                font_extents: cairo::FontExtents,
                command: &[&str],
                on_exit: Box<Fn()>)
@@ -98,7 +99,7 @@ impl Term {
             let mut rf = rf;
             let vt = term.vt.clone();
             let draw_pending = term.draw_pending.clone();
-            let context = Arc::new(ThreadedRef::new(context.clone()));
+            let dirty = Arc::new(ThreadedRef::new(dirty));
             let send = Box::new(move |input: Box<[u8]>| {
                 stdin_send.send(input).unwrap();
             });
@@ -115,9 +116,9 @@ impl Term {
                     // Enqueue a repaint, but put a bit of delay in it; this allows this thread
                     // to do a bit more work before the paint happens.
                     // TODO: ensure this actually matters in profiles.
-                    let context = context.clone();
+                    let dirty = dirty.clone();
                     glib::timeout_add(10, move || {
-                        context.get().borrow_mut().dirty();
+                        (dirty.get())();
                         glib::Continue(false)
                     });
                 }
