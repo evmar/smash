@@ -7,16 +7,12 @@ use std::collections::HashMap;
 use std::rc::Rc;
 use std::cell::RefCell;
 
-trait Delegate {
-    fn accept(&self, command: &str);
-}
-
 pub struct ReadLine {
     buf: String,
     ofs: usize,
     commands: HashMap<String, fn(&mut ReadLine)>,
     bindings: HashMap<String, String>,
-    delegate: Option<Box<Delegate>>,
+    accept_cb: Box<Fn()>,
 }
 
 macro_rules! cmds {
@@ -54,9 +50,7 @@ fn make_command_map() -> HashMap<String, fn(&mut ReadLine)> {
 
 // history
 "accept-line" => rl {
-    if let Some(ref mut delegate) = rl.delegate {
-        delegate.accept("foo");
-    }
+    (rl.accept_cb)();
 }
 
 // changing text
@@ -99,7 +93,7 @@ impl ReadLine {
             ofs: 0,
             commands: make_command_map(),
             bindings: make_binds_map(),
-            delegate: None,
+            accept_cb: Box::new(move || {}),
         }
     }
 
@@ -163,7 +157,19 @@ impl ReadLineView {
             dirty: dirty,
             rl: RefCell::new(ReadLine::new()),
         });
-        view.rl.borrow_mut().delegate = Some(Box::new(view.clone()));
+
+        {
+            let mut rl = view.rl.borrow_mut();
+            let view = view.clone();
+            rl.accept_cb = Box::new(move || {
+                let view = view.clone();
+                view::add_task(Box::new(move || {
+                    (view.dirty)();
+                    view.rl.borrow_mut().clear();
+                }));
+            });
+        }
+
         view
     }
 
@@ -212,16 +218,6 @@ impl View for ReadLineView {
             width: space.width,
             height: ext.height.round() as i32,
         }
-    }
-}
-
-impl Delegate for Rc<ReadLineView> {
-    fn accept(&self, _command: &str) {
-        let rl = self.clone();
-        view::add_task(Box::new(move || {
-            (rl.dirty)();
-            rl.rl.borrow_mut().clear();
-        }));
     }
 }
 
