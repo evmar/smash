@@ -12,7 +12,7 @@ pub struct ReadLine {
     ofs: usize,
     commands: HashMap<String, fn(&mut ReadLine)>,
     bindings: HashMap<String, String>,
-    accept_cb: Box<Fn()>,
+    pub accept_cb: Box<Fn()>,
 }
 
 macro_rules! cmds {
@@ -147,30 +147,16 @@ impl ReadLine {
 }
 
 pub struct ReadLineView {
-    dirty: Rc<Fn()>,
+    pub dirty: Rc<Fn()>,
     pub rl: RefCell<ReadLine>,
 }
 
 impl ReadLineView {
     pub fn new(dirty: Rc<Fn()>) -> Rc<ReadLineView> {
-        let view = Rc::new(ReadLineView {
+        Rc::new(ReadLineView {
             dirty: dirty,
             rl: RefCell::new(ReadLine::new()),
-        });
-
-        {
-            let mut rl = view.rl.borrow_mut();
-            let view = view.clone();
-            rl.accept_cb = Box::new(move || {
-                let view = view.clone();
-                view::add_task(Box::new(move || {
-                    (view.dirty)();
-                    view.rl.borrow_mut().clear();
-                }));
-            });
-        }
-
-        view
+        })
     }
 
     fn use_font(&self, cr: &cairo::Context) {

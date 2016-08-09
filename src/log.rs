@@ -52,22 +52,30 @@ impl view::View for Prompt {
 
 pub struct LogEntry {
     prompt: Prompt,
-    term: Option<RefCell<Term>>,
+    term: RefCell<Option<Term>>,
 }
 
 impl LogEntry {
-    pub fn new(dirty: Rc<Fn()>, font_extents: &cairo::FontExtents, done: Box<Fn()>) -> LogEntry {
-        LogEntry {
+    pub fn new(dirty: Rc<Fn()>,
+               font_extents: &cairo::FontExtents,
+               done: Box<Fn()>)
+               -> Rc<LogEntry> {
+        let le = Rc::new(LogEntry {
             prompt: Prompt::new(ReadLineView::new(dirty.clone())),
-            term: Some(RefCell::new(Term::new(dirty, *font_extents, &["ls"], done))),
-        }
+            term: RefCell::new(None),
+        });
+        let accept_cb = Box::new(move || {
+            // Some(RefCell::new(Term::new(dirty, *font_extents, &["ls"], done)));
+        });
+        le.prompt.rl.rl.borrow_mut().accept_cb = accept_cb;
+        le
     }
 }
 
 impl view::View for LogEntry {
     fn draw(&self, cr: &cairo::Context) {
         self.prompt.draw(cr);
-        if let Some(ref term) = self.term {
+        if let Some(ref term) = *self.term.borrow() {
             cr.save();
             let height = self.prompt.height.get() as f64;
             cr.translate(0.0, height);
@@ -76,7 +84,7 @@ impl view::View for LogEntry {
         }
     }
     fn key(&self, ev: &gdk::EventKey) {
-        if let Some(ref term) = self.term {
+        if let Some(ref term) = *self.term.borrow() {
             term.key(ev);
         } else {
             self.prompt.key(ev);
@@ -89,7 +97,7 @@ impl view::View for LogEntry {
 }
 
 pub struct Log {
-    entries: Vec<LogEntry>,
+    entries: Vec<Rc<LogEntry>>,
     done: bool,
 }
 

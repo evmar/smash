@@ -1,7 +1,6 @@
 extern crate smash;
 use smash::term::Term;
 use smash::view;
-use std::cell::RefCell;
 use std::rc::Rc;
 
 fn main() {
@@ -23,7 +22,7 @@ fn main() {
                              &["bash"],
                              Box::new(|| {}));
 
-        win.child = Rc::new(RefCell::new(term));
+        win.child = Rc::new(term);
         win.show();
     }
 

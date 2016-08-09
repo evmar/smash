@@ -162,3 +162,7 @@ pub fn init() {
 pub fn main() {
     gtk::main();
 }
+
+pub fn quit() {
+    gtk::main_quit();
+}

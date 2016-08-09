@@ -15,7 +15,7 @@ use std::sync::atomic;
 use std::thread;
 use std::time;
 use std::sync::mpsc;
-use std::cell::RefCell;
+use std::cell::Cell;
 use std::rc::Rc;
 
 use pty;
@@ -56,11 +56,11 @@ fn duration_in_ms(dur: time::Duration) -> u64 {
 }
 
 pub struct Term {
-    pub font_metrics: cairo::FontExtents,
+    font_metrics: cairo::FontExtents,
     vt: Arc<Mutex<vt100::VT>>,
     stdin: mpsc::Sender<Box<[u8]>>,
     draw_pending: Arc<AtomicBool>,
-    last_paint: time::Instant,
+    last_paint: Cell<time::Instant>,
 }
 
 impl Term {
@@ -92,7 +92,7 @@ impl Term {
             vt: Arc::new(Mutex::new(vt100::VT::new())),
             stdin: stdin_send.clone(),
             draw_pending: Arc::new(AtomicBool::new(false)),
-            last_paint: time::Instant::now(),
+            last_paint: Cell::new(time::Instant::now()),
         };
 
         {
@@ -141,16 +141,11 @@ impl Term {
         cr.font_extents()
     }
 
-    fn use_font(&mut self, cr: &cairo::Context) {
+    fn use_font(&self, cr: &cairo::Context) {
         cr.select_font_face("mono",
                             cairo::enums::FontSlant::Normal,
                             cairo::enums::FontWeight::Normal);
         cr.set_font_size(15.0);
-        if self.font_metrics.height == 0.0 {
-            let m = cr.font_extents();
-            // println!("metrics {:?} {:?}", m.ascent, m.descent);
-            self.font_metrics = m;
-        }
     }
 
     fn draw_span(&self, cr: &cairo::Context, x: f64, attr: vt100::Attr, text: &str) {
@@ -193,39 +188,38 @@ impl Term {
     }
 }
 
-impl View for RefCell<Term> {
+impl View for Term {
     fn draw(&self, cr: &cairo::Context) {
-        let mut term = self.borrow_mut();
-        term.draw_pending.store(false, atomic::Ordering::SeqCst);
+        self.draw_pending.store(false, atomic::Ordering::SeqCst);
         let now = time::Instant::now();
         if false {
             println!("paint after {:?}",
-                     duration_in_ms(now.duration_since(term.last_paint)));
+                     duration_in_ms(now.duration_since(self.last_paint.get())));
         }
-        term.last_paint = now;
+        self.last_paint.set(now);
 
         use_color(cr, DEFAULT_BG);
 
-        term.use_font(cr);
+        self.use_font(cr);
 
-        let mut vt = term.vt.lock().unwrap();
+        let mut vt = self.vt.lock().unwrap();
         let mut buf = String::with_capacity(80);
         for (row, line) in vt.lines[vt.top..].iter().enumerate() {
             cr.save();
-            cr.translate(0.0, (row as f64 * term.font_metrics.height));
+            cr.translate(0.0, (row as f64 * self.font_metrics.height));
             let mut attr = Default::default();
             let mut x = 0.0;
             for (col, cell) in line.iter().enumerate() {
                 if cell.attr != attr {
-                    term.draw_span(cr, x, attr, &buf);
-                    x = col as f64 * term.font_metrics.max_x_advance;
+                    self.draw_span(cr, x, attr, &buf);
+                    x = col as f64 * self.font_metrics.max_x_advance;
                     attr = cell.attr.clone();
                     buf.clear();
                 }
                 buf.push(cell.ch);
             }
             if buf.len() > 0 {
-                term.draw_span(cr, x, attr, &buf);
+                self.draw_span(cr, x, attr, &buf);
                 buf.clear();
             }
             cr.restore();
@@ -233,7 +227,7 @@ impl View for RefCell<Term> {
 
         if !vt.hide_cursor {
             cr.save();
-            cr.translate(0.0, ((vt.row - vt.top) as f64 * term.font_metrics.height));
+            cr.translate(0.0, ((vt.row - vt.top) as f64 * self.font_metrics.height));
             let (ch, mut attr) = {
                 let cell = vt.ensure_pos();
                 (cell.ch, cell.attr)
@@ -242,8 +236,8 @@ impl View for RefCell<Term> {
             attr.set_inverse(!inv);
             let bytes = [ch as u8];
             let span = str::from_utf8(&bytes).unwrap();
-            term.draw_span(cr,
-                           (vt.col as f64 * term.font_metrics.max_x_advance),
+            self.draw_span(cr,
+                           (vt.col as f64 * self.font_metrics.max_x_advance),
                            attr.clone(),
                            span);
             cr.restore();
@@ -251,9 +245,8 @@ impl View for RefCell<Term> {
     }
 
     fn key(&self, ev: &gdk::EventKey) {
-        let term = self.borrow();
         let buf = translate_key(&ev);
-        if term.stdin.send(buf).is_err() {
+        if self.stdin.send(buf).is_err() {
             println!("can't send");
         }
     }
