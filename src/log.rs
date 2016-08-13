@@ -64,9 +64,22 @@ impl LogEntry {
             prompt: Prompt::new(ReadLineView::new(dirty.clone())),
             term: RefCell::new(None),
         });
-        let accept_cb = Box::new(move || {
-            // Some(RefCell::new(Term::new(dirty, *font_extents, &["ls"], done)));
-        });
+
+        let accept_cb = {
+            // The accept callback from readline can potentially be
+            // called multiple times, but we only want create a
+            // terminal once.  Capture all the needed state in a
+            // moveable temporary.
+            let mut once = Some((le.clone(), dirty, font_extents.clone(), done));
+            Box::new(move || {
+                if let Some(once) = once.take() {
+                    view::add_task(move || {
+                        let (le, dirty, font_extents, done) = once;
+                        *le.term.borrow_mut() = Some(Term::new(dirty, font_extents, &["ls"], done));
+                    })
+                }
+            })
+        };
         le.prompt.rl.rl.borrow_mut().accept_cb = accept_cb;
         le
     }

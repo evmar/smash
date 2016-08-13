@@ -7,11 +7,25 @@ use std::rc::Rc;
 use std::cell::RefCell;
 use std::cell::Cell;
 
-thread_local!(static TASKS: RefCell<Vec<Box<FnMut()>>> = RefCell::new(Vec::new()));
 
-pub fn add_task(task: Box<FnMut()>) {
+// Following
+// https://github.com/google/xi-editor/commit/43abeb4adc36a60090e44dc1c74f5eabbfc77b7f
+// a workaround for no Box<FnOnce()>.
+trait Task {
+    fn call(self: Box<Self>);
+}
+
+impl<F: FnOnce()> Task for F {
+    fn call(self: Box<F>) {
+        self();
+    }
+}
+
+thread_local!(static TASKS: RefCell<Vec<Box<Task>>> = RefCell::new(Vec::new()));
+
+pub fn add_task<F: FnOnce() + 'static>(task: F) {
     TASKS.with(|tasks| {
-        tasks.borrow_mut().push(task);
+        tasks.borrow_mut().push(Box::new(task));
     });
     gtk::idle_add(run_tasks);
 }
@@ -19,8 +33,8 @@ pub fn add_task(task: Box<FnMut()>) {
 fn run_tasks() -> gtk::Continue {
     TASKS.with(|tasks| {
         let mut tasks = tasks.borrow_mut();
-        for mut t in tasks.drain(..) {
-            t();
+        for t in tasks.drain(..) {
+            t.call();
         }
     });
     Continue(false)

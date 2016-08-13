@@ -12,7 +12,7 @@ pub struct ReadLine {
     ofs: usize,
     commands: HashMap<String, fn(&mut ReadLine)>,
     bindings: HashMap<String, String>,
-    pub accept_cb: Box<Fn()>,
+    pub accept_cb: Box<FnMut()>,
 }
 
 macro_rules! cmds {
