@@ -71,11 +71,13 @@ impl LogEntry {
             // terminal once.  Capture all the needed state in a
             // moveable temporary.
             let mut once = Some((le.clone(), dirty, font_extents.clone(), done));
-            Box::new(move || {
+            Box::new(move |str: &str| {
                 if let Some(once) = once.take() {
+                    let text = String::from(str);
                     view::add_task(move || {
                         let (le, dirty, font_extents, done) = once;
-                        *le.term.borrow_mut() = Some(Term::new(dirty, font_extents, &["ls"], done));
+                        *le.term.borrow_mut() =
+                            Some(Term::new(dirty, font_extents, &[&text], done));
                     })
                 }
             })

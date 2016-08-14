@@ -12,7 +12,7 @@ pub struct ReadLine {
     ofs: usize,
     commands: HashMap<String, fn(&mut ReadLine)>,
     bindings: HashMap<String, String>,
-    pub accept_cb: Box<FnMut()>,
+    pub accept_cb: Box<FnMut(&str)>,
 }
 
 macro_rules! cmds {
@@ -50,7 +50,7 @@ fn make_command_map() -> HashMap<String, fn(&mut ReadLine)> {
 
 // history
 "accept-line" => rl {
-    (rl.accept_cb)();
+    (rl.accept_cb)(&rl.buf);
 }
 
 // changing text
@@ -93,7 +93,7 @@ impl ReadLine {
             ofs: 0,
             commands: make_command_map(),
             bindings: make_binds_map(),
-            accept_cb: Box::new(move || {}),
+            accept_cb: Box::new(move |_: &str| {}),
         }
     }
 
