@@ -113,40 +113,54 @@ impl view::View for LogEntry {
 
 pub struct Log {
     entries: Vec<Rc<LogEntry>>,
-    done: bool,
+    dirty: Rc<Fn()>,
+    font_extents: cairo::FontExtents,
 }
 
 impl Log {
     pub fn new(dirty: Rc<Fn()>, font_extents: &cairo::FontExtents) -> Rc<RefCell<Log>> {
         let log = Rc::new(RefCell::new(Log {
             entries: Vec::new(),
-            done: false,
+            dirty: dirty,
+            font_extents: font_extents.clone(),
         }));
-        let e = {
-            let log = log.clone();
-            LogEntry::new(dirty,
-                          font_extents,
+        Log::new_entry(&log);
+        log
+    }
+
+    pub fn new_entry(log: &Rc<RefCell<Log>>) {
+        let entry = {
+            let log_ref = log.clone();
+            let log = log.borrow();
+            LogEntry::new(log.dirty.clone(),
+                          &log.font_extents,
                           Box::new(move || {
-                              log.borrow_mut().done = true;
                               println!("done");
+                              Log::new_entry(&log_ref);
                           }))
         };
-        log.borrow_mut().entries.push(e);
-        log
+        log.borrow_mut().entries.push(entry);
     }
 }
 
 impl view::View for RefCell<Log> {
     fn draw(&self, cr: &cairo::Context) {
         let entries = &self.borrow().entries;
-        entries[0].draw(cr)
+        cr.save();
+        for entry in entries {
+            entry.draw(cr);
+            cr.translate(0.0, 60.0);
+        }
+        cr.restore();
     }
     fn key(&self, ev: &gdk::EventKey) {
         let entries = &self.borrow().entries;
-        entries[0].key(ev)
+        entries[entries.len() - 1].key(ev);
     }
     fn layout(&self, cr: &cairo::Context, space: Layout) -> Layout {
         let entries = &self.borrow().entries;
+        for entry in entries {
+        }
         entries[0].layout(cr, space)
     }
 }
