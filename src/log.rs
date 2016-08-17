@@ -106,8 +106,17 @@ impl view::View for LogEntry {
     }
 
     fn relayout(&self, cr: &cairo::Context, space: Layout) -> Layout {
-        self.layout.set(self.prompt.relayout(cr, space.clone()));
-        self.layout.get()
+        let mut layout = self.prompt.relayout(cr, space);
+        if let Some(ref term) = *self.term.borrow() {
+            let tlayout = term.relayout(cr,
+                                        Layout {
+                                            width: space.width,
+                                            height: space.height - layout.height,
+                                        });
+            layout = layout.add(tlayout.width, tlayout.height);
+        }
+        self.layout.set(layout);
+        layout
     }
     fn get_layout(&self) -> Layout {
         self.layout.get()
@@ -154,7 +163,7 @@ impl view::View for RefCell<Log> {
         cr.save();
         for entry in entries {
             entry.draw(cr);
-            cr.translate(0.0, 60.0);
+            cr.translate(0.0, entry.get_layout().height as f64);
         }
         cr.restore();
     }

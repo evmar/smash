@@ -251,8 +251,18 @@ impl View for Term {
             println!("can't send");
         }
     }
-    fn relayout(&self, _cr: &cairo::Context, _space: Layout) -> Layout {
-        self.layout.get()
+    fn relayout(&self, _cr: &cairo::Context, space: Layout) -> Layout {
+        let lines = {
+            let vt = self.vt.lock().unwrap();
+            vt.lines.len() - vt.top
+        };
+
+        let layout = Layout {
+            width: space.width,
+            height: lines as i32 * self.font_metrics.height as i32,
+        };
+        self.layout.set(layout);
+        layout
     }
     fn get_layout(&self) -> Layout {
         self.layout.get()
