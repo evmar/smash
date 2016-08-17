@@ -3,7 +3,7 @@ extern crate smash;
 extern crate gdk;
 use smash::readline::ReadLineView;
 use smash::view;
-use smash::view::View;
+use smash::view::{View, Layout};
 use smash::view::Win;
 use std::rc::Rc;
 
@@ -18,6 +18,9 @@ impl View for Padding {
     }
     fn key(&self, ev: &gdk::EventKey) {
         self.child.key(ev);
+    }
+    fn get_layout(&self) -> Layout {
+        self.child.get_layout().add(40, 40)
     }
 }
 

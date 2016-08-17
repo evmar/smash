@@ -5,6 +5,7 @@ use view;
 use view::{Layout, View};
 use std::collections::HashMap;
 use std::rc::Rc;
+use std::cell::Cell;
 use std::cell::RefCell;
 
 pub struct ReadLine {
@@ -149,6 +150,7 @@ impl ReadLine {
 pub struct ReadLineView {
     pub dirty: Rc<Fn()>,
     pub rl: RefCell<ReadLine>,
+    layout: Cell<Layout>,
 }
 
 impl ReadLineView {
@@ -156,6 +158,7 @@ impl ReadLineView {
         Rc::new(ReadLineView {
             dirty: dirty,
             rl: RefCell::new(ReadLine::new()),
+            layout: Cell::new(Layout::new()),
         })
     }
 
@@ -196,14 +199,17 @@ impl View for ReadLineView {
         }
     }
 
-    fn layout(&self, cr: &cairo::Context, space: Layout) -> Layout {
-        let rl = self;
-        rl.use_font(cr);
+    fn relayout(&self, cr: &cairo::Context, space: Layout) -> Layout {
+        self.use_font(cr);
         let ext = cr.font_extents();
-        Layout {
+        self.layout.set(Layout {
             width: space.width,
             height: ext.height.round() as i32,
-        }
+        });
+        self.layout.get()
+    }
+    fn get_layout(&self) -> Layout {
+        self.layout.get()
     }
 }
 

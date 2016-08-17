@@ -19,7 +19,7 @@ use std::rc::Rc;
 
 use pty;
 use threaded_ref::ThreadedRef;
-use view::View;
+use view::{View, Layout};
 use view;
 use vt100;
 
@@ -60,6 +60,7 @@ pub struct Term {
     stdin: mpsc::Sender<Box<[u8]>>,
     draw_pending: Arc<AtomicBool>,
     last_paint: Cell<time::Instant>,
+    layout: Cell<Layout>,
 }
 
 impl Term {
@@ -92,6 +93,7 @@ impl Term {
             stdin: stdin_send.clone(),
             draw_pending: Arc::new(AtomicBool::new(false)),
             last_paint: Cell::new(time::Instant::now()),
+            layout: Cell::new(Layout::new()),
         };
 
         {
@@ -248,6 +250,12 @@ impl View for Term {
         if self.stdin.send(buf).is_err() {
             println!("can't send");
         }
+    }
+    fn relayout(&self, _cr: &cairo::Context, _space: Layout) -> Layout {
+        self.layout.get()
+    }
+    fn get_layout(&self) -> Layout {
+        self.layout.get()
     }
 }
 

@@ -42,12 +42,19 @@ fn run_tasks() -> gtk::Continue {
 
 #[derive(Debug)]
 #[derive(Clone)]
+#[derive(Copy)]
 pub struct Layout {
     pub width: i32,
     pub height: i32,
 }
 
 impl Layout {
+    pub fn new() -> Layout {
+        Layout {
+            width: 0,
+            height: 0,
+        }
+    }
     pub fn add(&self, w: i32, h: i32) -> Layout {
         let layout = Layout {
             width: self.width + w,
@@ -63,18 +70,19 @@ impl Layout {
 pub trait View {
     fn draw(&self, cr: &cairo::Context);
     fn key(&self, ev: &gdk::EventKey);
-    fn layout(&self, _cr: &cairo::Context, _space: Layout) -> Layout {
-        Layout {
-            width: 0,
-            height: 0,
-        }
+    fn relayout(&self, _cr: &cairo::Context, _space: Layout) -> Layout {
+        self.get_layout()
     }
+    fn get_layout(&self) -> Layout;
 }
 
 pub struct NullView {}
 impl View for NullView {
     fn draw(&self, _: &cairo::Context) {}
     fn key(&self, _: &gdk::EventKey) {}
+    fn get_layout(&self) -> Layout {
+        Layout::new()
+    }
 }
 
 pub struct Win {
@@ -117,11 +125,11 @@ impl Win {
             let win = win.clone();
             gtkwin.connect_draw(move |_, cr| {
                 let child = win.child.borrow();
-                child.layout(cr,
-                             Layout {
-                                 width: 600,
-                                 height: 400,
-                             });
+                child.relayout(cr,
+                               Layout {
+                                   width: 600,
+                                   height: 400,
+                               });
                 child.draw(cr);
                 draw_pending.set(false);
                 Inhibit(false)

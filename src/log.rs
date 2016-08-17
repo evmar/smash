@@ -10,15 +10,11 @@ use view::Layout;
 
 struct Prompt {
     rl: Rc<ReadLineView>,
-    height: Cell<i32>,
 }
 
 impl Prompt {
     fn new(rl: Rc<ReadLineView>) -> Prompt {
-        Prompt {
-            rl: rl,
-            height: Cell::new(0),
-        }
+        Prompt { rl: rl }
     }
 }
 
@@ -28,7 +24,7 @@ impl view::View for Prompt {
         cr.set_source_rgb(0.7, 0.7, 0.7);
         cr.new_path();
         cr.move_to(5.0, 8.0);
-        let height = self.height.get() as f64;
+        let height = self.get_layout().height as f64;
         cr.line_to(13.0, height / 2.0);
         cr.line_to(5.0, height - 8.0);
         cr.fill();
@@ -41,17 +37,19 @@ impl view::View for Prompt {
         self.rl.key(ev);
     }
 
-    fn layout(&self, cr: &cairo::Context, space: Layout) -> Layout {
-        let rlsize = self.rl.layout(cr, space.add(-20, -10));
-        let layout = rlsize.add(20, 10);
-        self.height.set(layout.height);
-        layout
+    fn relayout(&self, cr: &cairo::Context, space: Layout) -> Layout {
+        self.rl.relayout(cr, space.add(-20, -10));
+        self.get_layout()
+    }
+    fn get_layout(&self) -> Layout {
+        self.rl.get_layout().add(20, 10)
     }
 }
 
 pub struct LogEntry {
     prompt: Prompt,
     term: RefCell<Option<Term>>,
+    layout: Cell<Layout>,
 }
 
 impl LogEntry {
@@ -62,6 +60,7 @@ impl LogEntry {
         let le = Rc::new(LogEntry {
             prompt: Prompt::new(ReadLineView::new(dirty.clone())),
             term: RefCell::new(None),
+            layout: Cell::new(Layout::new()),
         });
 
         let accept_cb = {
@@ -91,12 +90,13 @@ impl view::View for LogEntry {
         self.prompt.draw(cr);
         if let Some(ref term) = *self.term.borrow() {
             cr.save();
-            let height = self.prompt.height.get() as f64;
+            let height = self.prompt.get_layout().height as f64;
             cr.translate(0.0, height);
             term.draw(cr);
             cr.restore();
         }
     }
+
     fn key(&self, ev: &gdk::EventKey) {
         if let Some(ref term) = *self.term.borrow() {
             term.key(ev);
@@ -104,9 +104,13 @@ impl view::View for LogEntry {
             self.prompt.key(ev);
         }
     }
-    fn layout(&self, cr: &cairo::Context, space: Layout) -> Layout {
-        self.prompt.layout(cr, space.clone());
-        space
+
+    fn relayout(&self, cr: &cairo::Context, space: Layout) -> Layout {
+        self.layout.set(self.prompt.relayout(cr, space.clone()));
+        self.layout.get()
+    }
+    fn get_layout(&self) -> Layout {
+        self.layout.get()
     }
 }
 
@@ -114,6 +118,7 @@ pub struct Log {
     entries: Vec<Rc<LogEntry>>,
     dirty: Rc<Fn()>,
     font_extents: cairo::FontExtents,
+    layout: Cell<Layout>,
 }
 
 impl Log {
@@ -122,6 +127,7 @@ impl Log {
             entries: Vec::new(),
             dirty: dirty,
             font_extents: font_extents.clone(),
+            layout: Cell::new(Layout::new()),
         }));
         Log::new_entry(&log);
         log
@@ -156,10 +162,16 @@ impl view::View for RefCell<Log> {
         let entries = &self.borrow().entries;
         entries[entries.len() - 1].key(ev);
     }
-    fn layout(&self, cr: &cairo::Context, space: Layout) -> Layout {
-        let entries = &self.borrow().entries;
-        for _ in entries {
+    fn relayout(&self, cr: &cairo::Context, space: Layout) -> Layout {
+        let log = self.borrow();
+        let entries = &log.entries;
+        for entry in entries {
+            entry.relayout(cr, space);
         }
-        entries[0].layout(cr, space)
+        log.layout.get()
+    }
+    fn get_layout(&self) -> Layout {
+        let log = self.borrow();
+        log.layout.get()
     }
 }
