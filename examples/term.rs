@@ -8,7 +8,6 @@ fn main() {
     let win = view::Win::new();
 
     {
-        let mut win = win.borrow_mut();
         let font_extents = {
             let ctx = win.create_cairo();
             Term::get_font_metrics(&ctx)
@@ -22,7 +21,7 @@ fn main() {
                              &["bash"],
                              Box::new(|| {}));
 
-        win.child = Rc::new(term);
+        *win.child.borrow_mut() = Rc::new(term);
         win.show();
     }
 

@@ -80,11 +80,11 @@ impl View for NullView {
 pub struct Win {
     pub dirty_cb: Rc<Fn()>,
     pub gtkwin: gtk::Window,
-    pub child: Rc<View>,
+    pub child: RefCell<Rc<View>>,
 }
 
 impl Win {
-    pub fn new() -> Rc<RefCell<Win>> {
+    pub fn new() -> Rc<Win> {
         let gtkwin = gtk::Window::new(gtk::WindowType::Toplevel);
         gtkwin.set_default_size(400, 200);
         gtkwin.set_app_paintable(true);
@@ -107,22 +107,22 @@ impl Win {
             })
         };
 
-        let win = Rc::new(RefCell::new(Win {
+        let win = Rc::new(Win {
             dirty_cb: dirty_cb,
             gtkwin: gtkwin.clone(),
-            child: Rc::new(NullView {}),
-        }));
+            child: RefCell::new(Rc::new(NullView {})),
+        });
 
         {
             let win = win.clone();
             gtkwin.connect_draw(move |_, cr| {
-                let win = win.borrow();
-                win.child.layout(cr,
-                                 Layout {
-                                     width: 600,
-                                     height: 400,
-                                 });
-                win.child.draw(cr);
+                let child = win.child.borrow();
+                child.layout(cr,
+                             Layout {
+                                 width: 600,
+                                 height: 400,
+                             });
+                child.draw(cr);
                 draw_pending.set(false);
                 Inhibit(false)
             });
@@ -130,8 +130,8 @@ impl Win {
         {
             let win = win.clone();
             gtkwin.connect_key_press_event(move |_, ev| {
-                let win = win.borrow();
-                win.child.key(ev);
+                let child = win.child.borrow();
+                child.key(ev);
                 Inhibit(false)
             });
         }
@@ -139,17 +139,17 @@ impl Win {
         win
     }
 
-    pub fn create_cairo(&mut self) -> cairo::Context {
+    pub fn create_cairo(&self) -> cairo::Context {
         self.gtkwin.realize();
         let gdkwin = self.gtkwin.get_window().unwrap();
         cairo::Context::create_from_window(&gdkwin)
     }
 
-    pub fn resize(&mut self, width: i32, height: i32) {
+    pub fn resize(&self, width: i32, height: i32) {
         self.gtkwin.resize(width, height);
     }
 
-    pub fn show(&mut self) {
+    pub fn show(&self) {
         self.gtkwin.show();
     }
 }

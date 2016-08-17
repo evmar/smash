@@ -553,7 +553,6 @@ impl<'a> VTRead<'a> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use std::io::Read;
     use std::sync::Mutex;
 
     #[test]

@@ -11,12 +11,11 @@ fn main() {
     let win = view::Win::new();
 
     {
-        let mut win = win.borrow_mut();
         let font_extents = {
             let ctx = win.create_cairo();
             Term::get_font_metrics(&ctx)
         };
-        win.child = log::Log::new(win.dirty_cb.clone(), &font_extents);
+        *win.child.borrow_mut() = log::Log::new(win.dirty_cb.clone(), &font_extents);
         win.show();
     }
 

@@ -158,7 +158,7 @@ impl view::View for RefCell<Log> {
     }
     fn layout(&self, cr: &cairo::Context, space: Layout) -> Layout {
         let entries = &self.borrow().entries;
-        for entry in entries {
+        for _ in entries {
         }
         entries[0].layout(cr, space)
     }

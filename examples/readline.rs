@@ -26,12 +26,10 @@ fn main() {
 
     let win = Win::new();
     {
-        let mut win = win.borrow_mut();
-
         let rl = ReadLineView::new(win.dirty_cb.clone());
         let padding = Padding { child: rl.clone() };
 
-        win.child = Rc::new(padding);
+        *win.child.borrow_mut() = Rc::new(padding);
         win.show();
     }
 
