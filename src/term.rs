@@ -2,7 +2,6 @@ extern crate cairo;
 extern crate gdk;
 extern crate glib;
 
-use gtk::prelude::*;
 use std::fs;
 use std::io::Write;
 use std::os::unix::io::AsRawFd;

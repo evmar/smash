@@ -6,7 +6,6 @@ use std::cell::RefCell;
 use readline::ReadLineView;
 use term::Term;
 use view;
-use view::View;
 use view::Layout;
 
 struct Prompt {
