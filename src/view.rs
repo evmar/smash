@@ -68,7 +68,7 @@ impl Layout {
 }
 
 pub trait View {
-    fn draw(&self, cr: &cairo::Context);
+    fn draw(&self, cr: &cairo::Context, focus: bool);
     fn key(&self, ev: &gdk::EventKey);
     fn relayout(&self, _cr: &cairo::Context, _space: Layout) -> Layout {
         self.get_layout()
@@ -78,8 +78,8 @@ pub trait View {
 
 pub struct NullView {}
 impl View for NullView {
-    fn draw(&self, _: &cairo::Context) {}
-    fn key(&self, _: &gdk::EventKey) {}
+    fn draw(&self, _cr: &cairo::Context, _focus: bool) {}
+    fn key(&self, _ev: &gdk::EventKey) {}
     fn get_layout(&self) -> Layout {
         Layout::new()
     }
@@ -130,7 +130,7 @@ impl Win {
                                    width: 600,
                                    height: 400,
                                });
-                child.draw(cr);
+                child.draw(cr, true);
                 draw_pending.set(false);
                 Inhibit(false)
             });

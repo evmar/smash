@@ -190,7 +190,7 @@ impl Term {
 }
 
 impl View for Term {
-    fn draw(&self, cr: &cairo::Context) {
+    fn draw(&self, cr: &cairo::Context, _focus: bool) {
         self.draw_pending.store(false, atomic::Ordering::SeqCst);
         let now = time::Instant::now();
         if false {

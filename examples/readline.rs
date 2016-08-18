@@ -12,9 +12,9 @@ struct Padding {
 }
 
 impl View for Padding {
-    fn draw(&self, cr: &cairo::Context) {
+    fn draw(&self, cr: &cairo::Context, focus: bool) {
         cr.translate(20.0, 20.0);
-        self.child.draw(cr);
+        self.child.draw(cr, focus);
     }
     fn key(&self, ev: &gdk::EventKey) {
         self.child.key(ev);

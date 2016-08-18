@@ -19,7 +19,7 @@ impl Prompt {
 }
 
 impl view::View for Prompt {
-    fn draw(&self, cr: &cairo::Context) {
+    fn draw(&self, cr: &cairo::Context, focus: bool) {
         cr.save();
         cr.set_source_rgb(0.7, 0.7, 0.7);
         cr.new_path();
@@ -30,7 +30,7 @@ impl view::View for Prompt {
         cr.fill();
 
         cr.translate(18.0, 5.0);
-        self.rl.draw(cr);
+        self.rl.draw(cr, focus);
         cr.restore();
     }
     fn key(&self, ev: &gdk::EventKey) {
@@ -86,14 +86,16 @@ impl LogEntry {
 }
 
 impl view::View for LogEntry {
-    fn draw(&self, cr: &cairo::Context) {
-        self.prompt.draw(cr);
+    fn draw(&self, cr: &cairo::Context, focus: bool) {
         if let Some(ref term) = *self.term.borrow() {
+            self.prompt.draw(cr, false);
             cr.save();
             let height = self.prompt.get_layout().height as f64;
             cr.translate(0.0, height);
-            term.draw(cr);
+            term.draw(cr, focus);
             cr.restore();
+        } else {
+            self.prompt.draw(cr, focus);
         }
     }
 
@@ -158,11 +160,12 @@ impl Log {
 }
 
 impl view::View for RefCell<Log> {
-    fn draw(&self, cr: &cairo::Context) {
+    fn draw(&self, cr: &cairo::Context, focus: bool) {
         let entries = &self.borrow().entries;
         cr.save();
-        for entry in entries {
-            entry.draw(cr);
+        for (i, entry) in entries.iter().enumerate() {
+            let last = i == entries.len() - 1;
+            entry.draw(cr, focus && last);
             cr.translate(0.0, entry.get_layout().height as f64);
         }
         cr.restore();

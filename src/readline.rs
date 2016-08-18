@@ -171,7 +171,7 @@ impl ReadLineView {
 }
 
 impl View for ReadLineView {
-    fn draw(&self, cr: &cairo::Context) {
+    fn draw(&self, cr: &cairo::Context, focus: bool) {
         let rl = self;
         rl.use_font(cr);
         cr.set_source_rgb(0.0, 0.0, 0.0);
@@ -182,12 +182,14 @@ impl View for ReadLineView {
         let str = rl.buf.as_str();
         cr.show_text(str);
 
-        let text_ext = cr.text_extents(&str[0..rl.ofs]);
-        cr.rectangle(text_ext.x_advance,
-                     -ext.ascent,
-                     3.0,
-                     ext.ascent + ext.descent);
-        cr.fill();
+        if focus {
+            let text_ext = cr.text_extents(&str[0..rl.ofs]);
+            cr.rectangle(text_ext.x_advance,
+                         -ext.ascent,
+                         2.0,
+                         ext.ascent + ext.descent);
+            cr.fill();
+        }
     }
 
     fn key(&self, ev: &gdk::EventKey) {
