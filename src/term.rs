@@ -123,6 +123,7 @@ impl Term {
                         glib::Continue(false)
                     });
                 }
+                vt.lock().unwrap().trim();
                 glib::idle_add(move || {
                     let on_exit = on_exit.get();
                     on_exit();
@@ -253,7 +254,8 @@ impl View for Term {
     }
     fn relayout(&self, _cr: &cairo::Context, space: Layout) -> Layout {
         let lines = {
-            let vt = self.vt.lock().unwrap();
+            let mut vt = self.vt.lock().unwrap();
+            vt.ensure_pos();
             vt.lines.len() - vt.top
         };
 

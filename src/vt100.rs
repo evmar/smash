@@ -147,6 +147,16 @@ impl VT {
         return &mut row[self.col];
     }
 
+    // Drop the last line if it's empty; used when a subprocess exits.
+    pub fn trim(&mut self) {
+        if self.col == 0 && self.row > 0 && self.row >= self.lines.len() {
+            self.row -= 1;
+            if self.row < self.lines.len() - 1 {
+                self.lines.pop();
+            }
+        }
+    }
+
     #[allow(dead_code)]
     pub fn dump(&self) -> String {
         let mut buf = String::new();
@@ -555,14 +565,30 @@ mod tests {
     use super::*;
     use std::sync::Mutex;
 
+    fn write_text(vt: &Mutex<VT>, text: &[u8]) {
+        let mut r = VTReader::new(&vt, Box::new(|_| {}));
+        r.read(&mut &text[..]);
+    }
+
     #[test]
     fn utf8() {
         let vt = Mutex::new(VT::new());
-        let mut r = VTReader::new(&vt, Box::new(|_| {}));
-
-        let buf = [0xE6, 0x97, 0xA5 /* 日 */, 0xE6, 0x9C, 0xAC /* 本 */, 0xE8, 0xAA,
-                   0x9E /* 語 */];
-        r.read(&mut &buf[..]);
+        write_text(&vt,
+                   &[0xE6, 0x97, 0xA5 /* 日 */, 0xE6, 0x9C, 0xAC /* 本 */, 0xE8,
+                     0xAA, 0x9E /* 語 */]);
         assert_eq!(vt.lock().unwrap().col, 3);
+    }
+
+    #[test]
+    fn trim() {
+        let vt = Mutex::new(VT::new());
+        write_text(&vt, "hello, world\n".as_bytes());
+        vt.lock().unwrap().trim();
+        let vt = vt.lock().unwrap();
+        vt.dump();
+        assert_eq!(vt.row, 0);
+        assert_eq!(vt.col, 0);
+        assert_eq!(vt.top, 0);
+        assert_eq!(vt.lines.len(), 1);
     }
 }
