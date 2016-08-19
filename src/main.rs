@@ -9,6 +9,7 @@ use smash::term::Term;
 fn main() {
     view::init();
     let win = view::Win::new();
+    win.resize(600, 400);
 
     let font_extents = {
         let ctx = win.create_cairo();
