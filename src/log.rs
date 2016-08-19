@@ -151,7 +151,6 @@ impl Log {
             LogEntry::new(log.dirty.clone(),
                           &log.font_extents,
                           Box::new(move || {
-                              println!("done");
                               Log::new_entry(&log_ref);
                           }))
         };

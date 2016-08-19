@@ -123,7 +123,11 @@ impl Term {
                         glib::Continue(false)
                     });
                 }
-                vt.lock().unwrap().trim();
+                {
+                    let mut vt = vt.lock().unwrap();
+                    vt.trim();
+                    vt.hide_cursor = true;
+                }
                 glib::idle_add(move || {
                     let on_exit = on_exit.get();
                     on_exit();
