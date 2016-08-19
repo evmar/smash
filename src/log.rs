@@ -176,9 +176,15 @@ impl view::View for RefCell<Log> {
     fn relayout(&self, cr: &cairo::Context, space: Layout) -> Layout {
         let log = self.borrow();
         let entries = &log.entries;
+        let mut height = 0;
         for entry in entries {
-            entry.relayout(cr, space);
+            let entry_layout = entry.relayout(cr, space.add(0, -height));
+            height += entry_layout.height;
         }
+        log.layout.set(Layout {
+            width: space.width,
+            height: height,
+        });
         log.layout.get()
     }
     fn get_layout(&self) -> Layout {
