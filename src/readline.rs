@@ -8,11 +8,15 @@ use std::rc::Rc;
 use std::cell::Cell;
 use std::cell::RefCell;
 
-pub struct ReadLine {
-    buf: String,
-    ofs: usize,
+struct Config {
     commands: HashMap<String, fn(&mut ReadLine)>,
     bindings: HashMap<String, String>,
+}
+
+pub struct ReadLine {
+    config: Rc<Config>,
+    buf: String,
+    ofs: usize,
     pub accept_cb: Box<FnMut(&str)>,
 }
 
@@ -30,8 +34,8 @@ macro_rules! cmds {
 }
 
 fn make_command_map() -> HashMap<String, fn(&mut ReadLine)> {
-    cmds!(
-// movement
+    return cmds!(
+    // movement
 "beginning-of-line" => rl {
     rl.ofs = 0;
 }
@@ -48,20 +52,65 @@ fn make_command_map() -> HashMap<String, fn(&mut ReadLine)> {
         rl.ofs -= 1;
     }
 }
+"forward-word" => rl {
+    while rl.ofs < rl.buf.len() && !rl.in_word() {
+        rl.ofs += 1;
+    }
+    while rl.ofs < rl.buf.len() && rl.in_word() {
+        rl.ofs += 1;
+    }
+}
+"backward-word" => rl {
+    if rl.ofs > 0 {
+        rl.ofs -= 1;
+    }
+    while rl.ofs > 0 && !rl.in_word() {
+        rl.ofs -= 1;
+    }
+    while rl.ofs > 0 && rl.in_word() {
+        rl.ofs -= 1;
+    }
+    if rl.ofs < rl.buf.len() && !rl.in_word() {
+        rl.ofs += 1;
+    }
+}
 
-// history
+    // history
 "accept-line" => rl {
     (rl.accept_cb)(&rl.buf);
 }
 
-// changing text
+    // changing text
 "backward-delete-char" => rl {
     if rl.ofs > 0 {
         rl.buf.remove(rl.ofs - 1);
         rl.ofs -= 1;
     }
-})
 }
+
+    // killing and yanking
+"kill-line" => rl {
+    rl.buf.truncate(rl.ofs);
+}
+"unix-line-discard" => rl {
+    rl.buf.truncate(0);
+    rl.ofs = 0;
+}
+"backward-kill-word" => rl {
+    let end = rl.ofs;
+    rl.config.command("backward-word").unwrap()(rl);
+    let start = rl.ofs;
+    let mut new_buf = String::new();
+    for i in 0..start {
+        new_buf.push(rl.buf.as_bytes()[i] as char);
+    }
+    for i in end..rl.buf.len() {
+        new_buf.push(rl.buf.as_bytes()[i] as char);
+    }
+    rl.buf = new_buf;
+});
+}
+
 
 macro_rules! binds {
     ( $( $key:expr => $cmd:expr ),* ) => {{
@@ -79,21 +128,41 @@ fn make_binds_map() -> HashMap<String, String> {
         "C-a" => "beginning-of-line",
         "C-e" => "end-of-line",
         "C-f" => "forward-char",
+        "Right" => "forward-char",
         "C-b" => "backward-char",
+        "Left" => "backward-char",
+        "M-f" => "forward-word",
+        "M-b" => "backward-word",
 
         "Return" => "accept-line",
 
-        "BackSpace" => "backward-delete-char"
+        "BackSpace" => "backward-delete-char",
+
+        "C-k" => "kill-line",
+        "C-u" => "unix-line-discard",
+        "M-BackSpace" => "backward-kill-word"
     )
+}
+
+impl Config {
+    fn key(&self, key: &str) -> Option<fn(&mut ReadLine)> {
+        self.bindings.get(key).and_then(|name| self.command(name))
+    }
+    fn command(&self, name: &str) -> Option<fn(&mut ReadLine)> {
+        self.commands.get(name).map(|f| *f)
+    }
 }
 
 impl ReadLine {
     pub fn new() -> ReadLine {
-        ReadLine {
-            buf: String::new(),
-            ofs: 0,
+        let config = Rc::new(Config {
             commands: make_command_map(),
             bindings: make_binds_map(),
+        });
+        ReadLine {
+            config: config,
+            buf: String::new(),
+            ofs: 0,
             accept_cb: Box::new(move |_: &str| {}),
         }
     }
@@ -106,24 +175,7 @@ impl ReadLine {
     }
 
     pub fn key(&mut self, key: &str) -> bool {
-        // This function has an odd control flow because we need to run
-        // the keybinding command without any of the hashtables holding
-        // an immutable borrow on self.
-        let f = {
-            match self.bindings.get(key) {
-                None => None,
-                Some(command) => {
-                    match self.commands.get(command) {
-                        None => {
-                            println!("no command named {:?}", command);
-                            return false;
-                        }
-                        Some(f) => Some(*f),
-                    }
-                }
-            }
-        };
-        if let Some(f) = f {
+        if let Some(f) = self.config.key(key) {
             f(self);
             return true;
         }
@@ -144,6 +196,14 @@ impl ReadLine {
     pub fn clear(&mut self) {
         self.buf.clear();
         self.ofs = 0;
+    }
+
+    fn in_word(&self) -> bool {
+        if self.ofs >= self.buf.len() {
+            return false;
+        }
+        let c = self.buf.as_bytes()[self.ofs] as char;
+        return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9');
     }
 }
 
@@ -269,5 +329,39 @@ mod tests {
         assert_eq!("a", rl.get());
         rl.insert("bc");
         assert_eq!("abc", rl.get());
+    }
+
+    #[test]
+    fn forward_word() {
+        let mut rl = ReadLine::new();
+        rl.key("M-f");
+        assert_eq!(rl.ofs, 0);
+
+        rl.insert("012 456  9");
+        rl.ofs = 3;
+        rl.key("M-f");
+        assert_eq!(rl.ofs, 7);
+        rl.key("M-f");
+        assert_eq!(rl.ofs, 10);
+        rl.key("M-f");
+        assert_eq!(rl.ofs, 10);
+    }
+
+    #[test]
+    fn backward_word() {
+        let mut rl = ReadLine::new();
+        rl.key("M-b");
+        assert_eq!(rl.ofs, 0);
+
+        rl.insert("012 456  9");
+        rl.ofs = 10;
+        rl.key("M-b");
+        assert_eq!(rl.ofs, 9);
+        rl.key("M-b");
+        assert_eq!(rl.ofs, 4);
+        rl.key("M-b");
+        assert_eq!(rl.ofs, 0);
+        rl.key("M-b");
+        assert_eq!(rl.ofs, 0);
     }
 }
