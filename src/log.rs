@@ -4,19 +4,26 @@ use std::rc::Rc;
 use std::cell::Cell;
 use std::cell::RefCell;
 use prompt::Prompt;
+use shell::Shell;
 use term::Term;
 use view;
 use view::Layout;
 
 pub struct LogEntry {
+    shell: Rc<Shell>,
     prompt: Prompt,
     term: RefCell<Option<Term>>,
     layout: Cell<Layout>,
 }
 
 impl LogEntry {
-    pub fn new(dirty: Rc<Fn()>, font_extents: cairo::FontExtents, done: Box<Fn()>) -> Rc<LogEntry> {
+    pub fn new(shell: Rc<Shell>,
+               dirty: Rc<Fn()>,
+               font_extents: cairo::FontExtents,
+               done: Box<Fn()>)
+               -> Rc<LogEntry> {
         let le = Rc::new(LogEntry {
+            shell: shell,
             prompt: Prompt::new(dirty.clone()),
             term: RefCell::new(None),
             layout: Cell::new(Layout::new()),
@@ -27,14 +34,16 @@ impl LogEntry {
             // called multiple times, but we only want create a
             // terminal once.  Capture all the needed state in a
             // moveable temporary.
+            let le = le.clone();
             let mut once = Some((le.clone(), dirty, font_extents, done));
             Box::new(move |str: &str| {
                 if let Some(once) = once.take() {
-                    let text = String::from(str);
+                    let cmd = le.shell.parse(str);
                     view::add_task(move || {
+                        let argv: Vec<_> = cmd.iter().map(|s| s.as_str()).collect();
                         let (le, dirty, font_extents, done) = once;
                         *le.term.borrow_mut() =
-                            Some(Term::new(dirty, font_extents, &[&text], done));
+                            Some(Term::new(dirty, font_extents, argv.as_slice(), done));
                     })
                 }
             })
@@ -85,6 +94,7 @@ impl view::View for LogEntry {
 }
 
 pub struct Log {
+    shell: Rc<Shell>,
     entries: RefCell<Vec<Rc<LogEntry>>>,
     dirty: Rc<Fn()>,
     font_extents: cairo::FontExtents,
@@ -94,6 +104,7 @@ pub struct Log {
 impl Log {
     pub fn new(dirty: Rc<Fn()>, font_extents: &cairo::FontExtents) -> Rc<Log> {
         let log = Rc::new(Log {
+            shell: Rc::new(Shell::new()),
             entries: RefCell::new(Vec::new()),
             dirty: dirty,
             font_extents: font_extents.clone(),
@@ -106,7 +117,8 @@ impl Log {
     pub fn new_entry(log: &Rc<Log>) {
         let entry = {
             let log = log.clone();
-            LogEntry::new(log.dirty.clone(),
+            LogEntry::new(log.shell.clone(),
+                          log.dirty.clone(),
                           log.font_extents,
                           Box::new(move || {
                               Log::new_entry(&log);

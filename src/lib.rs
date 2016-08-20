@@ -3,6 +3,7 @@ pub mod log;
 pub mod prompt;
 pub mod pty;
 pub mod readline;
+pub mod shell;
 pub mod term;
 pub mod threaded_ref;
 pub mod view;
