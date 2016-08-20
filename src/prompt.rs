@@ -21,16 +21,21 @@ impl Prompt {
 
 impl view::View for Prompt {
     fn draw(&self, cr: &cairo::Context, focus: bool) {
+        let gray = 0.3;
+        let x_pad = 5.0;
+        let y_pad = 10.0;
+        let width = 8.0;
         cr.save();
-        cr.set_source_rgb(0.7, 0.7, 0.7);
+        cr.translate(x_pad, 0.0);
+        cr.set_source_rgb(gray, gray, gray);
         cr.new_path();
-        cr.move_to(5.0, 8.0);
+        cr.move_to(0.0, y_pad);
         let height = self.get_layout().height as f64;
-        cr.line_to(13.0, height / 2.0);
-        cr.line_to(5.0, height - 8.0);
+        cr.line_to(width, height / 2.0);
+        cr.line_to(0.0, height - y_pad);
         cr.fill();
 
-        cr.translate(18.0, 5.0);
+        cr.translate(width + x_pad, 5.0);
         self.rl.draw(cr, focus);
         cr.restore();
     }
