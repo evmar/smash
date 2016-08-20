@@ -3,48 +3,10 @@ extern crate gdk;
 use std::rc::Rc;
 use std::cell::Cell;
 use std::cell::RefCell;
-use readline::ReadLineView;
+use prompt::Prompt;
 use term::Term;
 use view;
 use view::Layout;
-
-struct Prompt {
-    rl: Rc<ReadLineView>,
-}
-
-impl Prompt {
-    fn new(rl: Rc<ReadLineView>) -> Prompt {
-        Prompt { rl: rl }
-    }
-}
-
-impl view::View for Prompt {
-    fn draw(&self, cr: &cairo::Context, focus: bool) {
-        cr.save();
-        cr.set_source_rgb(0.7, 0.7, 0.7);
-        cr.new_path();
-        cr.move_to(5.0, 8.0);
-        let height = self.get_layout().height as f64;
-        cr.line_to(13.0, height / 2.0);
-        cr.line_to(5.0, height - 8.0);
-        cr.fill();
-
-        cr.translate(18.0, 5.0);
-        self.rl.draw(cr, focus);
-        cr.restore();
-    }
-    fn key(&self, ev: &gdk::EventKey) {
-        self.rl.key(ev);
-    }
-
-    fn relayout(&self, cr: &cairo::Context, space: Layout) -> Layout {
-        self.rl.relayout(cr, space.add(-20, -10));
-        self.get_layout()
-    }
-    fn get_layout(&self) -> Layout {
-        self.rl.get_layout().add(20, 10)
-    }
-}
 
 pub struct LogEntry {
     prompt: Prompt,
@@ -55,7 +17,7 @@ pub struct LogEntry {
 impl LogEntry {
     pub fn new(dirty: Rc<Fn()>, font_extents: cairo::FontExtents, done: Box<Fn()>) -> Rc<LogEntry> {
         let le = Rc::new(LogEntry {
-            prompt: Prompt::new(ReadLineView::new(dirty.clone())),
+            prompt: Prompt::new(dirty.clone()),
             term: RefCell::new(None),
             layout: Cell::new(Layout::new()),
         });
@@ -77,7 +39,7 @@ impl LogEntry {
                 }
             })
         };
-        le.prompt.rl.rl.borrow_mut().accept_cb = accept_cb;
+        le.prompt.set_accept_cb(accept_cb);
         le
     }
 }

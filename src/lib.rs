@@ -1,5 +1,6 @@
 pub mod byte_scanner;
 pub mod log;
+pub mod prompt;
 pub mod pty;
 pub mod readline;
 pub mod term;
