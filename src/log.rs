@@ -98,6 +98,7 @@ pub struct Log {
     entries: RefCell<Vec<Rc<LogEntry>>>,
     dirty: Rc<Fn()>,
     font_extents: cairo::FontExtents,
+    scroll_offset: Cell<i32>,
     layout: Cell<Layout>,
 }
 
@@ -108,6 +109,7 @@ impl Log {
             entries: RefCell::new(Vec::new()),
             dirty: dirty,
             font_extents: font_extents.clone(),
+            scroll_offset: Cell::new(0),
             layout: Cell::new(Layout::new()),
         });
         Log::new_entry(&log);
@@ -132,10 +134,19 @@ impl view::View for Log {
     fn draw(&self, cr: &cairo::Context, focus: bool) {
         let entries = self.entries.borrow();
         cr.save();
+        let mut y = 0;
+        let scroll_offset = self.scroll_offset.get();
+        cr.translate(0.0, -scroll_offset as f64);
         for (i, entry) in entries.iter().enumerate() {
+            let height = entry.get_layout().height;
+            y += height;
+            if y < scroll_offset {
+                cr.translate(0.0, height as f64);
+                continue;
+            }
             let last = i == entries.len() - 1;
             entry.draw(cr, focus && last);
-            cr.translate(0.0, entry.get_layout().height as f64);
+            cr.translate(0.0, height as f64);
         }
         cr.restore();
     }
@@ -147,13 +158,15 @@ impl view::View for Log {
         let entries = self.entries.borrow();
         let mut height = 0;
         for entry in &*entries {
-            let entry_layout = entry.relayout(cr, space.add(0, -height));
+            let entry_layout = entry.relayout(cr, space);
             height += entry_layout.height;
         }
-        self.layout.set(Layout {
-            width: space.width,
-            height: height,
-        });
+        if height > space.height {
+            self.scroll_offset.set(height - space.height);
+        }
+        // Ignore the computed height, because the log fills all vertical
+        // space given to it.
+        self.layout.set(space);
         self.layout.get()
     }
     fn get_layout(&self) -> Layout {
