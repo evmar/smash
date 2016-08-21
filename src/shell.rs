@@ -4,7 +4,10 @@ pub struct Shell {
     cwd: PathBuf,
 }
 
-pub type Command = Vec<String>;
+pub enum Command {
+    Builtin(fn(&mut Shell)),
+    External(Vec<String>),
+}
 
 impl Shell {
     pub fn new() -> Shell {
@@ -12,6 +15,6 @@ impl Shell {
     }
     pub fn parse(&self, cmd: &str) -> Command {
         let argv = cmd.split(' ').map(String::from).collect();
-        argv
+        Command::External(argv)
     }
 }

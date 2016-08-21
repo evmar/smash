@@ -4,7 +4,7 @@ use std::rc::Rc;
 use std::cell::Cell;
 use std::cell::RefCell;
 use prompt::Prompt;
-use shell::Shell;
+use shell::{Command, Shell};
 use term::Term;
 use view;
 use view::Layout;
@@ -40,10 +40,15 @@ impl LogEntry {
                 if let Some(once) = once.take() {
                     let cmd = le.shell.parse(str);
                     view::add_task(move || {
-                        let argv: Vec<_> = cmd.iter().map(|s| s.as_str()).collect();
-                        let (le, dirty, font_extents, done) = once;
-                        *le.term.borrow_mut() =
-                            Some(Term::new(dirty, font_extents, argv.as_slice(), done));
+                        match cmd {
+                            Command::Builtin(_) => {}
+                            Command::External(argv) => {
+                                let argv: Vec<_> = argv.iter().map(|s| s.as_str()).collect();
+                                let (le, dirty, font_extents, done) = once;
+                                *le.term.borrow_mut() =
+                                    Some(Term::new(dirty, font_extents, argv.as_slice(), done));
+                            }
+                        }
                     })
                 }
             })
