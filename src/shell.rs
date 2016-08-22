@@ -14,7 +14,14 @@ impl Shell {
         Shell { cwd: PathBuf::from("/") }
     }
     pub fn parse(&self, cmd: &str) -> Command {
-        let argv = cmd.split(' ').map(String::from).collect();
-        Command::External(argv)
+        let argv: Vec<_> = cmd.split(' ').map(String::from).collect();
+        // Note: split() always returns at least one element.
+        match argv[0].as_str() {
+            "" => {
+                fn none(_: &mut Shell) {}
+                Command::Builtin(none)
+            }
+            _ => Command::External(argv),
+        }
     }
 }

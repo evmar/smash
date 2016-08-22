@@ -40,11 +40,15 @@ impl LogEntry {
                 if let Some(once) = once.take() {
                     let cmd = le.shell.parse(str);
                     view::add_task(move || {
+                        let (le, dirty, font_extents, done) = once;
                         match cmd {
-                            Command::Builtin(_) => {}
+                            Command::Builtin(_) => {
+                                let term = Term::new(dirty, font_extents);
+                                *le.term.borrow_mut() = Some(term);
+                                done();
+                            }
                             Command::External(argv) => {
                                 let argv: Vec<_> = argv.iter().map(|s| s.as_str()).collect();
-                                let (le, dirty, font_extents, done) = once;
                                 let mut term = Term::new(dirty, font_extents);
                                 term.spawn(argv.as_slice(), done);
                                 *le.term.borrow_mut() = Some(term);
@@ -133,6 +137,7 @@ impl Log {
                           }))
         };
         log.entries.borrow_mut().push(entry);
+        (log.dirty)();
     }
 }
 
