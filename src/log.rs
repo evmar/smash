@@ -45,8 +45,9 @@ impl LogEntry {
                             Command::External(argv) => {
                                 let argv: Vec<_> = argv.iter().map(|s| s.as_str()).collect();
                                 let (le, dirty, font_extents, done) = once;
-                                *le.term.borrow_mut() =
-                                    Some(Term::new(dirty, font_extents, argv.as_slice(), done));
+                                let mut term = Term::new(dirty, font_extents);
+                                term.spawn(argv.as_slice(), done);
+                                *le.term.borrow_mut() = Some(term);
                             }
                         }
                     })

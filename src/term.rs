@@ -57,21 +57,32 @@ fn duration_in_ms(dur: time::Duration) -> u64 {
 pub struct Term {
     font_metrics: cairo::FontExtents,
     vt: Arc<Mutex<vt100::VT>>,
-    stdin: mpsc::Sender<Box<[u8]>>,
+    stdin: Option<mpsc::Sender<Box<[u8]>>>,
     draw_pending: Arc<AtomicBool>,
     last_paint: Cell<time::Instant>,
     layout: Cell<Layout>,
+    dirty_cb: Rc<Fn()>,
 }
 
 impl Term {
-    pub fn new(dirty: Rc<Fn()>,
-               font_extents: cairo::FontExtents,
-               command: &[&str],
-               on_exit: Box<Fn()>)
-               -> Term {
+    pub fn new(dirty: Rc<Fn()>, font_extents: cairo::FontExtents) -> Term {
+        Term {
+            font_metrics: font_extents,
+            vt: Arc::new(Mutex::new(vt100::VT::new())),
+            stdin: None,
+            draw_pending: Arc::new(AtomicBool::new(false)),
+            last_paint: Cell::new(time::Instant::now()),
+            layout: Cell::new(Layout::new()),
+            dirty_cb: dirty,
+        }
+    }
+
+    pub fn spawn(&mut self, command: &[&str], on_exit: Box<Fn()>) {
         let rf = pty::spawn(command);
         pty::set_size(&rf, 25, 80);
         let (stdin_send, stdin_recv) = mpsc::channel();
+
+        self.stdin = Some(stdin_send.clone());
 
         {
             // Spawn a thread that forwards data from the channel into
@@ -87,20 +98,11 @@ impl Term {
             });
         }
 
-        let term = Term {
-            font_metrics: font_extents,
-            vt: Arc::new(Mutex::new(vt100::VT::new())),
-            stdin: stdin_send.clone(),
-            draw_pending: Arc::new(AtomicBool::new(false)),
-            last_paint: Cell::new(time::Instant::now()),
-            layout: Cell::new(Layout::new()),
-        };
-
         {
             let mut rf = rf;
-            let vt = term.vt.clone();
-            let draw_pending = term.draw_pending.clone();
-            let dirty = Arc::new(ThreadedRef::new(dirty));
+            let vt = self.vt.clone();
+            let draw_pending = self.draw_pending.clone();
+            let dirty = Arc::new(ThreadedRef::new(self.dirty_cb.clone()));
             let send = Box::new(move |input: Box<[u8]>| {
                 stdin_send.send(input).unwrap();
             });
@@ -135,8 +137,6 @@ impl Term {
                 });
             })
         };
-
-        term
     }
 
     pub fn get_font_metrics(cr: &cairo::Context) -> cairo::FontExtents {
@@ -172,11 +172,7 @@ impl Term {
                     ANSI_COLORS[c]
                 }
             });
-            if attr.inverse() {
-                (bg, fg)
-            } else {
-                (fg, bg)
-            }
+            if attr.inverse() { (bg, fg) } else { (fg, bg) }
         };
 
         if bg != DEFAULT_BG {
@@ -252,10 +248,13 @@ impl View for Term {
 
     fn key(&self, ev: &gdk::EventKey) {
         let buf = translate_key(&ev);
-        if self.stdin.send(buf).is_err() {
+        if let Some(ref stdin) = self.stdin {
+            stdin.send(buf).unwrap();
+        } else {
             println!("can't send");
         }
     }
+
     fn relayout(&self, _cr: &cairo::Context, space: Layout) -> Layout {
         let lines = {
             let mut vt = self.vt.lock().unwrap();
