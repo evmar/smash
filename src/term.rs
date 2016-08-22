@@ -257,7 +257,7 @@ impl View for Term {
 
     fn relayout(&self, _cr: &cairo::Context, space: Layout) -> Layout {
         let lines = {
-            let mut vt = self.vt.lock().unwrap();
+            let vt = self.vt.lock().unwrap();
             vt.lines.len() - vt.top
         };
 
