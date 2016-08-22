@@ -17,7 +17,10 @@ fn main() {
                    25 * font_extents.height as i32);
 
         let mut term = Term::new(win.dirty_cb.clone(), font_extents);
-        term.spawn(&["bash"], Box::new(|| {}));
+        term.spawn(&["bash"],
+                   Box::new(|| {
+                       view::quit();
+                   }));
         *win.child.borrow_mut() = Rc::new(term);
 
         win.show();
