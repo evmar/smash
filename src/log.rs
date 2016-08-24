@@ -44,6 +44,7 @@ impl LogEntry {
                         match cmd {
                             Command::Builtin(_) => {
                                 let term = Term::new(dirty, font_extents);
+                                term.cleanup();
                                 *le.term.borrow_mut() = Some(term);
                                 done();
                             }

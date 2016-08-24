@@ -147,14 +147,19 @@ impl VT {
         return &mut row[self.col];
     }
 
-    // Drop the last line if it's empty; used when a subprocess exits.
-    pub fn trim(&mut self) {
+    fn trim_last_line_if_empty(&mut self) {
         if self.col == 0 && self.row > 0 && self.row >= self.lines.len() {
             self.row -= 1;
             if self.row < self.lines.len() - 1 {
                 self.lines.pop();
             }
         }
+    }
+
+    // Clean up the terminal state; used when a subprocess exits.
+    pub fn cleanup(&mut self) {
+        self.trim_last_line_if_empty();
+        self.hide_cursor = true;
     }
 
     #[allow(dead_code)]
@@ -580,10 +585,10 @@ mod tests {
     }
 
     #[test]
-    fn trim() {
+    fn trim_last_line_if_empty() {
         let vt = Mutex::new(VT::new());
         write_text(&vt, "hello, world\n".as_bytes());
-        vt.lock().unwrap().trim();
+        vt.lock().unwrap().trim_last_line_if_empty();
         let vt = vt.lock().unwrap();
         vt.dump();
         assert_eq!(vt.row, 0);

@@ -125,11 +125,7 @@ impl Term {
                         glib::Continue(false)
                     });
                 }
-                {
-                    let mut vt = vt.lock().unwrap();
-                    vt.trim();
-                    vt.hide_cursor = true;
-                }
+                vt.lock().unwrap().cleanup();
                 glib::idle_add(move || {
                     let on_exit = on_exit.get();
                     on_exit();
@@ -137,6 +133,10 @@ impl Term {
                 });
             })
         };
+    }
+
+    pub fn cleanup(&self) {
+        self.vt.lock().unwrap().cleanup();
     }
 
     pub fn get_font_metrics(cr: &cairo::Context) -> cairo::FontExtents {
