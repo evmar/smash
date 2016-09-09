@@ -4,69 +4,43 @@ use std::rc::Rc;
 use std::cell::Cell;
 use std::cell::RefCell;
 use prompt::Prompt;
-use shell::{Command, Shell};
+use shell;
 use term::Term;
 use view;
 use view::Layout;
 
 pub struct LogEntry {
-    shell: Rc<Shell>,
+    id: usize,
     prompt: Prompt,
-    term: RefCell<Option<Term>>,
+    term: Option<Term>,
     layout: Cell<Layout>,
 }
 
 impl LogEntry {
-    pub fn new(shell: Rc<Shell>,
-               dirty: Rc<Fn()>,
-               font_extents: cairo::FontExtents,
-               done: Box<Fn()>)
-               -> Rc<LogEntry> {
-        let le = Rc::new(LogEntry {
-            shell: shell,
-            prompt: Prompt::new(dirty.clone()),
-            term: RefCell::new(None),
+    pub fn new(id: usize, dirty: Rc<Fn()>, accept: Box<FnMut(usize, &str)>) -> LogEntry {
+        let le = LogEntry {
+            id: id,
+            prompt: Prompt::new(dirty),
+            term: None,
             layout: Cell::new(Layout::new()),
-        });
-
-        let accept_cb = {
-            // The accept callback from readline can potentially be
-            // called multiple times, but we only want create a
-            // terminal once.  Capture all the needed state in a
-            // moveable temporary.
-            let le = le.clone();
-            let mut once = Some((le.clone(), dirty, font_extents, done));
-            Box::new(move |str: &str| {
-                if let Some(once) = once.take() {
-                    let cmd = le.shell.parse(str);
-                    view::add_task(move || {
-                        let (le, dirty, font_extents, done) = once;
-                        match cmd {
-                            Command::Builtin(_) => {
-                                let term = Term::new(dirty, font_extents);
-                                term.cleanup();
-                                *le.term.borrow_mut() = Some(term);
-                                done();
-                            }
-                            Command::External(argv) => {
-                                let argv: Vec<_> = argv.iter().map(|s| s.as_str()).collect();
-                                let mut term = Term::new(dirty, font_extents);
-                                term.spawn(argv.as_slice(), done);
-                                *le.term.borrow_mut() = Some(term);
-                            }
-                        }
-                    })
-                }
-            })
         };
-        le.prompt.set_accept_cb(accept_cb);
+        {
+            // The accept callback from readline can potentially be
+            // called multiple times, but we only want to accept once.
+            let mut once = Some((id, accept));
+            le.prompt.set_accept_cb(Box::new(move |str: &str| {
+                if let Some((id, mut accept)) = once.take() {
+                    accept(id, str);
+                }
+            }));
+        }
         le
     }
 }
 
 impl view::View for LogEntry {
     fn draw(&self, cr: &cairo::Context, focus: bool) {
-        if let Some(ref term) = *self.term.borrow() {
+        if let Some(ref term) = self.term {
             self.prompt.draw(cr, false);
             cr.save();
             let height = self.prompt.get_layout().height as f64;
@@ -79,7 +53,7 @@ impl view::View for LogEntry {
     }
 
     fn key(&self, ev: &gdk::EventKey) {
-        if let Some(ref term) = *self.term.borrow() {
+        if let Some(ref term) = self.term {
             term.key(ev);
         } else {
             self.prompt.key(ev);
@@ -88,7 +62,7 @@ impl view::View for LogEntry {
 
     fn relayout(&self, cr: &cairo::Context, space: Layout) -> Layout {
         let mut layout = self.prompt.relayout(cr, space);
-        if let Some(ref term) = *self.term.borrow() {
+        if let Some(ref term) = self.term {
             let tlayout = term.relayout(cr,
                                         Layout {
                                             width: space.width,
@@ -105,8 +79,8 @@ impl view::View for LogEntry {
 }
 
 pub struct Log {
-    shell: Rc<Shell>,
-    entries: RefCell<Vec<Rc<LogEntry>>>,
+    shell: Rc<shell::Shell>,
+    entries: RefCell<Vec<LogEntry>>,
     dirty: Rc<Fn()>,
     font_extents: cairo::FontExtents,
     scroll_offset: Cell<i32>,
@@ -116,7 +90,7 @@ pub struct Log {
 impl Log {
     pub fn new(dirty: Rc<Fn()>, font_extents: &cairo::FontExtents) -> Rc<Log> {
         let log = Rc::new(Log {
-            shell: Rc::new(Shell::new()),
+            shell: Rc::new(shell::Shell::new()),
             entries: RefCell::new(Vec::new()),
             dirty: dirty,
             font_extents: font_extents.clone(),
@@ -128,14 +102,46 @@ impl Log {
     }
 
     pub fn new_entry(log: &Rc<Log>) {
+        let id = log.entries.borrow().len();
+        let done = {
+            let log = log.clone();
+            Box::new(move || {
+                Log::new_entry(&log);
+            })
+        };
+        let accept_cb = {
+            // The accept callback from readline can potentially be
+            // called multiple times, but we only want create a
+            // terminal once.  Capture all the needed state in a
+            // moveable temporary.
+            let log = log.clone();
+            let mut once = Some((log, done));
+            Box::new(move |id: usize, str: &str| {
+                if once.is_none() {
+                    return;
+                }
+                let (log, done) = once.take().unwrap();
+                let cmd = shell::parse(str);
+                view::add_task(move || {
+                    let mut term = Term::new(log.dirty.clone(), log.font_extents);
+                    match cmd {
+                        shell::Command::Builtin(f) => {
+                            // f();
+                            term.cleanup();
+                            done();
+                        }
+                        shell::Command::External(argv) => {
+                            let argv: Vec<_> = argv.iter().map(|s| s.as_str()).collect();
+                            term.spawn(argv.as_slice(), done);
+                        }
+                    }
+                    log.entries.borrow_mut()[id].term = Some(term);
+                })
+            })
+        };
         let entry = {
             let log = log.clone();
-            LogEntry::new(log.shell.clone(),
-                          log.dirty.clone(),
-                          log.font_extents,
-                          Box::new(move || {
-                              Log::new_entry(&log);
-                          }))
+            LogEntry::new(id, log.dirty.clone(), accept_cb)
         };
         log.entries.borrow_mut().push(entry);
         (log.dirty)();
