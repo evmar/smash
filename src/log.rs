@@ -110,16 +110,10 @@ impl Log {
             })
         };
         let accept_cb = {
-            // The accept callback from readline can potentially be
-            // called multiple times, but we only want create a
-            // terminal once.  Capture all the needed state in a
-            // moveable temporary.
             let log = log.clone();
+            // accept is only called once; hack around missing Box<FnOnce>.
             let mut once = Some((log, done));
             Box::new(move |id: usize, str: &str| {
-                if once.is_none() {
-                    return;
-                }
                 let (log, done) = once.take().unwrap();
                 let cmd = shell::parse(str);
                 view::add_task(move || {
