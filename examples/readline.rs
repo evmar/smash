@@ -6,33 +6,35 @@ use smash::view;
 use smash::view::{View, Layout};
 use smash::view::Win;
 use std::rc::Rc;
+use std::cell::RefCell;
 
 struct Padding {
-    child: Rc<View>,
+    child: Rc<RefCell<View>>,
 }
 
 impl View for Padding {
     fn draw(&self, cr: &cairo::Context, focus: bool) {
         cr.translate(20.0, 20.0);
-        self.child.draw(cr, focus);
+        self.child.borrow().draw(cr, focus);
     }
-    fn key(&self, ev: &gdk::EventKey) {
-        self.child.key(ev);
+    fn key(&mut self, ev: &gdk::EventKey) {
+        self.child.borrow_mut().key(ev);
     }
     fn get_layout(&self) -> Layout {
-        self.child.get_layout().add(40, 40)
+        self.child.borrow().get_layout().add(40, 40)
     }
 }
 
 fn main() {
     view::init();
 
-    let win = Win::new();
+    let rwin = Win::new();
     {
+        let mut win = rwin.borrow_mut();
         let rl = ReadLineView::new(win.dirty_cb.clone());
         let padding = Padding { child: rl.clone() };
 
-        *win.child.borrow_mut() = Rc::new(padding);
+        win.child = Rc::new(RefCell::new(padding));
         win.show();
     }
 

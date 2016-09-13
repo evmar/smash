@@ -1,12 +1,13 @@
 extern crate cairo;
 extern crate gdk;
 use std::rc::Rc;
+use std::cell::RefCell;
 use view;
 use view::Layout;
 use readline::ReadLineView;
 
 pub struct Prompt {
-    rl: Rc<ReadLineView>,
+    rl: Rc<RefCell<ReadLineView>>,
 }
 
 impl Prompt {
@@ -14,8 +15,8 @@ impl Prompt {
         Prompt { rl: ReadLineView::new(dirty) }
     }
 
-    pub fn set_accept_cb(&self, accept_cb: Box<FnMut(&str)>) {
-        self.rl.rl.borrow_mut().accept_cb = accept_cb;
+    pub fn set_accept_cb(&mut self, accept_cb: Box<FnMut(&str)>) {
+        self.rl.borrow_mut().rl.accept_cb = accept_cb;
     }
 }
 
@@ -36,18 +37,18 @@ impl view::View for Prompt {
         cr.fill();
 
         cr.translate(width + x_pad, 5.0);
-        self.rl.draw(cr, focus);
+        self.rl.borrow_mut().draw(cr, focus);
         cr.restore();
     }
-    fn key(&self, ev: &gdk::EventKey) {
-        self.rl.key(ev);
+    fn key(&mut self, ev: &gdk::EventKey) {
+        self.rl.borrow_mut().key(ev);
     }
 
-    fn relayout(&self, cr: &cairo::Context, space: Layout) -> Layout {
-        self.rl.relayout(cr, space.add(-20, -10));
+    fn relayout(&mut self, cr: &cairo::Context, space: Layout) -> Layout {
+        self.rl.borrow_mut().relayout(cr, space.add(-20, -10));
         self.get_layout()
     }
     fn get_layout(&self) -> Layout {
-        self.rl.get_layout().add(20, 10)
+        self.rl.borrow_mut().get_layout().add(20, 10)
     }
 }

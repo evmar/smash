@@ -24,7 +24,7 @@ pub fn parse(cmd: &str) -> Command {
             Command::Builtin(none)
         }
         "yo" => {
-            fn yo(sh: &mut Shell) {}
+            fn yo(_: &mut Shell) {}
             Command::Builtin(yo)
         }
         _ => Command::External(argv),

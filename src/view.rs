@@ -69,8 +69,8 @@ impl Layout {
 
 pub trait View {
     fn draw(&self, cr: &cairo::Context, focus: bool);
-    fn key(&self, ev: &gdk::EventKey);
-    fn relayout(&self, _cr: &cairo::Context, _space: Layout) -> Layout {
+    fn key(&mut self, ev: &gdk::EventKey);
+    fn relayout(&mut self, _cr: &cairo::Context, _space: Layout) -> Layout {
         self.get_layout()
     }
     fn get_layout(&self) -> Layout;
@@ -79,7 +79,7 @@ pub trait View {
 pub struct NullView {}
 impl View for NullView {
     fn draw(&self, _cr: &cairo::Context, _focus: bool) {}
-    fn key(&self, _ev: &gdk::EventKey) {}
+    fn key(&mut self, _ev: &gdk::EventKey) {}
     fn get_layout(&self) -> Layout {
         Layout::new()
     }
@@ -88,11 +88,11 @@ impl View for NullView {
 pub struct Win {
     pub dirty_cb: Rc<Fn()>,
     pub gtkwin: gtk::Window,
-    pub child: RefCell<Rc<View>>,
+    pub child: Rc<RefCell<View>>,
 }
 
 impl Win {
-    pub fn new() -> Rc<Win> {
+    pub fn new() -> Rc<RefCell<Win>> {
         let gtkwin = gtk::Window::new(gtk::WindowType::Toplevel);
         gtkwin.set_default_size(400, 200);
         gtkwin.set_app_paintable(true);
@@ -115,16 +115,17 @@ impl Win {
             })
         };
 
-        let win = Rc::new(Win {
+        let win = Rc::new(RefCell::new(Win {
             dirty_cb: dirty_cb,
             gtkwin: gtkwin.clone(),
-            child: RefCell::new(Rc::new(NullView {})),
-        });
+            child: Rc::new(RefCell::new(NullView {})),
+        }));
 
         {
             let win = win.clone();
             gtkwin.connect_draw(move |_, cr| {
-                let child = win.child.borrow();
+                let win = win.borrow();
+                let mut child = win.child.borrow_mut();
                 child.relayout(cr,
                                Layout {
                                    width: 600,
@@ -138,8 +139,8 @@ impl Win {
         {
             let win = win.clone();
             gtkwin.connect_key_press_event(move |_, ev| {
-                let child = win.child.borrow();
-                child.key(ev);
+                let win = win.borrow();
+                win.child.borrow_mut().key(ev);
                 Inhibit(false)
             });
         }

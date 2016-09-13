@@ -2,12 +2,14 @@ extern crate smash;
 use smash::term::Term;
 use smash::view;
 use std::rc::Rc;
+use std::cell::RefCell;
 
 fn main() {
     view::init();
-    let win = view::Win::new();
+    let rwin = view::Win::new();
 
     {
+        let mut win = rwin.borrow_mut();
         let font_extents = {
             let ctx = win.create_cairo();
             Term::get_font_metrics(&ctx)
@@ -21,8 +23,7 @@ fn main() {
                    Box::new(|| {
                        view::quit();
                    }));
-        *win.child.borrow_mut() = Rc::new(term);
-
+        win.child = Rc::new(RefCell::new(term));
         win.show();
     }
 

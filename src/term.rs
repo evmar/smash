@@ -60,7 +60,7 @@ pub struct Term {
     stdin: Option<mpsc::Sender<Box<[u8]>>>,
     draw_pending: Arc<AtomicBool>,
     last_paint: Cell<time::Instant>,
-    layout: Cell<Layout>,
+    layout: Layout,
     dirty_cb: Rc<Fn()>,
 }
 
@@ -72,7 +72,7 @@ impl Term {
             stdin: None,
             draw_pending: Arc::new(AtomicBool::new(false)),
             last_paint: Cell::new(time::Instant::now()),
-            layout: Cell::new(Layout::new()),
+            layout: Layout::new(),
             dirty_cb: dirty,
         }
     }
@@ -246,7 +246,7 @@ impl View for Term {
         }
     }
 
-    fn key(&self, ev: &gdk::EventKey) {
+    fn key(&mut self, ev: &gdk::EventKey) {
         let buf = translate_key(&ev);
         if let Some(ref stdin) = self.stdin {
             stdin.send(buf).unwrap();
@@ -255,7 +255,7 @@ impl View for Term {
         }
     }
 
-    fn relayout(&self, _cr: &cairo::Context, space: Layout) -> Layout {
+    fn relayout(&mut self, _cr: &cairo::Context, space: Layout) -> Layout {
         let lines = {
             let vt = self.vt.lock().unwrap();
             vt.lines.len() - vt.top
@@ -265,11 +265,11 @@ impl View for Term {
             width: space.width,
             height: lines as i32 * self.font_metrics.height as i32,
         };
-        self.layout.set(layout);
+        self.layout = layout;
         layout
     }
     fn get_layout(&self) -> Layout {
-        self.layout.get()
+        self.layout
     }
 }
 

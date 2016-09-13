@@ -5,7 +5,6 @@ use view;
 use view::{Layout, View};
 use std::collections::HashMap;
 use std::rc::Rc;
-use std::cell::Cell;
 use std::cell::RefCell;
 
 struct Config {
@@ -209,17 +208,17 @@ impl ReadLine {
 
 pub struct ReadLineView {
     pub dirty: Rc<Fn()>,
-    pub rl: RefCell<ReadLine>,
-    layout: Cell<Layout>,
+    pub rl: ReadLine,
+    layout: Layout,
 }
 
 impl ReadLineView {
-    pub fn new(dirty: Rc<Fn()>) -> Rc<ReadLineView> {
-        Rc::new(ReadLineView {
+    pub fn new(dirty: Rc<Fn()>) -> Rc<RefCell<ReadLineView>> {
+        Rc::new(RefCell::new(ReadLineView {
             dirty: dirty,
-            rl: RefCell::new(ReadLine::new()),
-            layout: Cell::new(Layout::new()),
-        })
+            rl: ReadLine::new(),
+            layout: Layout::new(),
+        }))
     }
 
     fn use_font(&self, cr: &cairo::Context) {
@@ -238,7 +237,7 @@ impl View for ReadLineView {
         let ext = cr.font_extents();
 
         cr.translate(0.0, ext.ascent);
-        let rl = rl.rl.borrow();
+        let rl = &rl.rl;
         let str = rl.buf.as_str();
         cr.show_text(str);
 
@@ -252,26 +251,26 @@ impl View for ReadLineView {
         }
     }
 
-    fn key(&self, ev: &gdk::EventKey) {
+    fn key(&mut self, ev: &gdk::EventKey) {
         let rl = self;
         if let Some(key) = translate_key(ev) {
-            if rl.rl.borrow_mut().key(&key) {
+            if rl.rl.key(&key) {
                 (rl.dirty)();
             }
         }
     }
 
-    fn relayout(&self, cr: &cairo::Context, space: Layout) -> Layout {
+    fn relayout(&mut self, cr: &cairo::Context, space: Layout) -> Layout {
         self.use_font(cr);
         let ext = cr.font_extents();
-        self.layout.set(Layout {
+        self.layout = Layout {
             width: space.width,
             height: ext.height.round() as i32,
-        });
-        self.layout.get()
+        };
+        self.layout
     }
     fn get_layout(&self) -> Layout {
-        self.layout.get()
+        self.layout
     }
 }
 

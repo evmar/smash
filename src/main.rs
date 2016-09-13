@@ -8,15 +8,18 @@ use smash::term::Term;
 
 fn main() {
     view::init();
-    let win = view::Win::new();
-    win.resize(600, 400);
+    let rwin = view::Win::new();
+    {
+        let mut win = rwin.borrow_mut();
+        win.resize(600, 400);
 
-    let font_extents = {
-        let ctx = win.create_cairo();
-        Term::get_font_metrics(&ctx)
-    };
-    *win.child.borrow_mut() = log::Log::new(win.dirty_cb.clone(), &font_extents);
-    win.show();
+        let font_extents = {
+            let ctx = win.create_cairo();
+            Term::get_font_metrics(&ctx)
+        };
+        win.child = log::Log::new(win.dirty_cb.clone(), &font_extents);
+        win.show();
+    }
 
     view::main();
 }
