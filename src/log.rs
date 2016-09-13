@@ -79,7 +79,7 @@ impl view::View for LogEntry {
 }
 
 pub struct Log {
-    shell: Rc<shell::Shell>,
+    shell: Rc<RefCell<shell::Shell>>,
     entries: RefCell<Vec<LogEntry>>,
     dirty: Rc<Fn()>,
     font_extents: cairo::FontExtents,
@@ -90,7 +90,7 @@ pub struct Log {
 impl Log {
     pub fn new(dirty: Rc<Fn()>, font_extents: &cairo::FontExtents) -> Rc<Log> {
         let log = Rc::new(Log {
-            shell: Rc::new(shell::Shell::new()),
+            shell: Rc::new(RefCell::new(shell::Shell::new())),
             entries: RefCell::new(Vec::new()),
             dirty: dirty,
             font_extents: font_extents.clone(),
@@ -103,42 +103,43 @@ impl Log {
 
     pub fn new_entry(log: &Rc<Log>) {
         let id = log.entries.borrow().len();
+        let accept_cb = {
+            // accept is only called once; hack around missing Box<FnOnce>.
+            let mut once = Some(log.clone());
+            Box::new(move |id: usize, str: &str| {
+                let log = once.take().unwrap();
+                let cmd = shell::parse(str);
+                view::add_task(move || {
+                    Log::start(log, id, cmd);
+                })
+            })
+        };
+        let entry = LogEntry::new(id, log.dirty.clone(), accept_cb);
+        log.entries.borrow_mut().push(entry);
+        (log.dirty)();
+    }
+
+    fn start(log: Rc<Log>, id: usize, cmd: shell::Command) {
         let done = {
             let log = log.clone();
             Box::new(move || {
                 Log::new_entry(&log);
             })
         };
-        let accept_cb = {
-            let log = log.clone();
-            // accept is only called once; hack around missing Box<FnOnce>.
-            let mut once = Some((log, done));
-            Box::new(move |id: usize, str: &str| {
-                let (log, done) = once.take().unwrap();
-                let cmd = shell::parse(str);
-                view::add_task(move || {
-                    let mut term = Term::new(log.dirty.clone(), log.font_extents);
-                    match cmd {
-                        shell::Command::Builtin(f) => {
-                            // f();
-                            term.cleanup();
-                            done();
-                        }
-                        shell::Command::External(argv) => {
-                            let argv: Vec<_> = argv.iter().map(|s| s.as_str()).collect();
-                            term.spawn(argv.as_slice(), done);
-                        }
-                    }
-                    log.entries.borrow_mut()[id].term = Some(term);
-                })
-            })
-        };
-        let entry = {
-            let log = log.clone();
-            LogEntry::new(id, log.dirty.clone(), accept_cb)
-        };
-        log.entries.borrow_mut().push(entry);
-        (log.dirty)();
+
+        let mut term = Term::new(log.dirty.clone(), log.font_extents);
+        match cmd {
+            shell::Command::Builtin(f) => {
+                f(&mut log.shell.borrow_mut());
+                term.cleanup();
+                done();
+            }
+            shell::Command::External(argv) => {
+                let argv: Vec<_> = argv.iter().map(|s| s.as_str()).collect();
+                term.spawn(argv.as_slice(), done);
+            }
+        }
+        log.entries.borrow_mut()[id].term = Some(term);
     }
 }
 
