@@ -280,7 +280,7 @@ fn translate_key(ev: &gdk::EventKey) -> Box<[u8]> {
     let keyval = ev.get_keyval();
 
     match ev.get_state() {
-        gdk::enums::modifier_type::ControlMask => {
+        gdk::CONTROL_MASK => {
             if keyval < 128 {
                 match keyval as u8 as char {
                     c if c >= 'a' && c <= 'z' => {
@@ -291,13 +291,13 @@ fn translate_key(ev: &gdk::EventKey) -> Box<[u8]> {
                 }
             }
         }
-        gdk::enums::modifier_type::Mod1Mask => {
+        gdk::MOD1_MASK => {
             match gdk::keyval_to_unicode(keyval) {
                 Some(u) if u < 128 as char => return Box::new([27, u as u8]),
                 _ => {}
             }
         }
-        s if s == gdk::ModifierType::empty() || s == gdk::enums::modifier_type::ShiftMask => {
+        s if s.is_empty() || s == gdk::SHIFT_MASK => {
             match gdk::keyval_to_unicode(keyval) {
                 Some(u) if u < 128 as char => return Box::new([u as u8]),
                 _ => {}

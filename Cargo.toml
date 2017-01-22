@@ -3,15 +3,19 @@ name = "smash"
 version = "0.1.0"
 authors = ["Evan Martin <martine@danga.com>"]
 
+[[bin]]
+name = "smash"
+doc = false
+
 [dependencies]
 cairo-rs = "^0"
 glib = "^0"
 gdk = "^0"
-libc = "0.2.11"
+libc = "0.2.20"
 thread-id = "2.0.0"
 
 [dependencies.gtk]
-version = "0.0.7"
+version = "0.1.1"
 features = ["v3_8", "embed-lgpl-docs"]
 
 [profile.release]

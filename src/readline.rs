@@ -280,10 +280,10 @@ fn translate_key(ev: &gdk::EventKey) -> Option<String> {
     }
 
     let mut name = String::new();
-    if ev.get_state().contains(gdk::enums::modifier_type::ControlMask) {
+    if ev.get_state().contains(gdk::CONTROL_MASK) {
         name.push_str("C-");
     }
-    if ev.get_state().contains(gdk::enums::modifier_type::Mod1Mask) {
+    if ev.get_state().contains(gdk::MOD1_MASK) {
         name.push_str("M-");
     }
 
