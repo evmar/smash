@@ -126,6 +126,8 @@ impl Win {
             gtkwin.connect_draw(move |_, cr| {
                 let win = win.borrow();
                 let mut child = win.child.borrow_mut();
+                cr.set_source_rgb(1.0, 1.0, 1.0);
+                cr.paint();
                 child.relayout(cr,
                                Layout {
                                    width: 600,
