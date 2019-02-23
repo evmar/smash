@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"os"
 
+	"github.com/evmar/smash/proto"
 	"github.com/gorilla/websocket"
 )
 
@@ -44,12 +45,14 @@ func serveWS(w http.ResponseWriter, r *http.Request) error {
 		return err
 	}
 	for {
-		_, buf, err := conn.ReadMessage()
+		t, buf, err := conn.ReadMessage()
 		if err != nil {
 			return err
 		}
-		text := string(buf)
-		log.Printf("%q", text)
+		log.Printf("%v %v", t, buf)
+		msg := proto.GetRootAsReqRun(buf, 0)
+		log.Printf("%v", msg)
+		log.Printf("%q", msg.Cmd())
 	}
 	return nil
 }

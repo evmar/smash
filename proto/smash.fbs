@@ -1,0 +1,5 @@
+namespace proto;
+
+table ReqRun {
+  cmd:string;
+}

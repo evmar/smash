@@ -4,10 +4,14 @@
   "main": "index.js",
   "license": "Apache-2.0",
   "devDependencies": {
+    "@types/flatbuffers": "^1.9.1",
     "prettier": "^1.16.4",
     "ts-loader": "^5.3.3",
     "typescript": "^3.3.3333",
     "webpack": "^4.29.5",
     "webpack-cli": "^3.2.3"
+  },
+  "dependencies": {
+    "flatbuffers": "^1.10.2"
   }
 }
