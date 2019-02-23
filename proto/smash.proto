@@ -1,0 +1,10 @@
+syntax = "proto3";
+package proto;
+
+message RunRequest {
+  string command = 1;
+}
+
+message OutputResponse {
+  string text = 1;
+}

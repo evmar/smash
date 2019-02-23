@@ -1,4 +1,4 @@
-flatc ?= ~/projects/flatbuffers/flatc
+protoc_gen_ts ?= ./web/node_modules/.bin/protoc-gen-ts
 
 .PHONY: cli
 cli:
@@ -10,5 +10,10 @@ web:
 
 .PHONY: proto
 proto:
-	$(flatc) --go -o cli proto/smash.fbs
-	$(flatc) --ts --short-names --no-fb-import -o web/src proto/smash.fbs
+	protoc \
+	  -Iproto \
+	  --plugin="protoc-gen-ts=$(protoc_gen_ts)" \
+	  --go_out="cli/proto" \
+	  --js_out="import_style=commonjs,binary:web/src" \
+	  --ts_out="web/src" \
+	  proto/smash.proto

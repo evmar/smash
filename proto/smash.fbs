@@ -1,9 +1,0 @@
-namespace proto;
-
-table ReqRun {
-  cmd:string;
-}
-
-table RespOutput {
-  text:string;
-}

@@ -1,20 +1,17 @@
-import { flatbuffers } from 'flatbuffers';
-import { proto } from './smash_generated';
+import * as pb from './smash_pb';
 
 let ws: WebSocket;
 const out = document.createElement('pre');
 
 function spawn(cmd: string) {
-  const builder = new flatbuffers.Builder();
-  const r = proto.ReqRun.create(builder, builder.createString(cmd));
-  builder.finish(r);
-  ws.send(builder.asUint8Array());
+  const msg = new pb.RunRequest();
+  msg.setCommand(cmd);
+  ws.send(msg.serializeBinary());
 }
 
 function handleMessage(ev: MessageEvent) {
-  const buf = new flatbuffers.ByteBuffer(new Uint8Array(ev.data));
-  const msg = proto.RespOutput.getRoot(buf);
-  out.innerText += msg.text();
+  const msg = pb.OutputResponse.deserializeBinary(new Uint8Array(ev.data));
+  out.innerText += msg.getText();
 }
 
 function connect() {

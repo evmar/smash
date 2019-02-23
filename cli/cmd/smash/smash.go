@@ -8,8 +8,8 @@ import (
 	"os"
 	"os/exec"
 
-	"github.com/evmar/smash/proto"
-	flatbuffers "github.com/google/flatbuffers/go"
+	pb "github.com/evmar/smash/proto"
+	"github.com/golang/protobuf/proto"
 	"github.com/gorilla/websocket"
 )
 
@@ -54,18 +54,20 @@ func runCmd(conn *websocket.Conn, cmdline string) error {
 	for {
 		n, err := out.Read(buf[:])
 		if err != nil {
+			if err == io.EOF {
+				return nil
+			}
 			return err
 		}
 
-		b := flatbuffers.NewBuilder(64 << 10)
-		c := b.CreateByteString(buf[:n])
-		proto.RespOutputStart(b)
-		proto.RespOutputAddText(b, c)
-		respOutput := proto.RespOutputEnd(b)
-		b.Finish(respOutput)
-		msg := b.FinishedBytes()
-
-		if err := conn.WriteMessage(websocket.BinaryMessage, msg); err != nil {
+		msg := pb.OutputResponse{
+			Text: string(buf[:n]),
+		}
+		data, err := proto.Marshal(&msg)
+		if err != nil {
+			return err
+		}
+		if err := conn.WriteMessage(websocket.BinaryMessage, data); err != nil {
 			return err
 		}
 	}
@@ -81,11 +83,13 @@ func serveWS(w http.ResponseWriter, r *http.Request) error {
 		if err != nil {
 			return err
 		}
-		msg := proto.GetRootAsReqRun(buf, 0)
-		log.Printf("%q", msg.Cmd())
+		msg := pb.RunRequest{}
+		if err := proto.Unmarshal(buf, &msg); err != nil {
+			return err
+		}
 
-		if err := runCmd(conn, string(msg.Cmd())); err != nil {
-			return nil
+		if err := runCmd(conn, string(msg.Command)); err != nil {
+			return err
 		}
 	}
 	return nil
