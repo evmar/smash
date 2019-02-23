@@ -6,8 +6,10 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"os/exec"
 
 	"github.com/evmar/smash/proto"
+	flatbuffers "github.com/google/flatbuffers/go"
 	"github.com/gorilla/websocket"
 )
 
@@ -39,20 +41,52 @@ var upgrader = websocket.Upgrader{
 	EnableCompression: true,
 }
 
+func runCmd(conn *websocket.Conn, cmdline string) error {
+	cmd := exec.Command(cmdline)
+	out, err := cmd.StdoutPipe()
+	if err != nil {
+		return err
+	}
+	if err := cmd.Start(); err != nil {
+		return err
+	}
+	var buf [64 << 10]byte
+	for {
+		n, err := out.Read(buf[:])
+		if err != nil {
+			return err
+		}
+
+		b := flatbuffers.NewBuilder(64 << 10)
+		c := b.CreateByteString(buf[:n])
+		proto.RespOutputStart(b)
+		proto.RespOutputAddText(b, c)
+		respOutput := proto.RespOutputEnd(b)
+		b.Finish(respOutput)
+		msg := b.FinishedBytes()
+
+		if err := conn.WriteMessage(websocket.BinaryMessage, msg); err != nil {
+			return err
+		}
+	}
+}
+
 func serveWS(w http.ResponseWriter, r *http.Request) error {
 	conn, err := upgrader.Upgrade(w, r, nil)
 	if err != nil {
 		return err
 	}
 	for {
-		t, buf, err := conn.ReadMessage()
+		_, buf, err := conn.ReadMessage()
 		if err != nil {
 			return err
 		}
-		log.Printf("%v %v", t, buf)
 		msg := proto.GetRootAsReqRun(buf, 0)
-		log.Printf("%v", msg)
 		log.Printf("%q", msg.Cmd())
+
+		if err := runCmd(conn, string(msg.Cmd())); err != nil {
+			return nil
+		}
 	}
 	return nil
 }
