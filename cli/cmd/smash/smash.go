@@ -42,7 +42,7 @@ var upgrader = websocket.Upgrader{
 }
 
 func runCmd(conn *websocket.Conn, cmdline string) error {
-	cmd := exec.Command(cmdline)
+	cmd := exec.Command("/bin/sh", "-c", cmdline)
 	out, err := cmd.StdoutPipe()
 	if err != nil {
 		return err
