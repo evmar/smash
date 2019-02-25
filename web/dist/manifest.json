@@ -1,0 +1,12 @@
+{
+  "short_name": "smash",
+  "icons": [
+    {
+      "src": "144.png",
+      "type": "image/png",
+      "sizes": "144x144"
+    }
+  ],
+  "start_url": "/",
+  "display": "standalone"
+}

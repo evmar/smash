@@ -152,6 +152,10 @@ async function connect(): Promise<WebSocket> {
 }
 
 async function main() {
+  // Register an unused service worker so 'add to homescreen' works.
+  // TODO: even when we do this, we still get a URL bar?!
+  // await navigator.serviceWorker.register('worker.js');
+
   const styleTag = document.createElement('style');
   styleTag.innerText = style;
   document.head.appendChild(styleTag);

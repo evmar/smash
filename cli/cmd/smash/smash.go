@@ -2,38 +2,14 @@ package main
 
 import (
 	"fmt"
-	"io"
 	"log"
 	"net/http"
-	"os"
 	"os/exec"
 
 	pb "github.com/evmar/smash/proto"
 	"github.com/golang/protobuf/proto"
 	"github.com/gorilla/websocket"
 )
-
-func serveHTML(w io.Writer) error {
-	_, err := w.Write([]byte(`<!doctype html>
-<body></body>
-<script>`))
-	if err != nil {
-		return err
-	}
-	f, err := os.Open("../web/dist/bundle.js")
-	if err != nil {
-		return err
-	}
-	defer f.Close()
-	if _, err := io.Copy(w, f); err != nil {
-		return err
-	}
-	_, err = w.Write([]byte(`</script>`))
-	if err != nil {
-		return err
-	}
-	return nil
-}
 
 var upgrader = websocket.Upgrader{
 	ReadBufferSize:    1024,
@@ -94,16 +70,7 @@ func serveWS(w http.ResponseWriter, r *http.Request) error {
 }
 
 func main() {
-	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		if r.URL.Path == "/" {
-			err := serveHTML(w)
-			if err != nil {
-				log.Println(err)
-			}
-			return
-		}
-		http.NotFound(w, r)
-	})
+	http.Handle("/", http.FileServer(http.Dir("../web/dist")))
 	http.HandleFunc("/ws", func(w http.ResponseWriter, r *http.Request) {
 		if err := serveWS(w, r); err != nil {
 			log.Println(err)
