@@ -1,0 +1,30 @@
+body {
+  font-family: sans-serif;
+}
+pre {
+  font-family: WebKitWorkaround, monospace;
+  font-size: 14px;
+  margin: 0;
+}
+.readline {
+  display: flex;
+  padding: 2px 1px;
+}
+.readline:focus-within {
+  background: #eee;
+}
+.prompt {
+  white-space: pre;
+  cursor: pointer;
+}
+.input {
+  font: inherit;
+  flex: 1;
+  border: 0;
+  outline: none;
+  background: transparent;
+}
+.measure {
+  position: absolute;
+  visibility: hidden;
+}

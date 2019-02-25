@@ -3,39 +3,6 @@ import * as pb from './smash_pb';
 let ws: WebSocket | null = null;
 const out = document.createElement('pre');
 
-const style = `
-body {
-  font-family: sans-serif;
-}
-pre {
-  font-family: WebKitWorkaround, monospace;
-  font-size: 14px;
-  margin: 0;
-}
-.readline {
-  display: flex;
-  padding: 2px 1px;
-}
-.readline:focus-within {
-  background: #eee;
-}
-.prompt {
-  white-space: pre;
-  cursor: pointer;
-}
-.input {
-  font: inherit;
-  flex: 1;
-  border: 0;
-  outline: none;
-  background: transparent;
-}
-.measure {
-  position: absolute;
-  visibility: hidden;
-}
-`;
-
 function div(className: string) {
   const div = document.createElement('div');
   div.className = className;
@@ -156,9 +123,6 @@ async function main() {
   // TODO: even when we do this, we still get a URL bar?!
   // await navigator.serviceWorker.register('worker.js');
 
-  const styleTag = document.createElement('style');
-  styleTag.innerText = style;
-  document.head.appendChild(styleTag);
   const rl = new ReadLine();
   document.body.appendChild(rl.dom);
   rl.input.focus();
