@@ -1,12 +1,14 @@
 import * as pb from './smash_pb';
 
 let ws: WebSocket | null = null;
-const out = document.createElement('pre');
+const cells = new Map<number, Cell>();
 
-function div(className: string) {
-  const div = document.createElement('div');
-  div.className = className;
-  return div;
+function html(tagName: string, attr: { [key: string]: {} } = {}) {
+  const tag = document.createElement(tagName);
+  for (const key in attr) {
+    (tag as any)[key] = attr[key];
+  }
+  return tag;
 }
 
 function translateKey(ev: KeyboardEvent): string {
@@ -29,17 +31,18 @@ function translateKey(ev: KeyboardEvent): string {
 }
 
 class ReadLine {
-  dom = div('readline');
-  prompt = div('prompt');
-  input = document.createElement('input');
+  dom = html('div', { className: 'readline' });
+  prompt = html('div', { className: 'prompt' });
+  input = html('input', {
+    className: 'input',
+    spellcheck: false
+  }) as HTMLInputElement;
   oncommit = (_: string) => {};
 
   constructor() {
     this.prompt.innerText = '> ';
     this.dom.appendChild(this.prompt);
 
-    this.input.className = 'input';
-    this.input.spellcheck = false;
     this.dom.appendChild(this.input);
 
     this.input.onkeydown = ev => {
@@ -73,6 +76,7 @@ class ReadLine {
         // Allow default handling.
         return;
       default:
+        if (key.startsWith('C-Arrow')) return;
         console.log('TODO:', key, ev);
     }
     ev.preventDefault();
@@ -90,6 +94,22 @@ class ReadLine {
   }
 }
 
+class Cell {
+  dom = html('div', { className: 'cell' });
+  readline = new ReadLine();
+  output = html('pre');
+
+  constructor() {
+    this.dom.appendChild(this.readline.dom);
+    this.dom.appendChild(this.output);
+
+    this.readline.oncommit = cmd => {
+      this.readline.input.blur();
+      spawn(cmd);
+    };
+  }
+}
+
 function spawn(cmd: string) {
   if (!ws) return;
   const msg = new pb.RunRequest();
@@ -99,7 +119,7 @@ function spawn(cmd: string) {
 
 function handleMessage(ev: MessageEvent) {
   const msg = pb.OutputResponse.deserializeBinary(new Uint8Array(ev.data));
-  out.innerText += msg.getText();
+  cells.get(0)!.output.innerText += msg.getText();
 }
 
 async function connect(): Promise<WebSocket> {
@@ -123,23 +143,19 @@ async function main() {
   // TODO: even when we do this, we still get a URL bar?!
   // await navigator.serviceWorker.register('worker.js');
 
-  const rl = new ReadLine();
-  document.body.appendChild(rl.dom);
-  rl.input.focus();
-  document.body.appendChild(out);
+  const cell = new Cell();
+  cells.set(0, cell);
+  document.body.appendChild(cell.dom);
+  cell.readline.input.focus();
+
   ws = await connect();
   ws.onclose = ev => {
-    out.innerText += `\nconnection closed: ${ev.code} (${ev.reason})\n`;
+    console.error(`connection closed: ${ev.code} (${ev.reason})`);
     ws = null;
   };
   ws.onerror = err => {
-    out.innerText += `\nconnection failed: ${err}\n`;
+    console.error(`connection failed: ${err}`);
     ws = null;
-  };
-
-  rl.oncommit = cmd => {
-    rl.input.blur();
-    spawn(cmd);
   };
 }
 
