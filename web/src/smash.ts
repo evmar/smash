@@ -1,6 +1,6 @@
 import * as pb from './smash_pb';
 
-let ws: WebSocket;
+let ws: WebSocket | null = null;
 const out = document.createElement('pre');
 
 const style = `
@@ -9,6 +9,7 @@ body {
 }
 pre {
   font-family: WebKitWorkaround, monospace;
+  font-size: 14px;
   margin: 0;
 }
 .readline {
@@ -123,6 +124,7 @@ class ReadLine {
 }
 
 function spawn(cmd: string) {
+  if (!ws) return;
   const msg = new pb.RunRequest();
   msg.setCommand(cmd);
   ws.send(msg.serializeBinary());
@@ -158,9 +160,17 @@ async function main() {
   rl.input.focus();
   document.body.appendChild(out);
   ws = await connect();
-  ws.onerror = null;
+  ws.onclose = ev => {
+    out.innerText += `\nconnection closed: ${ev.code} (${ev.reason})\n`;
+    ws = null;
+  };
+  ws.onerror = err => {
+    out.innerText += `\nconnection failed: ${err}\n`;
+    ws = null;
+  };
 
   rl.oncommit = cmd => {
+    rl.input.blur();
     spawn(cmd);
   };
 }

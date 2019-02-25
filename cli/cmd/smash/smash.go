@@ -41,34 +41,34 @@ var upgrader = websocket.Upgrader{
 	EnableCompression: true,
 }
 
-func runCmd(conn *websocket.Conn, cmdline string) error {
-	cmd := exec.Command("/bin/sh", "-c", cmdline)
-	out, err := cmd.StdoutPipe()
-	if err != nil {
-		return err
-	}
-	if err := cmd.Start(); err != nil {
-		return err
-	}
-	var buf [64 << 10]byte
-	for {
-		n, err := out.Read(buf[:])
-		if err != nil {
-			if err == io.EOF {
-				return nil
-			}
-			return err
-		}
+type wsWriter struct {
+	conn *websocket.Conn
+}
 
-		msg := pb.OutputResponse{
-			Text: string(buf[:n]),
-		}
-		data, err := proto.Marshal(&msg)
-		if err != nil {
-			return err
-		}
-		if err := conn.WriteMessage(websocket.BinaryMessage, data); err != nil {
-			return err
+func (w *wsWriter) Write(buf []byte) (int, error) {
+	msg := pb.OutputResponse{
+		Text: string(buf[:]),
+	}
+	data, err := proto.Marshal(&msg)
+	if err != nil {
+		return 0, err
+	}
+	if err := w.conn.WriteMessage(websocket.BinaryMessage, data); err != nil {
+		return 0, err
+	}
+	return len(buf), nil
+}
+
+func runCmd(conn *websocket.Conn, cmdline string) {
+	cmd := exec.Command("/bin/sh", "-c", cmdline)
+	w := &wsWriter{conn}
+	cmd.Stdout = w
+	cmd.Stderr = w
+	if err := cmd.Run(); err != nil {
+		if err, ok := err.(*exec.ExitError); ok {
+			// Exit failure, ignore.
+		} else {
+			fmt.Fprintf(w, "%s\n", err)
 		}
 	}
 }
@@ -88,9 +88,7 @@ func serveWS(w http.ResponseWriter, r *http.Request) error {
 			return err
 		}
 
-		if err := runCmd(conn, string(msg.Command)); err != nil {
-			return err
-		}
+		runCmd(conn, string(msg.Command))
 	}
 	return nil
 }
