@@ -1,7 +1,7 @@
 import * as pb from './smash_pb';
 
 let ws: WebSocket | null = null;
-const cells = new Map<number, Cell>();
+const cells: Cell[] = [];
 
 function html(tagName: string, attr: { [key: string]: {} } = {}) {
   const tag = document.createElement(tagName);
@@ -108,6 +108,15 @@ class Cell {
       spawn(cmd);
     };
   }
+
+  onOutput(msg: pb.Output) {
+    if (msg.hasText()) {
+      this.output.innerText += msg.getText();
+    }
+    if (msg.hasExitCode()) {
+      console.log('exit code', msg.getExitCode());
+    }
+  }
 }
 
 function spawn(cmd: string) {
@@ -118,8 +127,14 @@ function spawn(cmd: string) {
 }
 
 function handleMessage(ev: MessageEvent) {
-  const msg = pb.OutputResponse.deserializeBinary(new Uint8Array(ev.data));
-  cells.get(0)!.output.innerText += msg.getText();
+  const msg = pb.ServerMsg.deserializeBinary(new Uint8Array(ev.data));
+  switch (msg.getMsgCase()) {
+    case pb.ServerMsg.MsgCase.OUTPUT: {
+      const m = msg.getOutput()!;
+      cells[m.getCell()].onOutput(m);
+      break;
+    }
+  }
 }
 
 async function connect(): Promise<WebSocket> {
@@ -144,7 +159,7 @@ async function main() {
   // await navigator.serviceWorker.register('worker.js');
 
   const cell = new Cell();
-  cells.set(0, cell);
+  cells.push(cell);
   document.body.appendChild(cell.dom);
   cell.readline.input.focus();
 

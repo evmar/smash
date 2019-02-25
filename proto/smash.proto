@@ -2,9 +2,20 @@ syntax = "proto3";
 package proto;
 
 message RunRequest {
-  string command = 1;
+  int32 cell = 1;
+  string command = 2;
 }
 
-message OutputResponse {
-  string text = 1;
+message Output {
+  int32 cell = 1;
+  oneof output {
+    string text = 2;
+    int32 exit_code = 3;
+  }
+}
+
+message ServerMsg {
+  oneof msg {
+    Output output = 1;
+  }
 }

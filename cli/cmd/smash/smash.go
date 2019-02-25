@@ -5,6 +5,7 @@ import (
 	"log"
 	"net/http"
 	"os/exec"
+	"syscall"
 
 	pb "github.com/evmar/smash/proto"
 	"github.com/golang/protobuf/proto"
@@ -17,35 +18,53 @@ var upgrader = websocket.Upgrader{
 	EnableCompression: true,
 }
 
+func writeMsg(conn *websocket.Conn, msg *pb.ServerMsg) error {
+	data, err := proto.Marshal(msg)
+	if err != nil {
+		return err
+	}
+	if err := conn.WriteMessage(websocket.BinaryMessage, data); err != nil {
+		return err
+	}
+	return nil
+}
+
 type wsWriter struct {
 	conn *websocket.Conn
+	cell int32
 }
 
 func (w *wsWriter) Write(buf []byte) (int, error) {
-	msg := pb.OutputResponse{
-		Text: string(buf[:]),
-	}
-	data, err := proto.Marshal(&msg)
+	err := writeMsg(w.conn, &pb.ServerMsg{Msg: &pb.ServerMsg_Output{&pb.Output{
+		Cell:   w.cell,
+		Output: &pb.Output_Text{string(buf[:])},
+	}}})
 	if err != nil {
-		return 0, err
-	}
-	if err := w.conn.WriteMessage(websocket.BinaryMessage, data); err != nil {
 		return 0, err
 	}
 	return len(buf), nil
 }
 
-func runCmd(conn *websocket.Conn, cmdline string) {
-	cmd := exec.Command("/bin/sh", "-c", cmdline)
-	w := &wsWriter{conn}
+func runCmd(conn *websocket.Conn, req *pb.RunRequest) {
+	cmd := exec.Command("/bin/sh", "-c", req.Command)
+	w := &wsWriter{conn: conn, cell: req.Cell}
 	cmd.Stdout = w
 	cmd.Stderr = w
+	exitCode := 0
 	if err := cmd.Run(); err != nil {
 		if err, ok := err.(*exec.ExitError); ok {
-			// Exit failure, ignore.
+			serr := err.Sys().(syscall.WaitStatus)
+			exitCode = serr.ExitStatus()
 		} else {
 			fmt.Fprintf(w, "%s\n", err)
 		}
+	}
+	err := writeMsg(w.conn, &pb.ServerMsg{Msg: &pb.ServerMsg_Output{&pb.Output{
+		Cell:   w.cell,
+		Output: &pb.Output_ExitCode{int32(exitCode)},
+	}}})
+	if err != nil {
+		log.Println(err)
 	}
 }
 
@@ -64,7 +83,7 @@ func serveWS(w http.ResponseWriter, r *http.Request) error {
 			return err
 		}
 
-		runCmd(conn, string(msg.Command))
+		runCmd(conn, &msg)
 	}
 	return nil
 }
