@@ -1,7 +1,7 @@
 import * as pb from './smash_pb';
 
 let ws: WebSocket | null = null;
-const cells: Cell[] = [];
+let cellStack: CellStack;
 
 function html(tagName: string, attr: { [key: string]: {} } = {}) {
   const tag = document.createElement(tagName);
@@ -97,15 +97,16 @@ class ReadLine {
 class Cell {
   dom = html('div', { className: 'cell' });
   readline = new ReadLine();
-  output = html('pre');
+  output = html('pre', { tabIndex: 0 });
+  onExit = (id: number) => {};
 
-  constructor() {
+  constructor(public id: number) {
     this.dom.appendChild(this.readline.dom);
     this.dom.appendChild(this.output);
 
     this.readline.oncommit = cmd => {
       this.readline.input.blur();
-      spawn(cmd);
+      spawn(this.id, cmd);
     };
   }
 
@@ -115,13 +116,38 @@ class Cell {
     }
     if (msg.hasExitCode()) {
       console.log('exit code', msg.getExitCode());
+      this.onExit(this.id);
     }
   }
 }
 
-function spawn(cmd: string) {
+class CellStack {
+  cells: Cell[] = [];
+
+  addNew() {
+    const id = this.cells.length;
+    const cell = new Cell(id);
+    cell.onExit = (id: number) => {
+      this.onExit(id);
+    };
+    this.cells.push(cell);
+    document.body.appendChild(cell.dom);
+    cell.readline.input.focus();
+  }
+
+  onOutput(msg: pb.Output) {
+    this.cells[msg.getCell()].onOutput(msg);
+  }
+
+  onExit(id: number) {
+    this.addNew();
+  }
+}
+
+function spawn(id: number, cmd: string) {
   if (!ws) return;
   const msg = new pb.RunRequest();
+  msg.setCell(id);
   msg.setCommand(cmd);
   ws.send(msg.serializeBinary());
 }
@@ -131,7 +157,7 @@ function handleMessage(ev: MessageEvent) {
   switch (msg.getMsgCase()) {
     case pb.ServerMsg.MsgCase.OUTPUT: {
       const m = msg.getOutput()!;
-      cells[m.getCell()].onOutput(m);
+      cellStack.onOutput(m);
       break;
     }
   }
@@ -158,10 +184,8 @@ async function main() {
   // TODO: even when we do this, we still get a URL bar?!
   // await navigator.serviceWorker.register('worker.js');
 
-  const cell = new Cell();
-  cells.push(cell);
-  document.body.appendChild(cell.dom);
-  cell.readline.input.focus();
+  cellStack = new CellStack();
+  cellStack.addNew();
 
   ws = await connect();
   ws.onclose = ev => {

@@ -5,6 +5,7 @@ pre {
   font-family: WebKitWorkaround, monospace;
   font-size: 14px;
   margin: 0;
+  outline: 0;
 }
 .readline {
   display: flex;
