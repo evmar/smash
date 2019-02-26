@@ -26,12 +26,19 @@ goog.exportSymbol('proto.proto.ServerMsg', null, global);
  * @constructor
  */
 proto.proto.RunRequest = function(opt_data) {
-  jspb.Message.initialize(this, opt_data, 0, -1, null, null);
+  jspb.Message.initialize(this, opt_data, 0, -1, proto.proto.RunRequest.repeatedFields_, null);
 };
 goog.inherits(proto.proto.RunRequest, jspb.Message);
 if (goog.DEBUG && !COMPILED) {
   proto.proto.RunRequest.displayName = 'proto.proto.RunRequest';
 }
+/**
+ * List of repeated fields within this message type.
+ * @private {!Array<number>}
+ * @const
+ */
+proto.proto.RunRequest.repeatedFields_ = [3];
+
 
 
 if (jspb.Message.GENERATE_TO_OBJECT) {
@@ -62,7 +69,8 @@ proto.proto.RunRequest.prototype.toObject = function(opt_includeInstance) {
 proto.proto.RunRequest.toObject = function(includeInstance, msg) {
   var f, obj = {
     cell: jspb.Message.getFieldWithDefault(msg, 1, 0),
-    command: jspb.Message.getFieldWithDefault(msg, 2, "")
+    cwd: jspb.Message.getFieldWithDefault(msg, 2, ""),
+    argvList: jspb.Message.getRepeatedField(msg, 3)
   };
 
   if (includeInstance) {
@@ -105,7 +113,11 @@ proto.proto.RunRequest.deserializeBinaryFromReader = function(msg, reader) {
       break;
     case 2:
       var value = /** @type {string} */ (reader.readString());
-      msg.setCommand(value);
+      msg.setCwd(value);
+      break;
+    case 3:
+      var value = /** @type {string} */ (reader.readString());
+      msg.addArgv(value);
       break;
     default:
       reader.skipField();
@@ -143,10 +155,17 @@ proto.proto.RunRequest.serializeBinaryToWriter = function(message, writer) {
       f
     );
   }
-  f = message.getCommand();
+  f = message.getCwd();
   if (f.length > 0) {
     writer.writeString(
       2,
+      f
+    );
+  }
+  f = message.getArgvList();
+  if (f.length > 0) {
+    writer.writeRepeatedString(
+      3,
       f
     );
   }
@@ -169,17 +188,46 @@ proto.proto.RunRequest.prototype.setCell = function(value) {
 
 
 /**
- * optional string command = 2;
+ * optional string cwd = 2;
  * @return {string}
  */
-proto.proto.RunRequest.prototype.getCommand = function() {
+proto.proto.RunRequest.prototype.getCwd = function() {
   return /** @type {string} */ (jspb.Message.getFieldWithDefault(this, 2, ""));
 };
 
 
 /** @param {string} value */
-proto.proto.RunRequest.prototype.setCommand = function(value) {
+proto.proto.RunRequest.prototype.setCwd = function(value) {
   jspb.Message.setProto3StringField(this, 2, value);
+};
+
+
+/**
+ * repeated string argv = 3;
+ * @return {!Array<string>}
+ */
+proto.proto.RunRequest.prototype.getArgvList = function() {
+  return /** @type {!Array<string>} */ (jspb.Message.getRepeatedField(this, 3));
+};
+
+
+/** @param {!Array<string>} value */
+proto.proto.RunRequest.prototype.setArgvList = function(value) {
+  jspb.Message.setField(this, 3, value || []);
+};
+
+
+/**
+ * @param {!string} value
+ * @param {number=} opt_index
+ */
+proto.proto.RunRequest.prototype.addArgv = function(value, opt_index) {
+  jspb.Message.addToRepeatedField(this, 3, value, opt_index);
+};
+
+
+proto.proto.RunRequest.prototype.clearArgvList = function() {
+  this.setArgvList([]);
 };
 
 

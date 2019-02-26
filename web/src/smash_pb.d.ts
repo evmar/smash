@@ -7,8 +7,13 @@ export class RunRequest extends jspb.Message {
   getCell(): number;
   setCell(value: number): void;
 
-  getCommand(): string;
-  setCommand(value: string): void;
+  getCwd(): string;
+  setCwd(value: string): void;
+
+  clearArgvList(): void;
+  getArgvList(): Array<string>;
+  setArgvList(value: Array<string>): void;
+  addArgv(value: string, index?: number): string;
 
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): RunRequest.AsObject;
@@ -34,7 +39,8 @@ export class RunRequest extends jspb.Message {
 export namespace RunRequest {
   export type AsObject = {
     cell: number;
-    command: string;
+    cwd: string;
+    argvList: Array<string>;
   };
 }
 

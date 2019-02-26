@@ -13,6 +13,7 @@
     "webpack-cli": "^3.2.3"
   },
   "dependencies": {
+    "@types/node": "^11.9.5",
     "google-protobuf": "^3.7.0-rc.2"
   }
 }

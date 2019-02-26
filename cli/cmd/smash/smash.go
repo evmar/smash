@@ -5,6 +5,7 @@ import (
 	"log"
 	"net/http"
 	"os/exec"
+	"path/filepath"
 	"syscall"
 
 	pb "github.com/evmar/smash/proto"
@@ -46,17 +47,30 @@ func (w *wsWriter) Write(buf []byte) (int, error) {
 }
 
 func runCmd(conn *websocket.Conn, req *pb.RunRequest) {
-	cmd := exec.Command("/bin/sh", "-c", req.Command)
+	log.Println("run:", req)
+	cmd := &exec.Cmd{Path: req.Argv[0], Args: req.Argv}
+	cmd.Dir = req.Cwd
 	w := &wsWriter{conn: conn, cell: req.Cell}
-	cmd.Stdout = w
-	cmd.Stderr = w
 	exitCode := 0
-	if err := cmd.Run(); err != nil {
-		if err, ok := err.(*exec.ExitError); ok {
-			serr := err.Sys().(syscall.WaitStatus)
-			exitCode = serr.ExitStatus()
+	if filepath.Base(cmd.Path) == cmd.Path {
+		if p, err := exec.LookPath(cmd.Path); err != nil {
+			fmt.Fprintf(w, "ERROR: %s\n", err)
+			exitCode = 1
+			cmd = nil
 		} else {
-			fmt.Fprintf(w, "%s\n", err)
+			cmd.Path = p
+		}
+	}
+	if cmd != nil {
+		cmd.Stdout = w
+		cmd.Stderr = w
+		if err := cmd.Run(); err != nil {
+			if eerr, ok := err.(*exec.ExitError); ok {
+				serr := eerr.Sys().(syscall.WaitStatus)
+				exitCode = serr.ExitStatus()
+			} else {
+				fmt.Fprintf(w, "ERROR: %s\n", err)
+			}
 		}
 	}
 	err := writeMsg(w.conn, &pb.ServerMsg{Msg: &pb.ServerMsg_Output{&pb.Output{

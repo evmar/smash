@@ -3,7 +3,8 @@ package proto;
 
 message RunRequest {
   int32 cell = 1;
-  string command = 2;
+  string cwd = 2;
+  repeated string argv = 3;
 }
 
 message Output {

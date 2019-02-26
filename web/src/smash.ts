@@ -1,6 +1,8 @@
 import * as pb from './smash_pb';
+import * as sh from './shell';
 
 let ws: WebSocket | null = null;
+let shell = new sh.Shell();
 let cellStack: CellStack;
 
 function html(tagName: string, attr: { [key: string]: {} } = {}) {
@@ -106,7 +108,13 @@ class Cell {
 
     this.readline.oncommit = cmd => {
       this.readline.input.blur();
-      spawn(this.id, cmd);
+      const exec = shell.exec(cmd);
+      if (sh.isLocal(exec)) {
+        this.output.innerText += exec.output;
+        this.onExit(this.id);
+      } else {
+        spawn(this.id, exec);
+      }
     };
   }
 
@@ -144,11 +152,12 @@ class CellStack {
   }
 }
 
-function spawn(id: number, cmd: string) {
+function spawn(id: number, cmd: sh.ExecRemote) {
   if (!ws) return;
   const msg = new pb.RunRequest();
   msg.setCell(id);
-  msg.setCommand(cmd);
+  msg.setCwd(cmd.cwd);
+  msg.setArgvList(cmd.cmd);
   ws.send(msg.serializeBinary());
 }
 
