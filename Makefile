@@ -17,3 +17,7 @@ proto:
 	  --js_out="import_style=commonjs,binary:web/src" \
 	  --ts_out="web/src" \
 	  proto/smash.proto
+
+.PHONY: fmt
+fmt:
+	./fmt.sh --write
