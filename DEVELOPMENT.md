@@ -12,7 +12,7 @@ Now reloading the page reloads the content.
 ## Formatter
 
 ```sh
-$ ./fmt.sh --write
+$ make fmt
 ```
 
 To run prettier, which is checked on presubmit.
@@ -30,3 +30,9 @@ Regenerates the protobuf APIs.
 PWAs only work on https or localhost. For one of these on ChromeOS,
 the best option seems to be connection forwarding using [Connection
 Forwarder](https://chrome.google.com/webstore/detail/connection-forwarder/ahaijnonphgkgnkbklchdhclailflinn) to forward localhost into the crostini IP.
+
+## The icon
+
+```sh
+$ convert -size 32x32 -gravity center -background white -fill black label:">" icon.png
+```
