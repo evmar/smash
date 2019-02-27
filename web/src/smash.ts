@@ -96,21 +96,34 @@ class ReadLine {
   }
 }
 
+class Term {
+  dom = html('pre', { tabIndex: 0 });
+
+  onUpdate(msg: pb.TermText) {
+    const children = this.dom.children;
+    const row = msg.getRow();
+    for (var childCount = children.length; childCount < row + 1; childCount++) {
+      this.dom.appendChild(html('div'));
+    }
+    (children[row] as HTMLElement).innerText = msg.getText();
+  }
+}
+
 class Cell {
   dom = html('div', { className: 'cell' });
   readline = new ReadLine();
-  output = html('pre', { tabIndex: 0 });
+  term = new Term();
   onExit = (id: number) => {};
 
   constructor(public id: number) {
     this.dom.appendChild(this.readline.dom);
-    this.dom.appendChild(this.output);
+    this.dom.appendChild(this.term.dom);
 
     this.readline.oncommit = cmd => {
       this.readline.input.blur();
       const exec = shell.exec(cmd);
       if (sh.isLocal(exec)) {
-        this.output.innerText += exec.output;
+        this.term.dom.innerText += exec.output;
         this.onExit(this.id);
       } else {
         spawn(this.id, exec);
@@ -120,8 +133,7 @@ class Cell {
 
   onOutput(msg: pb.Output) {
     if (msg.hasText()) {
-      const text = msg.getText()!;
-      this.output.innerText += text.getText();
+      this.term.onUpdate(msg.getText()!);
     }
     if (msg.hasExitCode()) {
       console.log('exit code', msg.getExitCode());

@@ -63,28 +63,28 @@ func (w *wsWriter) WriteError(msg string) error {
 	}}})
 }
 
-func termLoop(w *wsWriter, tr io.Reader) {
-	term := vt100.NewTerminal()
-	term = term
-	r := bufio.NewReader(tr)
-	row := 0
+// isPtyEOFError tests for a pty close error.
+// When a pty closes, you get an EIO error instead of an EOF.
+func isPtyEOFError(err error) bool {
+	const EIO syscall.Errno = 5
+	if perr, ok := err.(*os.PathError); ok {
+		if errno, ok := perr.Err.(syscall.Errno); ok && errno == EIO {
+			// read /dev/ptmx: input/output error
+			return true
+		}
+	}
+	return false
+}
+
+func termLoop(tr *vt100.TermReader, r io.Reader) {
+	br := bufio.NewReader(r)
 	for {
-		//err := term.Read(r)
-		buf, err := r.ReadBytes('\n')
-		w.WriteText(row, 0, buf)
-		if err != nil {
-			if err != io.EOF {
-				// When a pty closes, you get an EIO error instead of an EOF.
-				const EIO syscall.Errno = 5
-				if perr, ok := err.(*os.PathError); ok {
-					if errno, ok := perr.Err.(syscall.Errno); ok && errno == EIO {
-						// read /dev/ptmx: input/output error
-						err = io.EOF
-					}
-				}
+		if err := tr.Read(br); err != nil {
+			if isPtyEOFError(err) {
+				err = io.EOF
 			}
 			if err != io.EOF {
-				w.WriteError(err.Error())
+				// TODO: w.WriteError(err.Error())
 			}
 			return
 		}
@@ -105,7 +105,22 @@ func spawn(w *wsWriter, cmd *exec.Cmd) error {
 		return err
 	}
 
-	go termLoop(w, f)
+	var mu sync.Mutex
+	term := vt100.NewTerminal()
+	tr := vt100.NewTermReader(func(f func(t *vt100.Terminal)) {
+		mu.Lock()
+		defer mu.Unlock()
+		f(term)
+		buf := make([]byte, 100)
+		for row, l := range term.Lines {
+			for col, cell := range l {
+				buf[col] = byte(cell.Ch)
+			}
+			w.WriteText(row, 0, buf[:len(l)])
+		}
+	})
+
+	go termLoop(tr, f)
 
 	return cmd.Wait()
 }
