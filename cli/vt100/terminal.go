@@ -230,7 +230,6 @@ func (t *TermReader) Read(r *bufio.Reader) error {
 			}
 			buf[i] = rune(c)
 		}
-		log.Println("read block", max)
 		t.writeRunes(buf[:max], t.Attr)
 	default:
 		r.UnreadByte()

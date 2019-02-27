@@ -80,16 +80,10 @@ export class TermText extends jspb.Message {
   getRow(): number;
   setRow(value: number): void;
 
-  getCol(): number;
-  setCol(value: number): void;
-
-  hasAttr(): boolean;
-  clearAttr(): void;
-  getAttr(): TermAttr | undefined;
-  setAttr(value?: TermAttr): void;
-
-  getText(): string;
-  setText(value: string): void;
+  clearSpansList(): void;
+  getSpansList(): Array<TermText.Span>;
+  setSpansList(value: Array<TermText.Span>): void;
+  addSpans(value?: TermText.Span, index?: number): TermText.Span;
 
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): TermText.AsObject;
@@ -112,10 +106,42 @@ export class TermText extends jspb.Message {
 export namespace TermText {
   export type AsObject = {
     row: number;
-    col: number;
-    attr?: TermAttr.AsObject;
-    text: string;
+    spansList: Array<TermText.Span.AsObject>;
   };
+
+  export class Span extends jspb.Message {
+    hasAttr(): boolean;
+    clearAttr(): void;
+    getAttr(): TermAttr | undefined;
+    setAttr(value?: TermAttr): void;
+
+    getText(): string;
+    setText(value: string): void;
+
+    serializeBinary(): Uint8Array;
+    toObject(includeInstance?: boolean): Span.AsObject;
+    static toObject(includeInstance: boolean, msg: Span): Span.AsObject;
+    static extensions: { [key: number]: jspb.ExtensionFieldInfo<jspb.Message> };
+    static extensionsBinary: {
+      [key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>;
+    };
+    static serializeBinaryToWriter(
+      message: Span,
+      writer: jspb.BinaryWriter
+    ): void;
+    static deserializeBinary(bytes: Uint8Array): Span;
+    static deserializeBinaryFromReader(
+      message: Span,
+      reader: jspb.BinaryReader
+    ): Span;
+  }
+
+  export namespace Span {
+    export type AsObject = {
+      attr?: TermAttr.AsObject;
+      text: string;
+    };
+  }
 }
 
 export class TermState extends jspb.Message {

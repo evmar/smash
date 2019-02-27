@@ -14,9 +14,11 @@ message TermAttr {
 
 message TermText {
   int32 row = 1;
-  int32 col = 2;
-  TermAttr attr = 3;
-  string text = 4;
+  message Span {
+    TermAttr attr = 1;
+    string text = 2;
+  }
+  repeated Span spans = 2;
 }
 
 message TermState {

@@ -45,14 +45,10 @@ type wsWriter struct {
 	cell int32
 }
 
-func (w *wsWriter) WriteText(row, col int, text []byte) error {
+func (w *wsWriter) WriteText(row int, text *pb.TermText) error {
 	return w.conn.writeMsg(&pb.ServerMsg{Msg: &pb.ServerMsg_Output{&pb.Output{
-		Cell: w.cell,
-		Output: &pb.Output_Text{&pb.TermText{
-			Row:  int32(row),
-			Col:  int32(col),
-			Text: string(text),
-		}},
+		Cell:   w.cell,
+		Output: &pb.Output_Text{text},
 	}}})
 }
 
@@ -111,12 +107,26 @@ func spawn(w *wsWriter, cmd *exec.Cmd) error {
 		mu.Lock()
 		defer mu.Unlock()
 		f(term)
-		buf := make([]byte, 100)
 		for row, l := range term.Lines {
-			for col, cell := range l {
-				buf[col] = byte(cell.Ch)
+			text := &pb.TermText{
+				Row: int32(row),
 			}
-			w.WriteText(row, 0, buf[:len(l)])
+			span := &pb.TermText_Span{}
+			var attr vt100.Attr
+			for _, cell := range l {
+				if cell.Attr != attr {
+					text.Spans = append(text.Spans, span)
+					span = &pb.TermText_Span{}
+					attr = cell.Attr
+				}
+				// TODO: super inefficient.
+				span.Text += fmt.Sprintf("%c", cell.Ch)
+			}
+			if len(span.Text) > 0 {
+				text.Spans = append(text.Spans, span)
+			}
+			w.WriteText(row, text)
+
 		}
 	})
 

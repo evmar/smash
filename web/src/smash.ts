@@ -105,7 +105,11 @@ class Term {
     for (var childCount = children.length; childCount < row + 1; childCount++) {
       this.dom.appendChild(html('div'));
     }
-    (children[row] as HTMLElement).innerText = msg.getText();
+    const child = children[row] as HTMLElement;
+    child.innerText = '';
+    for (const span of msg.getSpansList()) {
+      child.innerText += span.getText();
+    }
   }
 }
 
