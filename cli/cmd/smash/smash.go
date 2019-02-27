@@ -103,11 +103,16 @@ func spawn(w *wsWriter, cmd *exec.Cmd) error {
 
 	var mu sync.Mutex
 	term := vt100.NewTerminal()
-	tr := vt100.NewTermReader(func(f func(t *vt100.Terminal)) {
+	var tr *vt100.TermReader
+	tr = vt100.NewTermReader(func(f func(t *vt100.Terminal)) {
 		mu.Lock()
 		defer mu.Unlock()
 		f(term)
+		allDirty := tr.Dirty.Lines[-1]
 		for row, l := range term.Lines {
+			if !(allDirty || tr.Dirty.Lines[row]) {
+				continue
+			}
 			text := &pb.TermText{
 				Row: int32(row),
 			}
@@ -127,6 +132,7 @@ func spawn(w *wsWriter, cmd *exec.Cmd) error {
 			}
 			w.WriteText(row, text)
 		}
+		tr.Dirty.Reset()
 	})
 
 	go termLoop(tr, f)

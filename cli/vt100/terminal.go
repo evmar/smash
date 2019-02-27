@@ -161,12 +161,22 @@ func (t *Terminal) fixPosition() {
 	}
 }
 
+type TermDirty struct {
+	Cursor bool
+	Lines  map[int]bool
+}
+
+func (t *TermDirty) Reset() {
+	t.Lines = make(map[int]bool)
+}
+
 // TermReader carries in-progress terminal state during vt100 emulation.
 // It passes updates to its output to an underlying Terminal.
 // It's split from Terminal because it can run concurrently with a Terminal.
 type TermReader struct {
 	WithTerm func(func(t *Terminal))
 
+	Dirty TermDirty
 	Input io.Writer
 	TODOs FeatureLog
 
@@ -176,12 +186,13 @@ type TermReader struct {
 
 func NewTermReader(withTerm func(func(t *Terminal))) *TermReader {
 	return &TermReader{
+		Dirty:    TermDirty{Lines: make(map[int]bool)},
 		WithTerm: withTerm,
 		TODOs:    FeatureLog{},
 	}
 }
 
-func (t *TermReader) Read(r *bufio.Reader) error {
+func (tr *TermReader) Read(r *bufio.Reader) error {
 	c, err := r.ReadByte()
 	if err != nil {
 		return err
@@ -190,27 +201,31 @@ func (t *TermReader) Read(r *bufio.Reader) error {
 	case c == 0x7: // bell
 		// ignore
 	case c == 0x8: // backspace
-		t.WithTerm(func(t *Terminal) {
+		tr.WithTerm(func(t *Terminal) {
 			if t.Col > 0 {
 				t.Col--
 			}
+			tr.Dirty.Cursor = true
 		})
 	case c == 0x1b:
-		return t.readEscape(r)
+		return tr.readEscape(r)
 	case c == '\r':
-		t.WithTerm(func(t *Terminal) {
+		tr.WithTerm(func(t *Terminal) {
 			t.Col = 0
+			tr.Dirty.Cursor = true
 		})
 	case c == '\n':
-		t.WithTerm(func(t *Terminal) {
+		tr.WithTerm(func(t *Terminal) {
 			t.Col = 0
 			t.Row++
 			t.fixPosition()
+			tr.Dirty.Cursor = true
 		})
 	case c == '\t':
-		t.WithTerm(func(t *Terminal) {
+		tr.WithTerm(func(t *Terminal) {
 			t.Col += 8 - (t.Col % 8)
 			t.fixPosition()
+			tr.Dirty.Cursor = true
 		})
 	case c >= ' ' && c <= '~':
 		// Plain text.  Peek ahead to read a block of text together.
@@ -230,10 +245,10 @@ func (t *TermReader) Read(r *bufio.Reader) error {
 			}
 			buf[i] = rune(c)
 		}
-		t.writeRunes(buf[:max], t.Attr)
+		tr.writeRunes(buf[:max], tr.Attr)
 	default:
 		r.UnreadByte()
-		return t.readUTF8(r)
+		return tr.readUTF8(r)
 	}
 	return nil
 }
@@ -252,6 +267,8 @@ func (tr *TermReader) writeRunes(rs []rune, attr Attr) {
 	tr.WithTerm(func(t *Terminal) {
 		for _, r := range rs {
 			t.writeRune(r, attr)
+			tr.Dirty.Cursor = true
+			tr.Dirty.Lines[t.Row] = true
 		}
 	})
 }
@@ -300,7 +317,7 @@ func (t *TermReader) readUTF8(r io.ByteScanner) error {
 	return nil
 }
 
-func (t *TermReader) readEscape(r io.ByteScanner) error {
+func (tr *TermReader) readEscape(r io.ByteScanner) error {
 	// http://invisible-island.net/xterm/ctlseqs/ctlseqs.html
 	c, err := r.ReadByte()
 	if err != nil {
@@ -316,38 +333,39 @@ func (t *TermReader) readEscape(r io.ByteScanner) error {
 		case 'B': // US ASCII
 			// ignore
 		default:
-			t.TODOs.Add("g0 charset %s", showChar(c))
+			tr.TODOs.Add("g0 charset %s", showChar(c))
 		}
 	case c == '=':
-		t.TODOs.Add("application keypad")
+		tr.TODOs.Add("application keypad")
 	case c == '>':
-		t.TODOs.Add("normal keypad")
+		tr.TODOs.Add("normal keypad")
 	case c == '[':
-		return t.readCSI(r)
+		return tr.readCSI(r)
 	case c == ']':
 		// OSC Ps ; Pt BEL
-		n, err := t.readInt(r)
+		n, err := tr.readInt(r)
 		if err != nil {
 			return err
 		}
-		_, err = t.expect(r, ';')
+		_, err = tr.expect(r, ';')
 		if err != nil {
 			return err
 		}
-		text, err := t.readTo(r, 0x7)
+		text, err := tr.readTo(r, 0x7)
 		if err != nil {
 			return err
 		}
 		switch n {
 		case 0, 1, 2:
-			t.WithTerm(func(t *Terminal) {
+			tr.WithTerm(func(t *Terminal) {
 				t.Title = string(text)
+				// TODO: tr.Dirty
 			})
 		default:
 			log.Printf("term: bad OSC %d", n)
 		}
 	case c == 'M': // move up/insert line
-		t.WithTerm(func(t *Terminal) {
+		tr.WithTerm(func(t *Terminal) {
 			if t.Row == 0 {
 				// Insert line above.
 				t.Lines = append(t.Lines, nil)
@@ -362,6 +380,7 @@ func (t *TermReader) readEscape(r io.ByteScanner) error {
 				}
 				t.Row--
 			}
+			tr.Dirty.Lines[-1] = true
 		})
 	default:
 		log.Printf("term: unknown escape %s", showChar(c))
@@ -441,6 +460,7 @@ L:
 			for i := 0; i < n; i++ {
 				t.Lines[t.Row][t.Col+i] = Cell{' ', 0}
 			}
+			tr.Dirty.Lines[t.Row] = true
 		})
 	case c == 'A': // cursor up
 		dy := 1
@@ -452,6 +472,7 @@ L:
 				t.Row = 0
 			}
 			t.fixPosition()
+			tr.Dirty.Cursor = true
 		})
 	case c == 'C': // cursor forward
 		dx := 1
@@ -459,6 +480,7 @@ L:
 		tr.WithTerm(func(t *Terminal) {
 			t.Col += dx
 			t.fixPosition()
+			tr.Dirty.Cursor = true
 		})
 	case c == 'D': // cursor back
 		dx := 1
@@ -466,6 +488,7 @@ L:
 		tr.WithTerm(func(t *Terminal) {
 			t.Col -= dx
 			t.fixPosition()
+			tr.Dirty.Cursor = true
 		})
 	case c == 'G': // cursor character absolute
 		x := 1
@@ -473,6 +496,7 @@ L:
 		tr.WithTerm(func(t *Terminal) {
 			t.Col = x - 1
 			t.fixPosition()
+			tr.Dirty.Cursor = true
 		})
 	case c == 'H': // move to position
 		row := 1
@@ -482,6 +506,7 @@ L:
 			t.Row = t.Top + row - 1
 			t.Col = col - 1
 			t.fixPosition()
+			tr.Dirty.Cursor = true
 		})
 	case c == 'J': // erase in display
 		arg := 0
@@ -499,6 +524,7 @@ L:
 			default:
 				log.Printf("term: unknown erase in display %v", args)
 			}
+			tr.Dirty.Lines[-1] = true
 		})
 	case c == 'K': // erase in line
 		arg := 0
@@ -516,6 +542,7 @@ L:
 			default:
 				log.Printf("term: unknown erase in line %v", args)
 			}
+			tr.Dirty.Lines[t.Row] = true
 		})
 	case c == 'L': // insert lines
 		n := 1
@@ -528,6 +555,7 @@ L:
 			for i := 0; i < n; i++ {
 				t.Lines[t.Row+i] = make([]Cell, 0)
 			}
+			tr.Dirty.Lines[-1] = true
 		})
 	case c == 'P': // erase in line
 		arg := 1
@@ -539,6 +567,7 @@ L:
 			}
 			copy(l[t.Col:], l[t.Col+arg:])
 			t.Lines[t.Row] = l[:len(l)-arg]
+			tr.Dirty.Lines[t.Row] = true
 		})
 	case c == 'X': // erase characters
 		tr.TODOs.Add("erase characters %v", args)
@@ -564,6 +593,7 @@ L:
 		tr.WithTerm(func(t *Terminal) {
 			t.Row = arg - 1
 			t.fixPosition()
+			tr.Dirty.Cursor = true
 		})
 	case !qflag && (c == 'h' || c == 'l'): // reset mode
 		reset := c == 'l'
@@ -593,6 +623,7 @@ L:
 			default:
 				log.Printf("term: unknown dec private mode %v %v", args, set)
 			}
+			// TODO: tr.Dirty
 		})
 	case c == 'm': // reset
 		if len(args) == 0 {
