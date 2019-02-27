@@ -8,6 +8,7 @@ import (
 	"unicode/utf8"
 )
 
+// Bits is a uint16 with some bitfield accessors.
 type Bits uint16
 
 func (b Bits) Get(ofs uint, count uint) uint16 {
@@ -18,6 +19,8 @@ func (b *Bits) Set(ofs uint, count uint, val uint) {
 	*b = Bits((uint16(*b) & ^uint16(mask)) | uint16(val)<<ofs)
 }
 
+// Attr represents per-cell terminal attributes.
+// Bit layout is:
 // xxxx xxIB AAAA CCCC
 //  I = inverse
 //  B = bright
@@ -99,6 +102,7 @@ func showChar(ch byte) string {
 	}
 }
 
+// Cell is a single character cell in the rendered terminal.
 type Cell struct {
 	Ch   rune
 	Attr Attr
@@ -108,6 +112,7 @@ func (c Cell) String() string {
 	return fmt.Sprintf("Cell{%q, %s}", c.Ch, c.Attr)
 }
 
+// FeatureLog records missing terminal features as TODOs.
 type FeatureLog map[string]int
 
 func (f FeatureLog) Add(text string, args ...interface{}) {
@@ -117,6 +122,7 @@ func (f FeatureLog) Add(text string, args ...interface{}) {
 	f[text]++
 }
 
+// Terminal is the rendered state of a terminal after vt100 emulation.
 type Terminal struct {
 	Title      string
 	Lines      [][]Cell
@@ -129,9 +135,12 @@ type Terminal struct {
 	// Index of first displayed line; greater than 0 when content has
 	// scrolled off the top of the terminal.
 	Top int
+
 	// The 0-based position of the cursor.
 	Row, Col int
-	Attr     Attr
+
+	// The current display attributes, used for the next written character.
+	Attr Attr
 }
 
 func NewTerminal() *Terminal {
@@ -143,13 +152,8 @@ func NewTerminal() *Terminal {
 	}
 }
 
-func promoteEOF(err error) error {
-	if err == io.EOF {
-		return io.ErrUnexpectedEOF
-	}
-	return err
-}
-
+// fixPosition ensures that terminal offsets (Top/Row/Height) always
+// refer to valid places within the Terminal Lines array.
 func (t *Terminal) fixPosition() {
 	if t.Row >= t.Top+t.Height {
 		t.Top++
@@ -334,8 +338,10 @@ func mapColor(color int, arg int) int {
 	}
 }
 
+// readCSI reads a CSI escape, which look like
+//   \e[1;2x
+// where "1" and "2" are "arguments" to the "x" command.
 func (t *Terminal) readCSI(r io.ByteScanner) error {
-	// CSI
 	var args []int
 
 	qflag := false
@@ -618,6 +624,8 @@ func (t *Terminal) readTo(r io.ByteScanner, end byte) ([]byte, error) {
 	return nil, fmt.Errorf("term: readTo(%s) overlong", showChar(end))
 }
 
+// DisplayString inserts a string into the terminal output, as if it had
+// been produced by an underlying tty.
 func (t *Terminal) DisplayString(input string) {
 	r := strings.NewReader(input)
 	var err error
@@ -626,6 +634,7 @@ func (t *Terminal) DisplayString(input string) {
 	}
 }
 
+// ToString renders the terminal state to a simple string, for use in tests.
 func (t *Terminal) ToString() string {
 	var buf [6]byte
 	str := ""
