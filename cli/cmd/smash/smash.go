@@ -1,16 +1,19 @@
 package main
 
 import (
+	"bufio"
 	"fmt"
 	"io"
 	"log"
 	"net/http"
+	"os"
 	"os/exec"
 	"path/filepath"
 	"sync"
 	"syscall"
 
 	pb "github.com/evmar/smash/proto"
+	"github.com/evmar/smash/vt100"
 	"github.com/golang/protobuf/proto"
 	"github.com/gorilla/websocket"
 	"github.com/kr/pty"
@@ -42,18 +45,53 @@ type wsWriter struct {
 	cell int32
 }
 
-func (w *wsWriter) Write(buf []byte) (int, error) {
-	err := w.conn.writeMsg(&pb.ServerMsg{Msg: &pb.ServerMsg_Output{&pb.Output{
-		Cell:   w.cell,
-		Output: &pb.Output_Text{string(buf[:])},
+func (w *wsWriter) WriteText(row, col int, text []byte) error {
+	return w.conn.writeMsg(&pb.ServerMsg{Msg: &pb.ServerMsg_Output{&pb.Output{
+		Cell: w.cell,
+		Output: &pb.Output_Text{&pb.TermText{
+			Row:  int32(row),
+			Col:  int32(col),
+			Text: string(text),
+		}},
 	}}})
-	if err != nil {
-		return 0, err
-	}
-	return len(buf), nil
 }
 
-func spawn(w io.Writer, cmd *exec.Cmd) error {
+func (w *wsWriter) WriteError(msg string) error {
+	return w.conn.writeMsg(&pb.ServerMsg{Msg: &pb.ServerMsg_Output{&pb.Output{
+		Cell:   w.cell,
+		Output: &pb.Output_Error{msg},
+	}}})
+}
+
+func termLoop(w *wsWriter, tr io.Reader) {
+	term := vt100.NewTerminal()
+	term = term
+	r := bufio.NewReader(tr)
+	row := 0
+	for {
+		//err := term.Read(r)
+		buf, err := r.ReadBytes('\n')
+		w.WriteText(row, 0, buf)
+		if err != nil {
+			if err != io.EOF {
+				// When a pty closes, you get an EIO error instead of an EOF.
+				const EIO syscall.Errno = 5
+				if perr, ok := err.(*os.PathError); ok {
+					if errno, ok := perr.Err.(syscall.Errno); ok && errno == EIO {
+						// read /dev/ptmx: input/output error
+						err = io.EOF
+					}
+				}
+			}
+			if err != io.EOF {
+				w.WriteError(err.Error())
+			}
+			return
+		}
+	}
+}
+
+func spawn(w *wsWriter, cmd *exec.Cmd) error {
 	if filepath.Base(cmd.Path) == cmd.Path {
 		// TODO: should use shell env $PATH.
 		if p, err := exec.LookPath(cmd.Path); err != nil {
@@ -66,9 +104,9 @@ func spawn(w io.Writer, cmd *exec.Cmd) error {
 	if err != nil {
 		return err
 	}
-	go func() {
-		io.Copy(w, f)
-	}()
+
+	go termLoop(w, f)
+
 	return cmd.Wait()
 }
 
@@ -83,7 +121,7 @@ func runCmd(conn *conn, req *pb.RunRequest) {
 			serr := eerr.Sys().(syscall.WaitStatus)
 			exitCode = serr.ExitStatus()
 		} else {
-			fmt.Fprintf(w, "ERROR: %s\n", err)
+			w.WriteError(err.Error())
 			exitCode = 1
 		}
 	}

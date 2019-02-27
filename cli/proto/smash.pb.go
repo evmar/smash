@@ -75,9 +75,151 @@ func (m *RunRequest) GetArgv() []string {
 	return nil
 }
 
+type TermAttr struct {
+	Fg                   int32    `protobuf:"varint,1,opt,name=fg,proto3" json:"fg,omitempty"`
+	Bg                   int32    `protobuf:"varint,2,opt,name=bg,proto3" json:"bg,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
+}
+
+func (m *TermAttr) Reset()         { *m = TermAttr{} }
+func (m *TermAttr) String() string { return proto.CompactTextString(m) }
+func (*TermAttr) ProtoMessage()    {}
+func (*TermAttr) Descriptor() ([]byte, []int) {
+	return fileDescriptor_85c015dadfa1ff75, []int{1}
+}
+
+func (m *TermAttr) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_TermAttr.Unmarshal(m, b)
+}
+func (m *TermAttr) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_TermAttr.Marshal(b, m, deterministic)
+}
+func (m *TermAttr) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_TermAttr.Merge(m, src)
+}
+func (m *TermAttr) XXX_Size() int {
+	return xxx_messageInfo_TermAttr.Size(m)
+}
+func (m *TermAttr) XXX_DiscardUnknown() {
+	xxx_messageInfo_TermAttr.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_TermAttr proto.InternalMessageInfo
+
+func (m *TermAttr) GetFg() int32 {
+	if m != nil {
+		return m.Fg
+	}
+	return 0
+}
+
+func (m *TermAttr) GetBg() int32 {
+	if m != nil {
+		return m.Bg
+	}
+	return 0
+}
+
+type TermText struct {
+	Row                  int32     `protobuf:"varint,1,opt,name=row,proto3" json:"row,omitempty"`
+	Col                  int32     `protobuf:"varint,2,opt,name=col,proto3" json:"col,omitempty"`
+	Attr                 *TermAttr `protobuf:"bytes,3,opt,name=attr,proto3" json:"attr,omitempty"`
+	Text                 string    `protobuf:"bytes,4,opt,name=text,proto3" json:"text,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}  `json:"-"`
+	XXX_unrecognized     []byte    `json:"-"`
+	XXX_sizecache        int32     `json:"-"`
+}
+
+func (m *TermText) Reset()         { *m = TermText{} }
+func (m *TermText) String() string { return proto.CompactTextString(m) }
+func (*TermText) ProtoMessage()    {}
+func (*TermText) Descriptor() ([]byte, []int) {
+	return fileDescriptor_85c015dadfa1ff75, []int{2}
+}
+
+func (m *TermText) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_TermText.Unmarshal(m, b)
+}
+func (m *TermText) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_TermText.Marshal(b, m, deterministic)
+}
+func (m *TermText) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_TermText.Merge(m, src)
+}
+func (m *TermText) XXX_Size() int {
+	return xxx_messageInfo_TermText.Size(m)
+}
+func (m *TermText) XXX_DiscardUnknown() {
+	xxx_messageInfo_TermText.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_TermText proto.InternalMessageInfo
+
+func (m *TermText) GetRow() int32 {
+	if m != nil {
+		return m.Row
+	}
+	return 0
+}
+
+func (m *TermText) GetCol() int32 {
+	if m != nil {
+		return m.Col
+	}
+	return 0
+}
+
+func (m *TermText) GetAttr() *TermAttr {
+	if m != nil {
+		return m.Attr
+	}
+	return nil
+}
+
+func (m *TermText) GetText() string {
+	if m != nil {
+		return m.Text
+	}
+	return ""
+}
+
+type TermState struct {
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
+}
+
+func (m *TermState) Reset()         { *m = TermState{} }
+func (m *TermState) String() string { return proto.CompactTextString(m) }
+func (*TermState) ProtoMessage()    {}
+func (*TermState) Descriptor() ([]byte, []int) {
+	return fileDescriptor_85c015dadfa1ff75, []int{3}
+}
+
+func (m *TermState) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_TermState.Unmarshal(m, b)
+}
+func (m *TermState) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_TermState.Marshal(b, m, deterministic)
+}
+func (m *TermState) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_TermState.Merge(m, src)
+}
+func (m *TermState) XXX_Size() int {
+	return xxx_messageInfo_TermState.Size(m)
+}
+func (m *TermState) XXX_DiscardUnknown() {
+	xxx_messageInfo_TermState.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_TermState proto.InternalMessageInfo
+
 type Output struct {
 	Cell int32 `protobuf:"varint,1,opt,name=cell,proto3" json:"cell,omitempty"`
 	// Types that are valid to be assigned to Output:
+	//	*Output_Error
 	//	*Output_Text
 	//	*Output_ExitCode
 	Output               isOutput_Output `protobuf_oneof:"output"`
@@ -90,7 +232,7 @@ func (m *Output) Reset()         { *m = Output{} }
 func (m *Output) String() string { return proto.CompactTextString(m) }
 func (*Output) ProtoMessage()    {}
 func (*Output) Descriptor() ([]byte, []int) {
-	return fileDescriptor_85c015dadfa1ff75, []int{1}
+	return fileDescriptor_85c015dadfa1ff75, []int{4}
 }
 
 func (m *Output) XXX_Unmarshal(b []byte) error {
@@ -122,13 +264,19 @@ type isOutput_Output interface {
 	isOutput_Output()
 }
 
+type Output_Error struct {
+	Error string `protobuf:"bytes,2,opt,name=error,proto3,oneof"`
+}
+
 type Output_Text struct {
-	Text string `protobuf:"bytes,2,opt,name=text,proto3,oneof"`
+	Text *TermText `protobuf:"bytes,3,opt,name=text,proto3,oneof"`
 }
 
 type Output_ExitCode struct {
-	ExitCode int32 `protobuf:"varint,3,opt,name=exit_code,json=exitCode,proto3,oneof"`
+	ExitCode int32 `protobuf:"varint,4,opt,name=exit_code,json=exitCode,proto3,oneof"`
 }
+
+func (*Output_Error) isOutput_Output() {}
 
 func (*Output_Text) isOutput_Output() {}
 
@@ -141,11 +289,18 @@ func (m *Output) GetOutput() isOutput_Output {
 	return nil
 }
 
-func (m *Output) GetText() string {
+func (m *Output) GetError() string {
+	if x, ok := m.GetOutput().(*Output_Error); ok {
+		return x.Error
+	}
+	return ""
+}
+
+func (m *Output) GetText() *TermText {
 	if x, ok := m.GetOutput().(*Output_Text); ok {
 		return x.Text
 	}
-	return ""
+	return nil
 }
 
 func (m *Output) GetExitCode() int32 {
@@ -158,6 +313,7 @@ func (m *Output) GetExitCode() int32 {
 // XXX_OneofWrappers is for the internal use of the proto package.
 func (*Output) XXX_OneofWrappers() []interface{} {
 	return []interface{}{
+		(*Output_Error)(nil),
 		(*Output_Text)(nil),
 		(*Output_ExitCode)(nil),
 	}
@@ -176,7 +332,7 @@ func (m *ServerMsg) Reset()         { *m = ServerMsg{} }
 func (m *ServerMsg) String() string { return proto.CompactTextString(m) }
 func (*ServerMsg) ProtoMessage()    {}
 func (*ServerMsg) Descriptor() ([]byte, []int) {
-	return fileDescriptor_85c015dadfa1ff75, []int{2}
+	return fileDescriptor_85c015dadfa1ff75, []int{5}
 }
 
 func (m *ServerMsg) XXX_Unmarshal(b []byte) error {
@@ -230,6 +386,9 @@ func (*ServerMsg) XXX_OneofWrappers() []interface{} {
 
 func init() {
 	proto.RegisterType((*RunRequest)(nil), "proto.RunRequest")
+	proto.RegisterType((*TermAttr)(nil), "proto.TermAttr")
+	proto.RegisterType((*TermText)(nil), "proto.TermText")
+	proto.RegisterType((*TermState)(nil), "proto.TermState")
 	proto.RegisterType((*Output)(nil), "proto.Output")
 	proto.RegisterType((*ServerMsg)(nil), "proto.ServerMsg")
 }
@@ -237,18 +396,24 @@ func init() {
 func init() { proto.RegisterFile("smash.proto", fileDescriptor_85c015dadfa1ff75) }
 
 var fileDescriptor_85c015dadfa1ff75 = []byte{
-	// 205 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xe2, 0xe2, 0x2e, 0xce, 0x4d, 0x2c,
-	0xce, 0xd0, 0x2b, 0x28, 0xca, 0x2f, 0xc9, 0x17, 0x62, 0x05, 0x53, 0x4a, 0x6e, 0x5c, 0x5c, 0x41,
-	0xa5, 0x79, 0x41, 0xa9, 0x85, 0xa5, 0xa9, 0xc5, 0x25, 0x42, 0x42, 0x5c, 0x2c, 0xc9, 0xa9, 0x39,
-	0x39, 0x12, 0x8c, 0x0a, 0x8c, 0x1a, 0xac, 0x41, 0x60, 0xb6, 0x90, 0x00, 0x17, 0x73, 0x72, 0x79,
-	0x8a, 0x04, 0x93, 0x02, 0xa3, 0x06, 0x67, 0x10, 0x88, 0x09, 0x52, 0x95, 0x58, 0x94, 0x5e, 0x26,
-	0xc1, 0xac, 0xc0, 0xac, 0xc1, 0x19, 0x04, 0x66, 0x2b, 0x45, 0x73, 0xb1, 0xf9, 0x97, 0x96, 0x14,
-	0x94, 0x62, 0x37, 0x43, 0x84, 0x8b, 0xa5, 0x24, 0xb5, 0xa2, 0x04, 0x62, 0x88, 0x07, 0x43, 0x10,
-	0x98, 0x27, 0x24, 0xcb, 0xc5, 0x99, 0x5a, 0x91, 0x59, 0x12, 0x9f, 0x9c, 0x9f, 0x92, 0x2a, 0xc1,
-	0x0c, 0x52, 0xee, 0xc1, 0x10, 0xc4, 0x01, 0x12, 0x72, 0xce, 0x4f, 0x49, 0x75, 0xe2, 0xe0, 0x62,
-	0xcb, 0x07, 0x1b, 0xa9, 0x64, 0xcd, 0xc5, 0x19, 0x9c, 0x5a, 0x54, 0x96, 0x5a, 0xe4, 0x5b, 0x9c,
-	0x2e, 0xa4, 0x0e, 0x13, 0x06, 0xdb, 0xc0, 0x6d, 0xc4, 0x0b, 0xf1, 0x90, 0x1e, 0xc4, 0x7a, 0x0f,
-	0x86, 0x20, 0xa8, 0xb4, 0x13, 0x2b, 0x17, 0x73, 0x6e, 0x71, 0x7a, 0x12, 0x1b, 0x58, 0xda, 0x18,
-	0x10, 0x00, 0x00, 0xff, 0xff, 0x56, 0xc3, 0x4c, 0x2d, 0xfe, 0x00, 0x00, 0x00,
+	// 302 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x6c, 0x8f, 0x4f, 0x4b, 0xc3, 0x40,
+	0x10, 0xc5, 0xf3, 0xa7, 0x29, 0xcd, 0x04, 0xff, 0xb0, 0x07, 0xc9, 0x45, 0x08, 0x2b, 0x62, 0xf0,
+	0xd0, 0x43, 0x3d, 0x7a, 0xb2, 0x82, 0xe4, 0x22, 0xc2, 0xb6, 0x77, 0x49, 0xdb, 0xe9, 0x2a, 0xb4,
+	0x6e, 0xdd, 0x4c, 0xda, 0x7e, 0x00, 0x3f, 0xb8, 0xec, 0xec, 0xf6, 0xa4, 0xa7, 0x7d, 0x3b, 0xf3,
+	0x78, 0xef, 0x37, 0x50, 0x74, 0xdb, 0xb6, 0xfb, 0x18, 0xef, 0xac, 0x21, 0x23, 0x32, 0x7e, 0xe4,
+	0x0b, 0x80, 0xea, 0xbf, 0x14, 0x7e, 0xf7, 0xd8, 0x91, 0x10, 0x30, 0x58, 0xe2, 0x66, 0x53, 0xc6,
+	0x55, 0x5c, 0x67, 0x8a, 0xb5, 0xb8, 0x84, 0x74, 0x79, 0x58, 0x95, 0x49, 0x15, 0xd7, 0xb9, 0x72,
+	0xd2, 0xb9, 0x5a, 0xab, 0xf7, 0x65, 0x5a, 0xa5, 0x75, 0xae, 0x58, 0xcb, 0x7b, 0x18, 0xcd, 0xd1,
+	0x6e, 0x9f, 0x88, 0xac, 0x38, 0x87, 0x64, 0xad, 0x43, 0x46, 0xb2, 0xd6, 0xee, 0xbf, 0xd0, 0x1c,
+	0x90, 0xa9, 0x64, 0xa1, 0xa5, 0xf6, 0xde, 0x39, 0x1e, 0xc9, 0xa5, 0x5b, 0x73, 0x08, 0x66, 0x27,
+	0xb9, 0xcf, 0x6c, 0x82, 0xdd, 0x49, 0x71, 0x03, 0x83, 0x96, 0xc8, 0x96, 0x69, 0x15, 0xd7, 0xc5,
+	0xe4, 0xc2, 0x1f, 0x30, 0x3e, 0xd5, 0x29, 0x5e, 0x3a, 0x28, 0xc2, 0x23, 0x95, 0x03, 0xe6, 0x64,
+	0x2d, 0x0b, 0xc8, 0x9d, 0x6b, 0x46, 0x2d, 0xa1, 0xfc, 0x89, 0x61, 0xf8, 0xd6, 0xd3, 0xae, 0xff,
+	0xff, 0xcc, 0x2b, 0xc8, 0xd0, 0x5a, 0x63, 0xfd, 0xa1, 0x4d, 0xa4, 0xfc, 0x57, 0xdc, 0x86, 0xdc,
+	0xbf, 0xe5, 0x8e, 0xbf, 0x89, 0x7c, 0x95, 0xb8, 0x86, 0x1c, 0x8f, 0x9f, 0xf4, 0xbe, 0x34, 0x2b,
+	0x64, 0x86, 0xac, 0x89, 0xd4, 0xc8, 0x8d, 0x9e, 0xcd, 0x0a, 0xa7, 0x23, 0x18, 0x1a, 0xee, 0x96,
+	0x8f, 0x90, 0xcf, 0xd0, 0xee, 0xd1, 0xbe, 0x76, 0x5a, 0xdc, 0x9d, 0xc6, 0x8c, 0x52, 0x4c, 0xce,
+	0x42, 0xbc, 0xe7, 0x6c, 0x22, 0x15, 0xd6, 0xd3, 0x0c, 0xd2, 0x6d, 0xa7, 0x17, 0x43, 0x5e, 0x3f,
+	0xfc, 0x06, 0x00, 0x00, 0xff, 0xff, 0x80, 0x78, 0xac, 0x51, 0xca, 0x01, 0x00, 0x00,
 }

@@ -120,7 +120,8 @@ class Cell {
 
   onOutput(msg: pb.Output) {
     if (msg.hasText()) {
-      this.output.innerText += msg.getText();
+      const text = msg.getText()!;
+      this.output.innerText += text.getText();
     }
     if (msg.hasExitCode()) {
       console.log('exit code', msg.getExitCode());

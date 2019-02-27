@@ -7,11 +7,28 @@ message RunRequest {
   repeated string argv = 3;
 }
 
+message TermAttr {
+  int32 fg = 1;
+  int32 bg = 2;
+}
+
+message TermText {
+  int32 row = 1;
+  int32 col = 2;
+  TermAttr attr = 3;
+  string text = 4;
+}
+
+message TermState {
+  // e.g. cursor position
+}
+
 message Output {
   int32 cell = 1;
   oneof output {
-    string text = 2;
-    int32 exit_code = 3;
+    string error = 2;
+    TermText text = 3;
+    int32 exit_code = 4;
   }
 }
 

@@ -44,14 +44,116 @@ export namespace RunRequest {
   };
 }
 
+export class TermAttr extends jspb.Message {
+  getFg(): number;
+  setFg(value: number): void;
+
+  getBg(): number;
+  setBg(value: number): void;
+
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): TermAttr.AsObject;
+  static toObject(includeInstance: boolean, msg: TermAttr): TermAttr.AsObject;
+  static extensions: { [key: number]: jspb.ExtensionFieldInfo<jspb.Message> };
+  static extensionsBinary: {
+    [key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>;
+  };
+  static serializeBinaryToWriter(
+    message: TermAttr,
+    writer: jspb.BinaryWriter
+  ): void;
+  static deserializeBinary(bytes: Uint8Array): TermAttr;
+  static deserializeBinaryFromReader(
+    message: TermAttr,
+    reader: jspb.BinaryReader
+  ): TermAttr;
+}
+
+export namespace TermAttr {
+  export type AsObject = {
+    fg: number;
+    bg: number;
+  };
+}
+
+export class TermText extends jspb.Message {
+  getRow(): number;
+  setRow(value: number): void;
+
+  getCol(): number;
+  setCol(value: number): void;
+
+  hasAttr(): boolean;
+  clearAttr(): void;
+  getAttr(): TermAttr | undefined;
+  setAttr(value?: TermAttr): void;
+
+  getText(): string;
+  setText(value: string): void;
+
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): TermText.AsObject;
+  static toObject(includeInstance: boolean, msg: TermText): TermText.AsObject;
+  static extensions: { [key: number]: jspb.ExtensionFieldInfo<jspb.Message> };
+  static extensionsBinary: {
+    [key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>;
+  };
+  static serializeBinaryToWriter(
+    message: TermText,
+    writer: jspb.BinaryWriter
+  ): void;
+  static deserializeBinary(bytes: Uint8Array): TermText;
+  static deserializeBinaryFromReader(
+    message: TermText,
+    reader: jspb.BinaryReader
+  ): TermText;
+}
+
+export namespace TermText {
+  export type AsObject = {
+    row: number;
+    col: number;
+    attr?: TermAttr.AsObject;
+    text: string;
+  };
+}
+
+export class TermState extends jspb.Message {
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): TermState.AsObject;
+  static toObject(includeInstance: boolean, msg: TermState): TermState.AsObject;
+  static extensions: { [key: number]: jspb.ExtensionFieldInfo<jspb.Message> };
+  static extensionsBinary: {
+    [key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>;
+  };
+  static serializeBinaryToWriter(
+    message: TermState,
+    writer: jspb.BinaryWriter
+  ): void;
+  static deserializeBinary(bytes: Uint8Array): TermState;
+  static deserializeBinaryFromReader(
+    message: TermState,
+    reader: jspb.BinaryReader
+  ): TermState;
+}
+
+export namespace TermState {
+  export type AsObject = {};
+}
+
 export class Output extends jspb.Message {
   getCell(): number;
   setCell(value: number): void;
 
+  hasError(): boolean;
+  clearError(): void;
+  getError(): string;
+  setError(value: string): void;
+
   hasText(): boolean;
   clearText(): void;
-  getText(): string;
-  setText(value: string): void;
+  getText(): TermText | undefined;
+  setText(value?: TermText): void;
 
   hasExitCode(): boolean;
   clearExitCode(): void;
@@ -80,14 +182,16 @@ export class Output extends jspb.Message {
 export namespace Output {
   export type AsObject = {
     cell: number;
-    text: string;
+    error: string;
+    text?: TermText.AsObject;
     exitCode: number;
   };
 
   export enum OutputCase {
     OUTPUT_NOT_SET = 0,
-    TEXT = 2,
-    EXIT_CODE = 3
+    ERROR = 2,
+    TEXT = 3,
+    EXIT_CODE = 4
   }
 }
 
