@@ -29,3 +29,28 @@ pre {
   position: absolute;
   visibility: hidden;
 }
+
+.fg1 {
+  color: #2e3436;
+}
+.fg2 {
+  color: #cc0000;
+}
+.fg3 {
+  color: #4e9a06;
+}
+.fg4 {
+  color: #c4a000;
+}
+.fg5 {
+  color: #3465a4;
+}
+.fg6 {
+  color: #75507b;
+}
+.fg7 {
+  color: #06989a;
+}
+.fg8 {
+  color: #d3d7cf;
+}

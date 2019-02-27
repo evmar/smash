@@ -44,38 +44,6 @@ export namespace RunRequest {
   };
 }
 
-export class TermAttr extends jspb.Message {
-  getFg(): number;
-  setFg(value: number): void;
-
-  getBg(): number;
-  setBg(value: number): void;
-
-  serializeBinary(): Uint8Array;
-  toObject(includeInstance?: boolean): TermAttr.AsObject;
-  static toObject(includeInstance: boolean, msg: TermAttr): TermAttr.AsObject;
-  static extensions: { [key: number]: jspb.ExtensionFieldInfo<jspb.Message> };
-  static extensionsBinary: {
-    [key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>;
-  };
-  static serializeBinaryToWriter(
-    message: TermAttr,
-    writer: jspb.BinaryWriter
-  ): void;
-  static deserializeBinary(bytes: Uint8Array): TermAttr;
-  static deserializeBinaryFromReader(
-    message: TermAttr,
-    reader: jspb.BinaryReader
-  ): TermAttr;
-}
-
-export namespace TermAttr {
-  export type AsObject = {
-    fg: number;
-    bg: number;
-  };
-}
-
 export class TermText extends jspb.Message {
   getRow(): number;
   setRow(value: number): void;
@@ -110,10 +78,8 @@ export namespace TermText {
   };
 
   export class Span extends jspb.Message {
-    hasAttr(): boolean;
-    clearAttr(): void;
-    getAttr(): TermAttr | undefined;
-    setAttr(value?: TermAttr): void;
+    getAttr(): number;
+    setAttr(value: number): void;
 
     getText(): string;
     setText(value: string): void;
@@ -138,7 +104,7 @@ export namespace TermText {
 
   export namespace Span {
     export type AsObject = {
-      attr?: TermAttr.AsObject;
+      attr: number;
       text: string;
     };
   }

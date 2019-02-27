@@ -96,6 +96,18 @@ class ReadLine {
   }
 }
 
+interface Attr {
+  fg: number;
+  bg: number;
+}
+
+/** Decodes a packed attribute number as described in terminal.go. */
+function decodeAttr(attr: number): Attr {
+  const fg = attr & 0b1111;
+  const bg = (attr & 0b11110000) >> 4;
+  return { fg, bg };
+}
+
 class Term {
   dom = html('pre', { tabIndex: 0 });
 
@@ -108,7 +120,12 @@ class Term {
     const child = children[row] as HTMLElement;
     child.innerText = '';
     for (const span of msg.getSpansList()) {
-      child.innerText += span.getText();
+      const { fg, bg } = decodeAttr(span.getAttr());
+      const hspan = html('span');
+      if (fg > 0) hspan.classList.add(`fg${fg}`);
+      if (bg > 0) hspan.classList.add(`bg${bg}`);
+      hspan.innerText = span.getText();
+      child.appendChild(hspan);
     }
   }
 }

@@ -115,9 +115,9 @@ func spawn(w *wsWriter, cmd *exec.Cmd) error {
 			var attr vt100.Attr
 			for _, cell := range l {
 				if cell.Attr != attr {
-					text.Spans = append(text.Spans, span)
-					span = &pb.TermText_Span{}
 					attr = cell.Attr
+					text.Spans = append(text.Spans, span)
+					span = &pb.TermText_Span{Attr: int32(attr)}
 				}
 				// TODO: super inefficient.
 				span.Text += fmt.Sprintf("%c", cell.Ch)
@@ -126,7 +126,6 @@ func spawn(w *wsWriter, cmd *exec.Cmd) error {
 				text.Spans = append(text.Spans, span)
 			}
 			w.WriteText(row, text)
-
 		}
 	})
 

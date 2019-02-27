@@ -14,7 +14,6 @@ var global = Function('return this')();
 goog.exportSymbol('proto.proto.Output', null, global);
 goog.exportSymbol('proto.proto.RunRequest', null, global);
 goog.exportSymbol('proto.proto.ServerMsg', null, global);
-goog.exportSymbol('proto.proto.TermAttr', null, global);
 goog.exportSymbol('proto.proto.TermState', null, global);
 goog.exportSymbol('proto.proto.TermText', null, global);
 goog.exportSymbol('proto.proto.TermText.Span', null, global);
@@ -246,175 +245,6 @@ proto.proto.RunRequest.prototype.clearArgvList = function() {
  * @extends {jspb.Message}
  * @constructor
  */
-proto.proto.TermAttr = function(opt_data) {
-  jspb.Message.initialize(this, opt_data, 0, -1, null, null);
-};
-goog.inherits(proto.proto.TermAttr, jspb.Message);
-if (goog.DEBUG && !COMPILED) {
-  proto.proto.TermAttr.displayName = 'proto.proto.TermAttr';
-}
-
-
-if (jspb.Message.GENERATE_TO_OBJECT) {
-/**
- * Creates an object representation of this proto suitable for use in Soy templates.
- * Field names that are reserved in JavaScript and will be renamed to pb_name.
- * To access a reserved field use, foo.pb_<name>, eg, foo.pb_default.
- * For the list of reserved names please see:
- *     com.google.apps.jspb.JsClassTemplate.JS_RESERVED_WORDS.
- * @param {boolean=} opt_includeInstance Whether to include the JSPB instance
- *     for transitional soy proto support: http://goto/soy-param-migration
- * @return {!Object}
- */
-proto.proto.TermAttr.prototype.toObject = function(opt_includeInstance) {
-  return proto.proto.TermAttr.toObject(opt_includeInstance, this);
-};
-
-
-/**
- * Static version of the {@see toObject} method.
- * @param {boolean|undefined} includeInstance Whether to include the JSPB
- *     instance for transitional soy proto support:
- *     http://goto/soy-param-migration
- * @param {!proto.proto.TermAttr} msg The msg instance to transform.
- * @return {!Object}
- * @suppress {unusedLocalVariables} f is only used for nested messages
- */
-proto.proto.TermAttr.toObject = function(includeInstance, msg) {
-  var f, obj = {
-    fg: jspb.Message.getFieldWithDefault(msg, 1, 0),
-    bg: jspb.Message.getFieldWithDefault(msg, 2, 0)
-  };
-
-  if (includeInstance) {
-    obj.$jspbMessageInstance = msg;
-  }
-  return obj;
-};
-}
-
-
-/**
- * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
- * @return {!proto.proto.TermAttr}
- */
-proto.proto.TermAttr.deserializeBinary = function(bytes) {
-  var reader = new jspb.BinaryReader(bytes);
-  var msg = new proto.proto.TermAttr;
-  return proto.proto.TermAttr.deserializeBinaryFromReader(msg, reader);
-};
-
-
-/**
- * Deserializes binary data (in protobuf wire format) from the
- * given reader into the given message object.
- * @param {!proto.proto.TermAttr} msg The message object to deserialize into.
- * @param {!jspb.BinaryReader} reader The BinaryReader to use.
- * @return {!proto.proto.TermAttr}
- */
-proto.proto.TermAttr.deserializeBinaryFromReader = function(msg, reader) {
-  while (reader.nextField()) {
-    if (reader.isEndGroup()) {
-      break;
-    }
-    var field = reader.getFieldNumber();
-    switch (field) {
-    case 1:
-      var value = /** @type {number} */ (reader.readInt32());
-      msg.setFg(value);
-      break;
-    case 2:
-      var value = /** @type {number} */ (reader.readInt32());
-      msg.setBg(value);
-      break;
-    default:
-      reader.skipField();
-      break;
-    }
-  }
-  return msg;
-};
-
-
-/**
- * Serializes the message to binary data (in protobuf wire format).
- * @return {!Uint8Array}
- */
-proto.proto.TermAttr.prototype.serializeBinary = function() {
-  var writer = new jspb.BinaryWriter();
-  proto.proto.TermAttr.serializeBinaryToWriter(this, writer);
-  return writer.getResultBuffer();
-};
-
-
-/**
- * Serializes the given message to binary data (in protobuf wire
- * format), writing to the given BinaryWriter.
- * @param {!proto.proto.TermAttr} message
- * @param {!jspb.BinaryWriter} writer
- * @suppress {unusedLocalVariables} f is only used for nested messages
- */
-proto.proto.TermAttr.serializeBinaryToWriter = function(message, writer) {
-  var f = undefined;
-  f = message.getFg();
-  if (f !== 0) {
-    writer.writeInt32(
-      1,
-      f
-    );
-  }
-  f = message.getBg();
-  if (f !== 0) {
-    writer.writeInt32(
-      2,
-      f
-    );
-  }
-};
-
-
-/**
- * optional int32 fg = 1;
- * @return {number}
- */
-proto.proto.TermAttr.prototype.getFg = function() {
-  return /** @type {number} */ (jspb.Message.getFieldWithDefault(this, 1, 0));
-};
-
-
-/** @param {number} value */
-proto.proto.TermAttr.prototype.setFg = function(value) {
-  jspb.Message.setProto3IntField(this, 1, value);
-};
-
-
-/**
- * optional int32 bg = 2;
- * @return {number}
- */
-proto.proto.TermAttr.prototype.getBg = function() {
-  return /** @type {number} */ (jspb.Message.getFieldWithDefault(this, 2, 0));
-};
-
-
-/** @param {number} value */
-proto.proto.TermAttr.prototype.setBg = function(value) {
-  jspb.Message.setProto3IntField(this, 2, value);
-};
-
-
-
-/**
- * Generated by JsPbCodeGenerator.
- * @param {Array=} opt_data Optional initial data array, typically from a
- * server response, or constructed directly in Javascript. The array is used
- * in place and becomes part of the constructed object. It is not cloned.
- * If no data is provided, the constructed object will be empty, but still
- * valid.
- * @extends {jspb.Message}
- * @constructor
- */
 proto.proto.TermText = function(opt_data) {
   jspb.Message.initialize(this, opt_data, 0, -1, proto.proto.TermText.repeatedFields_, null);
 };
@@ -600,7 +430,7 @@ proto.proto.TermText.Span.prototype.toObject = function(opt_includeInstance) {
  */
 proto.proto.TermText.Span.toObject = function(includeInstance, msg) {
   var f, obj = {
-    attr: (f = msg.getAttr()) && proto.proto.TermAttr.toObject(includeInstance, f),
+    attr: jspb.Message.getFieldWithDefault(msg, 1, 0),
     text: jspb.Message.getFieldWithDefault(msg, 2, "")
   };
 
@@ -639,8 +469,7 @@ proto.proto.TermText.Span.deserializeBinaryFromReader = function(msg, reader) {
     var field = reader.getFieldNumber();
     switch (field) {
     case 1:
-      var value = new proto.proto.TermAttr;
-      reader.readMessage(value,proto.proto.TermAttr.deserializeBinaryFromReader);
+      var value = /** @type {number} */ (reader.readInt32());
       msg.setAttr(value);
       break;
     case 2:
@@ -677,11 +506,10 @@ proto.proto.TermText.Span.prototype.serializeBinary = function() {
 proto.proto.TermText.Span.serializeBinaryToWriter = function(message, writer) {
   var f = undefined;
   f = message.getAttr();
-  if (f != null) {
-    writer.writeMessage(
+  if (f !== 0) {
+    writer.writeInt32(
       1,
-      f,
-      proto.proto.TermAttr.serializeBinaryToWriter
+      f
     );
   }
   f = message.getText();
@@ -695,32 +523,17 @@ proto.proto.TermText.Span.serializeBinaryToWriter = function(message, writer) {
 
 
 /**
- * optional TermAttr attr = 1;
- * @return {?proto.proto.TermAttr}
+ * optional int32 attr = 1;
+ * @return {number}
  */
 proto.proto.TermText.Span.prototype.getAttr = function() {
-  return /** @type{?proto.proto.TermAttr} */ (
-    jspb.Message.getWrapperField(this, proto.proto.TermAttr, 1));
+  return /** @type {number} */ (jspb.Message.getFieldWithDefault(this, 1, 0));
 };
 
 
-/** @param {?proto.proto.TermAttr|undefined} value */
+/** @param {number} value */
 proto.proto.TermText.Span.prototype.setAttr = function(value) {
-  jspb.Message.setWrapperField(this, 1, value);
-};
-
-
-proto.proto.TermText.Span.prototype.clearAttr = function() {
-  this.setAttr(undefined);
-};
-
-
-/**
- * Returns whether this field is set.
- * @return {!boolean}
- */
-proto.proto.TermText.Span.prototype.hasAttr = function() {
-  return jspb.Message.getField(this, 1) != null;
+  jspb.Message.setProto3IntField(this, 1, value);
 };
 
 

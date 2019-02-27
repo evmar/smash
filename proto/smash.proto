@@ -7,15 +7,10 @@ message RunRequest {
   repeated string argv = 3;
 }
 
-message TermAttr {
-  int32 fg = 1;
-  int32 bg = 2;
-}
-
 message TermText {
   int32 row = 1;
   message Span {
-    TermAttr attr = 1;
+    int32 attr = 1;
     string text = 2;
   }
   repeated Span spans = 2;
