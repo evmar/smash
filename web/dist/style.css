@@ -30,6 +30,10 @@ pre {
   visibility: hidden;
 }
 
+.bright {
+  font-weight: bold;
+}
+
 .fg1 {
   color: #2e3436;
 }
@@ -53,4 +57,54 @@ pre {
 }
 .fg8 {
   color: #d3d7cf;
+}
+
+.bright.fg1 {
+  color: #555753;
+}
+.bright.fg2 {
+  color: #ef2929;
+}
+.bright.fg3 {
+  color: #8ae234;
+}
+.bright.fg4 {
+  color: #fce94f;
+}
+.bright.fg5 {
+  color: #729fcf;
+}
+.bright.fg6 {
+  color: #ad7fa8;
+}
+.bright.fg7 {
+  color: #34e2e2;
+}
+.bright.fg8 {
+  color: #eeeeec;
+}
+
+.bg1 {
+  background: #2e3436;
+}
+.bg2 {
+  background: #cc0000;
+}
+.bg3 {
+  background: #4e9a06;
+}
+.bg4 {
+  background: #c4a000;
+}
+.bg5 {
+  background: #3465a4;
+}
+.bg6 {
+  background: #75507b;
+}
+.bg7 {
+  background: #06989a;
+}
+.bg8 {
+  background: #d3d7cf;
 }
