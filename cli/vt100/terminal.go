@@ -1,6 +1,7 @@
 package vt100
 
 import (
+	"bufio"
 	"fmt"
 	"io"
 	"log"
@@ -180,7 +181,7 @@ func NewTermReader(withTerm func(func(t *Terminal))) *TermReader {
 	}
 }
 
-func (t *TermReader) Read(r io.ByteScanner) error {
+func (t *TermReader) Read(r *bufio.Reader) error {
 	c, err := r.ReadByte()
 	if err != nil {
 		return err
@@ -212,7 +213,25 @@ func (t *TermReader) Read(r io.ByteScanner) error {
 			t.fixPosition()
 		})
 	case c >= ' ' && c <= '~':
-		t.writeRune(rune(c), t.Attr)
+		// Plain text.  Peek ahead to read a block of text together.
+		// This lets writeRunes batch its modification.
+		r.UnreadByte()
+		max := r.Buffered()
+		var buf [80]rune
+		if max > 80 {
+			max = 80
+		}
+		for i := 0; i < max; i++ {
+			// Ignore error because we're reading from the buffer.
+			c, _ := r.ReadByte()
+			if c < ' ' || c > '~' {
+				r.UnreadByte()
+				max = i
+			}
+			buf[i] = rune(c)
+		}
+		log.Println("read block", max)
+		t.writeRunes(buf[:max], t.Attr)
 	default:
 		r.UnreadByte()
 		return t.readUTF8(r)
@@ -220,15 +239,21 @@ func (t *TermReader) Read(r io.ByteScanner) error {
 	return nil
 }
 
-func (t *TermReader) writeRune(r rune, attr Attr) {
-	t.WithTerm(func(t *Terminal) {
-		if t.Col == t.Width {
-			t.Row++
-			t.Col = 0
+func (t *Terminal) writeRune(r rune, attr Attr) {
+	if t.Col == t.Width {
+		t.Row++
+		t.Col = 0
+	}
+	t.Col++
+	t.fixPosition()
+	t.Lines[t.Row][t.Col-1] = Cell{r, attr}
+}
+
+func (tr *TermReader) writeRunes(rs []rune, attr Attr) {
+	tr.WithTerm(func(t *Terminal) {
+		for _, r := range rs {
+			t.writeRune(r, attr)
 		}
-		t.Col++
-		t.fixPosition()
-		t.Lines[t.Row][t.Col-1] = Cell{r, attr}
 	})
 }
 
@@ -254,7 +279,7 @@ func (t *TermReader) readUTF8(r io.ByteScanner) error {
 			log.Printf("term: not yet implemented: utf8 start %#v", c)
 		}
 		attr.SetInverse(true)
-		t.writeRune('@', attr)
+		t.writeRunes([]rune{'@'}, attr)
 		return nil
 	}
 
@@ -271,7 +296,8 @@ func (t *TermReader) readUTF8(r io.ByteScanner) error {
 		}
 		uc = uc<<6 | rune(c&0x3F)
 	}
-	t.writeRune(uc, attr)
+	// TODO: read block of UTF here.
+	t.writeRunes([]rune{uc}, attr)
 	return nil
 }
 
@@ -686,7 +712,7 @@ func (t *TermReader) readTo(r io.ByteScanner, end byte) ([]byte, error) {
 // DisplayString inserts a string into the terminal output, as if it had
 // been produced by an underlying tty.
 func (t *TermReader) DisplayString(input string) {
-	r := strings.NewReader(input)
+	r := bufio.NewReader(strings.NewReader(input))
 	var err error
 	for err == nil {
 		err = t.Read(r)
