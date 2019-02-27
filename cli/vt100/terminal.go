@@ -69,7 +69,7 @@ func (a Attr) Validate() error {
 		return fmt.Errorf("%s: bad back color", a)
 	}
 	if uint16(a)&0xFC00 != 0 {
-		return fmt.Errorf("%s: extra bits", uint16(a))
+		return fmt.Errorf("%s: extra bits", a)
 	}
 	return nil
 }
