@@ -120,15 +120,22 @@ class Term {
       this.dom.appendChild(html('div'));
     }
     const child = children[row] as HTMLElement;
-    child.innerText = '';
-    for (const span of msg.getSpansList()) {
-      const { fg, bg, bright } = decodeAttr(span.getAttr());
-      const hspan = html('span');
-      if (bright) hspan.classList.add(`bright`);
-      if (fg > 0) hspan.classList.add(`fg${fg}`);
-      if (bg > 0) hspan.classList.add(`bg${bg}`);
-      hspan.innerText = span.getText();
-      child.appendChild(hspan);
+    const spans = msg.getSpansList();
+    if (spans.length === 0) {
+      // Empty line. Set text to something non-empty so the div isn't
+      // collapsed.
+      child.innerText = ' ';
+    } else {
+      child.innerText = '';
+      for (const span of spans) {
+        const { fg, bg, bright } = decodeAttr(span.getAttr());
+        const hspan = html('span');
+        if (bright) hspan.classList.add(`bright`);
+        if (fg > 0) hspan.classList.add(`fg${fg}`);
+        if (bg > 0) hspan.classList.add(`bg${bg}`);
+        hspan.innerText = span.getText();
+        child.appendChild(hspan);
+      }
     }
   }
 }
