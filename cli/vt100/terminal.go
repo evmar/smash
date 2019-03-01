@@ -207,6 +207,8 @@ func (tr *TermReader) Read(r *bufio.Reader) error {
 			}
 			tr.Dirty.Cursor = true
 		})
+	case c == 0xf: // exit_alt_charset_mode under screen(?)
+		// ignore
 	case c == 0x1b:
 		return tr.readEscape(r)
 	case c == '\r':

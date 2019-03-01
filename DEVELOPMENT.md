@@ -36,3 +36,9 @@ Forwarder](https://chrome.google.com/webstore/detail/connection-forwarder/ahaijn
 ```sh
 $ convert -size 32x32 -gravity center -background white -fill black label:">" icon.png
 ```
+
+## vt100
+
+Run `script` then the command to capture raw terminal output.
+
+Run `infocmp -L` to understand what the terminal outputs mean.
