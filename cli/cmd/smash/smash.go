@@ -11,6 +11,7 @@ import (
 	"path/filepath"
 	"sync"
 	"syscall"
+	"time"
 
 	pb "github.com/evmar/smash/proto"
 	"github.com/evmar/smash/vt100"
@@ -45,7 +46,7 @@ type wsWriter struct {
 	cell int32
 }
 
-func (w *wsWriter) WriteText(row int, text *pb.TermText) error {
+func (w *wsWriter) WriteText(text *pb.TermText) error {
 	return w.conn.writeMsg(&pb.ServerMsg{Msg: &pb.ServerMsg_Output{&pb.Output{
 		Cell:   w.cell,
 		Output: &pb.Output_Text{text},
@@ -72,17 +73,14 @@ func isPtyEOFError(err error) bool {
 	return false
 }
 
-func termLoop(tr *vt100.TermReader, r io.Reader) {
+func termLoop(tr *vt100.TermReader, r io.Reader) error {
 	br := bufio.NewReader(r)
 	for {
 		if err := tr.Read(br); err != nil {
 			if isPtyEOFError(err) {
 				err = io.EOF
 			}
-			if err != io.EOF {
-				// TODO: w.WriteError(err.Error())
-			}
-			return
+			return err
 		}
 	}
 }
@@ -101,42 +99,86 @@ func spawn(w *wsWriter, cmd *exec.Cmd) error {
 		return err
 	}
 
-	var mu sync.Mutex
+	var mu sync.Mutex // protects term, drawPending, and done
+	wake := sync.NewCond(&mu)
 	term := vt100.NewTerminal()
+	drawPending := false
+	var done error
+
 	var tr *vt100.TermReader
-	tr = vt100.NewTermReader(func(f func(t *vt100.Terminal)) {
-		mu.Lock()
-		defer mu.Unlock()
-		f(term)
+	renderFromDirty := func() {
 		allDirty := tr.Dirty.Lines[-1]
+		text := &pb.TermText{}
 		for row, l := range term.Lines {
 			if !(allDirty || tr.Dirty.Lines[row]) {
 				continue
 			}
-			text := &pb.TermText{
+			rowSpans := &pb.TermText_RowSpans{
 				Row: int32(row),
 			}
+			text.RowSpans = append(text.RowSpans, rowSpans)
 			span := &pb.TermText_Span{}
 			var attr vt100.Attr
 			for _, cell := range l {
 				if cell.Attr != attr {
 					attr = cell.Attr
-					text.Spans = append(text.Spans, span)
+					rowSpans.Spans = append(rowSpans.Spans, span)
 					span = &pb.TermText_Span{Attr: int32(attr)}
 				}
 				// TODO: super inefficient.
 				span.Text += fmt.Sprintf("%c", cell.Ch)
 			}
 			if len(span.Text) > 0 {
-				text.Spans = append(text.Spans, span)
+				rowSpans.Spans = append(rowSpans.Spans, span)
 			}
-			w.WriteText(row, text)
 		}
-		tr.Dirty.Reset()
+		w.WriteText(text)
+	}
+
+	tr = vt100.NewTermReader(func(f func(t *vt100.Terminal)) {
+		// This is called from the 'go termLoop' goroutine,
+		// when the vt100 impl wants to update the terminal.
+		mu.Lock()
+		f(term)
+		if !drawPending {
+			drawPending = true
+			wake.Signal()
+		}
+		mu.Unlock()
 	})
 
-	go termLoop(tr, f)
+	go func() {
+		err := termLoop(tr, f)
+		mu.Lock()
+		done = err
+		wake.Signal()
+		mu.Unlock()
+	}()
 
+	for {
+		mu.Lock()
+		for !drawPending && done == nil {
+			wake.Wait()
+		}
+
+		if done == nil {
+			mu.Unlock()
+			// Allow more pending paints to enqueue.
+			time.Sleep(10 * time.Millisecond)
+			mu.Lock()
+		}
+
+		renderFromDirty()
+		tr.Dirty.Reset()
+		drawPending = false
+		mu.Unlock()
+
+		if done != nil {
+			break
+		}
+	}
+
+	log.Println(done)
 	return cmd.Wait()
 }
 

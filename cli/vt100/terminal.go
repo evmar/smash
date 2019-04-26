@@ -166,6 +166,10 @@ type TermDirty struct {
 	Lines  map[int]bool
 }
 
+func (t *TermDirty) IsDirty() bool {
+	return t.Cursor || len(t.Lines) > 0
+}
+
 func (t *TermDirty) Reset() {
 	t.Lines = make(map[int]bool)
 }

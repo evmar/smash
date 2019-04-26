@@ -8,12 +8,15 @@ message RunRequest {
 }
 
 message TermText {
-  int32 row = 1;
+  repeated RowSpans row_spans = 1;
+  message RowSpans {
+    int32 row = 1;
+    repeated Span spans = 2;
+  }
   message Span {
     int32 attr = 1;
     string text = 2;
   }
-  repeated Span spans = 2;
 }
 
 message TermState {

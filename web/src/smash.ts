@@ -114,27 +114,34 @@ class Term {
   dom = html('pre', { tabIndex: 0 });
 
   onUpdate(msg: pb.TermText) {
+    console.log('update:', msg.getRowSpansList().length);
     const children = this.dom.children;
-    const row = msg.getRow();
-    for (var childCount = children.length; childCount < row + 1; childCount++) {
-      this.dom.appendChild(html('div'));
-    }
-    const child = children[row] as HTMLElement;
-    const spans = msg.getSpansList();
-    if (spans.length === 0) {
-      // Empty line. Set text to something non-empty so the div isn't
-      // collapsed.
-      child.innerText = ' ';
-    } else {
-      child.innerText = '';
-      for (const span of spans) {
-        const { fg, bg, bright } = decodeAttr(span.getAttr());
-        const hspan = html('span');
-        if (bright) hspan.classList.add(`bright`);
-        if (fg > 0) hspan.classList.add(`fg${fg}`);
-        if (bg > 0) hspan.classList.add(`bg${bg}`);
-        hspan.innerText = span.getText();
-        child.appendChild(hspan);
+    for (const rowSpans of msg.getRowSpansList()) {
+      const row = rowSpans.getRow();
+      for (
+        var childCount = children.length;
+        childCount < row + 1;
+        childCount++
+      ) {
+        this.dom.appendChild(html('div'));
+      }
+      const child = children[row] as HTMLElement;
+      const spans = rowSpans.getSpansList();
+      if (spans.length === 0) {
+        // Empty line. Set text to something non-empty so the div isn't
+        // collapsed.
+        child.innerText = ' ';
+      } else {
+        child.innerText = '';
+        for (const span of spans) {
+          const { fg, bg, bright } = decodeAttr(span.getAttr());
+          const hspan = html('span');
+          if (bright) hspan.classList.add(`bright`);
+          if (fg > 0) hspan.classList.add(`fg${fg}`);
+          if (bg > 0) hspan.classList.add(`bg${bg}`);
+          hspan.innerText = span.getText();
+          child.appendChild(hspan);
+        }
       }
     }
   }

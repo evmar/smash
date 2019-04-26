@@ -45,13 +45,10 @@ export namespace RunRequest {
 }
 
 export class TermText extends jspb.Message {
-  getRow(): number;
-  setRow(value: number): void;
-
-  clearSpansList(): void;
-  getSpansList(): Array<TermText.Span>;
-  setSpansList(value: Array<TermText.Span>): void;
-  addSpans(value?: TermText.Span, index?: number): TermText.Span;
+  clearRowSpansList(): void;
+  getRowSpansList(): Array<TermText.RowSpans>;
+  setRowSpansList(value: Array<TermText.RowSpans>): void;
+  addRowSpans(value?: TermText.RowSpans, index?: number): TermText.RowSpans;
 
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): TermText.AsObject;
@@ -73,9 +70,42 @@ export class TermText extends jspb.Message {
 
 export namespace TermText {
   export type AsObject = {
-    row: number;
-    spansList: Array<TermText.Span.AsObject>;
+    rowSpansList: Array<TermText.RowSpans.AsObject>;
   };
+
+  export class RowSpans extends jspb.Message {
+    getRow(): number;
+    setRow(value: number): void;
+
+    clearSpansList(): void;
+    getSpansList(): Array<TermText.Span>;
+    setSpansList(value: Array<TermText.Span>): void;
+    addSpans(value?: TermText.Span, index?: number): TermText.Span;
+
+    serializeBinary(): Uint8Array;
+    toObject(includeInstance?: boolean): RowSpans.AsObject;
+    static toObject(includeInstance: boolean, msg: RowSpans): RowSpans.AsObject;
+    static extensions: { [key: number]: jspb.ExtensionFieldInfo<jspb.Message> };
+    static extensionsBinary: {
+      [key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>;
+    };
+    static serializeBinaryToWriter(
+      message: RowSpans,
+      writer: jspb.BinaryWriter
+    ): void;
+    static deserializeBinary(bytes: Uint8Array): RowSpans;
+    static deserializeBinaryFromReader(
+      message: RowSpans,
+      reader: jspb.BinaryReader
+    ): RowSpans;
+  }
+
+  export namespace RowSpans {
+    export type AsObject = {
+      row: number;
+      spansList: Array<TermText.Span.AsObject>;
+    };
+  }
 
   export class Span extends jspb.Message {
     getAttr(): number;
