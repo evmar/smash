@@ -289,7 +289,7 @@ proto.proto.TermText.prototype.toObject = function(opt_includeInstance) {
  */
 proto.proto.TermText.toObject = function(includeInstance, msg) {
   var f, obj = {
-    rowSpansList: jspb.Message.toObjectList(msg.getRowSpansList(),
+    rowsList: jspb.Message.toObjectList(msg.getRowsList(),
     proto.proto.TermText.RowSpans.toObject, includeInstance)
   };
 
@@ -330,7 +330,7 @@ proto.proto.TermText.deserializeBinaryFromReader = function(msg, reader) {
     case 1:
       var value = new proto.proto.TermText.RowSpans;
       reader.readMessage(value,proto.proto.TermText.RowSpans.deserializeBinaryFromReader);
-      msg.addRowSpans(value);
+      msg.addRows(value);
       break;
     default:
       reader.skipField();
@@ -361,7 +361,7 @@ proto.proto.TermText.prototype.serializeBinary = function() {
  */
 proto.proto.TermText.serializeBinaryToWriter = function(message, writer) {
   var f = undefined;
-  f = message.getRowSpansList();
+  f = message.getRowsList();
   if (f.length > 0) {
     writer.writeRepeatedMessage(
       1,
@@ -737,17 +737,17 @@ proto.proto.TermText.Span.prototype.setText = function(value) {
 
 
 /**
- * repeated RowSpans row_spans = 1;
+ * repeated RowSpans rows = 1;
  * @return {!Array<!proto.proto.TermText.RowSpans>}
  */
-proto.proto.TermText.prototype.getRowSpansList = function() {
+proto.proto.TermText.prototype.getRowsList = function() {
   return /** @type{!Array<!proto.proto.TermText.RowSpans>} */ (
     jspb.Message.getRepeatedWrapperField(this, proto.proto.TermText.RowSpans, 1));
 };
 
 
 /** @param {!Array<!proto.proto.TermText.RowSpans>} value */
-proto.proto.TermText.prototype.setRowSpansList = function(value) {
+proto.proto.TermText.prototype.setRowsList = function(value) {
   jspb.Message.setRepeatedWrapperField(this, 1, value);
 };
 
@@ -757,13 +757,13 @@ proto.proto.TermText.prototype.setRowSpansList = function(value) {
  * @param {number=} opt_index
  * @return {!proto.proto.TermText.RowSpans}
  */
-proto.proto.TermText.prototype.addRowSpans = function(opt_value, opt_index) {
+proto.proto.TermText.prototype.addRows = function(opt_value, opt_index) {
   return jspb.Message.addToRepeatedWrapperField(this, 1, opt_value, proto.proto.TermText.RowSpans, opt_index);
 };
 
 
-proto.proto.TermText.prototype.clearRowSpansList = function() {
-  this.setRowSpansList([]);
+proto.proto.TermText.prototype.clearRowsList = function() {
+  this.setRowsList([]);
 };
 
 

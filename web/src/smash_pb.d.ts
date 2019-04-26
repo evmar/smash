@@ -45,10 +45,10 @@ export namespace RunRequest {
 }
 
 export class TermText extends jspb.Message {
-  clearRowSpansList(): void;
-  getRowSpansList(): Array<TermText.RowSpans>;
-  setRowSpansList(value: Array<TermText.RowSpans>): void;
-  addRowSpans(value?: TermText.RowSpans, index?: number): TermText.RowSpans;
+  clearRowsList(): void;
+  getRowsList(): Array<TermText.RowSpans>;
+  setRowsList(value: Array<TermText.RowSpans>): void;
+  addRows(value?: TermText.RowSpans, index?: number): TermText.RowSpans;
 
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): TermText.AsObject;
@@ -70,7 +70,7 @@ export class TermText extends jspb.Message {
 
 export namespace TermText {
   export type AsObject = {
-    rowSpansList: Array<TermText.RowSpans.AsObject>;
+    rowsList: Array<TermText.RowSpans.AsObject>;
   };
 
   export class RowSpans extends jspb.Message {

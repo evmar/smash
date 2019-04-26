@@ -116,7 +116,7 @@ func spawn(w *wsWriter, cmd *exec.Cmd) error {
 			rowSpans := &pb.TermText_RowSpans{
 				Row: int32(row),
 			}
-			text.RowSpans = append(text.RowSpans, rowSpans)
+			text.Rows = append(text.Rows, rowSpans)
 			span := &pb.TermText_Span{}
 			var attr vt100.Attr
 			for _, cell := range l {

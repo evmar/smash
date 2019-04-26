@@ -8,7 +8,7 @@ message RunRequest {
 }
 
 message TermText {
-  repeated RowSpans row_spans = 1;
+  repeated RowSpans rows = 1;
   message RowSpans {
     int32 row = 1;
     repeated Span spans = 2;

@@ -114,9 +114,8 @@ class Term {
   dom = html('pre', { tabIndex: 0 });
 
   onUpdate(msg: pb.TermText) {
-    console.log('update:', msg.getRowSpansList().length);
     const children = this.dom.children;
-    for (const rowSpans of msg.getRowSpansList()) {
+    for (const rowSpans of msg.getRowsList()) {
       const row = rowSpans.getRow();
       for (
         var childCount = children.length;
