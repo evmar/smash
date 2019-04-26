@@ -1,10 +1,22 @@
 syntax = "proto3";
 package proto;
 
+message ClientMessage {
+  oneof msg {
+    RunRequest run = 1;
+    KeyEvent key = 2;
+  }
+}
+
 message RunRequest {
   int32 cell = 1;
   string cwd = 2;
   repeated string argv = 3;
+}
+
+message KeyEvent {
+  int32 cell = 1;
+  string keys = 2;
 }
 
 message TermText {

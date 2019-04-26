@@ -112,6 +112,12 @@ function decodeAttr(attr: number): Attr {
 
 class Term {
   dom = html('pre', { tabIndex: 0 });
+  send = (msg: pb.KeyEvent) => {};
+
+  constructor(private id: number) {
+    this.dom.onkeydown = e => this.onKeyDown(e);
+    this.dom.onkeypress = e => this.onKeyPress(e);
+  }
 
   onUpdate(msg: pb.TermText) {
     const children = this.dom.children;
@@ -144,20 +150,46 @@ class Term {
       }
     }
   }
+
+  onKeyDown(ev: KeyboardEvent) {
+    switch (ev.key) {
+      case 'Alt':
+      case 'Control':
+      case 'Shift':
+      case 'Unidentified':
+        return '';
+    }
+    console.log('down', ev.key, ev.char, ev.altKey);
+    //ev.preventDefault();
+  }
+  onKeyPress(ev: KeyboardEvent) {
+    const msg = new pb.KeyEvent();
+    msg.setCell(this.id);
+    msg.setKeys(ev.key);
+    this.send(msg);
+    ev.preventDefault();
+  }
 }
 
 class Cell {
   dom = html('div', { className: 'cell' });
   readline = new ReadLine();
-  term = new Term();
+  term = new Term(this.id);
   onExit = (id: number) => {};
+  send = (msg: pb.ClientMessage) => {};
 
   constructor(public id: number) {
     this.dom.appendChild(this.readline.dom);
     this.dom.appendChild(this.term.dom);
+    this.term.send = key => {
+      const msg = new pb.ClientMessage();
+      msg.setKey(key);
+      this.send(msg);
+    };
 
     this.readline.oncommit = cmd => {
-      this.readline.input.blur();
+      this.term.dom.focus();
+      console.log(document.activeElement);
       const exec = shell.exec(cmd);
       if (sh.isLocal(exec)) {
         this.term.dom.innerText += exec.output;
@@ -181,6 +213,7 @@ class Cell {
 
 class CellStack {
   cells: Cell[] = [];
+  send = (msg: pb.ClientMessage) => {};
 
   addNew() {
     const id = this.cells.length;
@@ -188,6 +221,7 @@ class CellStack {
     cell.onExit = (id: number) => {
       this.onExit(id);
     };
+    cell.send = msg => this.send(msg);
     this.cells.push(cell);
     document.body.appendChild(cell.dom);
     cell.readline.input.focus();
@@ -204,10 +238,12 @@ class CellStack {
 
 function spawn(id: number, cmd: sh.ExecRemote) {
   if (!ws) return;
-  const msg = new pb.RunRequest();
-  msg.setCell(id);
-  msg.setCwd(cmd.cwd);
-  msg.setArgvList(cmd.cmd);
+  const run = new pb.RunRequest();
+  run.setCell(id);
+  run.setCwd(cmd.cwd);
+  run.setArgvList(cmd.cmd);
+  const msg = new pb.ClientMessage();
+  msg.setRun(run);
   ws.send(msg.serializeBinary());
 }
 
@@ -254,6 +290,10 @@ async function main() {
   ws.onerror = err => {
     console.error(`connection failed: ${err}`);
     ws = null;
+  };
+  cellStack.send = msg => {
+    if (!ws) return;
+    ws.send(msg.serializeBinary());
   };
 }
 

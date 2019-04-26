@@ -3,6 +3,52 @@
 
 import * as jspb from 'google-protobuf';
 
+export class ClientMessage extends jspb.Message {
+  hasRun(): boolean;
+  clearRun(): void;
+  getRun(): RunRequest | undefined;
+  setRun(value?: RunRequest): void;
+
+  hasKey(): boolean;
+  clearKey(): void;
+  getKey(): KeyEvent | undefined;
+  setKey(value?: KeyEvent): void;
+
+  getMsgCase(): ClientMessage.MsgCase;
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): ClientMessage.AsObject;
+  static toObject(
+    includeInstance: boolean,
+    msg: ClientMessage
+  ): ClientMessage.AsObject;
+  static extensions: { [key: number]: jspb.ExtensionFieldInfo<jspb.Message> };
+  static extensionsBinary: {
+    [key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>;
+  };
+  static serializeBinaryToWriter(
+    message: ClientMessage,
+    writer: jspb.BinaryWriter
+  ): void;
+  static deserializeBinary(bytes: Uint8Array): ClientMessage;
+  static deserializeBinaryFromReader(
+    message: ClientMessage,
+    reader: jspb.BinaryReader
+  ): ClientMessage;
+}
+
+export namespace ClientMessage {
+  export type AsObject = {
+    run?: RunRequest.AsObject;
+    key?: KeyEvent.AsObject;
+  };
+
+  export enum MsgCase {
+    MSG_NOT_SET = 0,
+    RUN = 1,
+    KEY = 2
+  }
+}
+
 export class RunRequest extends jspb.Message {
   getCell(): number;
   setCell(value: number): void;
@@ -41,6 +87,38 @@ export namespace RunRequest {
     cell: number;
     cwd: string;
     argvList: Array<string>;
+  };
+}
+
+export class KeyEvent extends jspb.Message {
+  getCell(): number;
+  setCell(value: number): void;
+
+  getKeys(): string;
+  setKeys(value: string): void;
+
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): KeyEvent.AsObject;
+  static toObject(includeInstance: boolean, msg: KeyEvent): KeyEvent.AsObject;
+  static extensions: { [key: number]: jspb.ExtensionFieldInfo<jspb.Message> };
+  static extensionsBinary: {
+    [key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>;
+  };
+  static serializeBinaryToWriter(
+    message: KeyEvent,
+    writer: jspb.BinaryWriter
+  ): void;
+  static deserializeBinary(bytes: Uint8Array): KeyEvent;
+  static deserializeBinaryFromReader(
+    message: KeyEvent,
+    reader: jspb.BinaryReader
+  ): KeyEvent;
+}
+
+export namespace KeyEvent {
+  export type AsObject = {
+    cell: number;
+    keys: string;
   };
 }
 

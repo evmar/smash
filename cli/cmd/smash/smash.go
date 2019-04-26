@@ -219,12 +219,17 @@ func serveWS(w http.ResponseWriter, r *http.Request) error {
 		if err != nil {
 			return err
 		}
-		msg := pb.RunRequest{}
+		msg := pb.ClientMessage{}
 		if err := proto.Unmarshal(buf, &msg); err != nil {
 			return err
 		}
 
-		runCmd(conn, &msg)
+		if run := msg.GetRun(); run != nil {
+			go runCmd(conn, run)
+		} else if key := msg.GetKey(); key != nil {
+			// TODO: handle key
+			fmt.Println(key)
+		}
 	}
 	return nil
 }
