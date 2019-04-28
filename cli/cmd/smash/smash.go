@@ -26,8 +26,9 @@ var upgrader = websocket.Upgrader{
 	EnableCompression: true,
 }
 
+// conn wraps a websocket.Conn with a lock.
 type conn struct {
-	mu sync.Mutex
+	sync.Mutex
 	ws *websocket.Conn
 }
 
@@ -36,28 +37,9 @@ func (c *conn) writeMsg(msg *pb.ServerMsg) error {
 	if err != nil {
 		return err
 	}
-	c.mu.Lock()
-	defer c.mu.Unlock()
+	c.Lock()
+	defer c.Unlock()
 	return c.ws.WriteMessage(websocket.BinaryMessage, data)
-}
-
-type wsWriter struct {
-	conn *conn
-	cell int32
-}
-
-func (w *wsWriter) WriteText(text *pb.TermText) error {
-	return w.conn.writeMsg(&pb.ServerMsg{Msg: &pb.ServerMsg_Output{&pb.Output{
-		Cell:   w.cell,
-		Output: &pb.Output_Text{text},
-	}}})
-}
-
-func (w *wsWriter) WriteError(msg string) error {
-	return w.conn.writeMsg(&pb.ServerMsg{Msg: &pb.ServerMsg_Output{&pb.Output{
-		Cell:   w.cell,
-		Output: &pb.Output_Error{msg},
-	}}})
 }
 
 // isPtyEOFError tests for a pty close error.
@@ -73,6 +55,39 @@ func isPtyEOFError(err error) bool {
 	return false
 }
 
+// command represents a subprocess running on behalf of the user.
+// req.Cell has the id of the command for use in protocol messages.
+type command struct {
+	conn *conn
+	// req is the initial request that caused the command to be spawned.
+	req *pb.RunRequest
+	cmd *exec.Cmd
+
+	// stdin accepts input keys and forwards them to the subprocess.
+	stdin chan []byte
+}
+
+func newCmd(conn *conn, req *pb.RunRequest) *command {
+	cmd := &exec.Cmd{Path: req.Argv[0], Args: req.Argv}
+	cmd.Dir = req.Cwd
+	return &command{
+		conn: conn,
+		req:  req,
+		cmd:  cmd,
+	}
+}
+
+func (cmd *command) send(out pb.IsOutput_Output) error {
+	return cmd.conn.writeMsg(&pb.ServerMsg{Msg: &pb.ServerMsg_Output{&pb.Output{
+		Cell:   cmd.req.Cell,
+		Output: out,
+	}}})
+}
+
+func (cmd *command) sendError(msg string) error {
+	return cmd.send(&pb.Output_Error{msg})
+}
+
 func termLoop(tr *vt100.TermReader, r io.Reader) error {
 	br := bufio.NewReader(r)
 	for {
@@ -85,19 +100,27 @@ func termLoop(tr *vt100.TermReader, r io.Reader) error {
 	}
 }
 
-func spawn(w *wsWriter, cmd *exec.Cmd) error {
-	if filepath.Base(cmd.Path) == cmd.Path {
+func (cmd *command) run() error {
+	if filepath.Base(cmd.cmd.Path) == cmd.cmd.Path {
 		// TODO: should use shell env $PATH.
-		if p, err := exec.LookPath(cmd.Path); err != nil {
+		if p, err := exec.LookPath(cmd.cmd.Path); err != nil {
 			return err
 		} else {
-			cmd.Path = p
+			cmd.cmd.Path = p
 		}
 	}
-	f, err := pty.Start(cmd)
+
+	f, err := pty.Start(cmd.cmd)
 	if err != nil {
 		return err
 	}
+
+	cmd.stdin = make(chan []byte)
+	go func() {
+		for input := range cmd.stdin {
+			f.Write(input)
+		}
+	}()
 
 	var mu sync.Mutex // protects term, drawPending, and done
 	wake := sync.NewCond(&mu)
@@ -132,7 +155,11 @@ func spawn(w *wsWriter, cmd *exec.Cmd) error {
 				rowSpans.Spans = append(rowSpans.Spans, span)
 			}
 		}
-		w.WriteText(text)
+
+		cmd.conn.writeMsg(&pb.ServerMsg{Msg: &pb.ServerMsg_Output{&pb.Output{
+			Cell:   cmd.req.Cell,
+			Output: &pb.Output_Text{text},
+		}}})
 	}
 
 	tr = vt100.NewTermReader(func(f func(t *vt100.Terminal)) {
@@ -178,32 +205,18 @@ func spawn(w *wsWriter, cmd *exec.Cmd) error {
 		}
 	}
 
-	log.Println(done)
-	return cmd.Wait()
-}
-
-func runCmd(conn *conn, req *pb.RunRequest) {
-	log.Println("run:", req)
-	cmd := &exec.Cmd{Path: req.Argv[0], Args: req.Argv}
-	cmd.Dir = req.Cwd
-	w := &wsWriter{conn: conn, cell: req.Cell}
+	log.Println(done) // TODO: use error
 	exitCode := 0
-	if err := spawn(w, cmd); err != nil {
+	if err := cmd.cmd.Wait(); err != nil {
 		if eerr, ok := err.(*exec.ExitError); ok {
 			serr := eerr.Sys().(syscall.WaitStatus)
 			exitCode = serr.ExitStatus()
 		} else {
-			w.WriteError(err.Error())
+			cmd.sendError(err.Error())
 			exitCode = 1
 		}
 	}
-	err := conn.writeMsg(&pb.ServerMsg{Msg: &pb.ServerMsg_Output{&pb.Output{
-		Cell:   w.cell,
-		Output: &pb.Output_ExitCode{int32(exitCode)},
-	}}})
-	if err != nil {
-		log.Println(err)
-	}
+	return cmd.send(&pb.Output_ExitCode{int32(exitCode)})
 }
 
 func serveWS(w http.ResponseWriter, r *http.Request) error {
@@ -214,6 +227,7 @@ func serveWS(w http.ResponseWriter, r *http.Request) error {
 	conn := &conn{
 		ws: wsConn,
 	}
+	commands := map[int]*command{}
 	for {
 		_, buf, err := conn.ws.ReadMessage()
 		if err != nil {
@@ -225,10 +239,23 @@ func serveWS(w http.ResponseWriter, r *http.Request) error {
 		}
 
 		if run := msg.GetRun(); run != nil {
-			go runCmd(conn, run)
+			cmd := newCmd(conn, run)
+			commands[int(run.Cell)] = cmd
+			go func() {
+				err := cmd.run()
+				if err != nil {
+					log.Println(err)
+				}
+			}()
 		} else if key := msg.GetKey(); key != nil {
-			// TODO: handle key
-			fmt.Println(key)
+			cmd := commands[int(key.Cell)]
+			if cmd == nil {
+				log.Println("got key msg for unknown command", key.Cell)
+				continue
+			}
+			// TODO: what if cmd failed?
+			// TODO: what if pipe is blocked?
+			cmd.stdin <- []byte(key.Keys)
 		}
 	}
 	return nil
