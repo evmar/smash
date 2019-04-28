@@ -2,8 +2,10 @@ package vt100
 
 import (
 	"bufio"
+	"bytes"
 	"fmt"
 	"io"
+	"io/ioutil"
 	"log"
 	"strings"
 	"unicode/utf8"
@@ -193,6 +195,7 @@ func NewTermReader(withTerm func(func(t *Terminal))) *TermReader {
 		Dirty:    TermDirty{Lines: make(map[int]bool)},
 		WithTerm: withTerm,
 		TODOs:    FeatureLog{},
+		Input:    ioutil.Discard,
 	}
 }
 
@@ -367,8 +370,14 @@ func (tr *TermReader) readEscape(r io.ByteScanner) error {
 				t.Title = string(text)
 				// TODO: tr.Dirty
 			})
+		case 10, 11, 12, 13, 14, 15, 16, 17, 18, 19: // dymamic colors
+			if string(text) == "?" {
+				tr.TODOs.Add("vt100 dynamic color query %d", n)
+			} else {
+				tr.TODOs.Add("vt100 dynamic color %d %q", n, text)
+			}
 		default:
-			log.Printf("term: bad OSC %d", n)
+			log.Printf("term: bad OSC %d %v", n, text)
 		}
 	case c == 'M': // move up/insert line
 		tr.WithTerm(func(t *Terminal) {
@@ -388,6 +397,8 @@ func (tr *TermReader) readEscape(r io.ByteScanner) error {
 			}
 			tr.Dirty.Lines[-1] = true
 		})
+	case c == 'P': // device control string
+		return tr.readDCS(r)
 	default:
 		log.Printf("term: unknown escape %s", showChar(c))
 	}
@@ -455,6 +466,16 @@ L:
 	}
 
 	switch {
+	case c == '$': // request ansi/dec mode
+		// Ends in "$p" for some reason.
+		if _, err := tr.expect(r, 'p'); err != nil {
+			return err
+		}
+		if !qflag {
+			tr.TODOs.Add("request ANSI mode")
+		} else {
+			tr.TODOs.Add("request DEC private mode")
+		}
 	case c == '@': // insert blanks
 		n := 1
 		readArgs(args, &n)
@@ -624,8 +645,12 @@ L:
 				// "very visible cursor" state.
 			case 25: // show cursor
 				t.HideCursor = !set
+			case 1000, 1001, 1002: // mouse
+				tr.TODOs.Add("mouse handling")
 			case 1049: // alternate screen buffer
 				tr.TODOs.Add("alternate screen buffer %v", set)
+			case 2004: // bracketed paste
+				tr.TODOs.Add("bracketed paste")
 			default:
 				log.Printf("term: unknown dec private mode %v %v", args, set)
 			}
@@ -643,12 +668,22 @@ L:
 				tr.Attr.SetBright(true)
 			case arg == 7:
 				tr.Attr.SetInverse(true)
+			case arg == 23: // clear italics
+				// ignore
+			case arg == 29: // clear crossed-out
+				// ignore
 			case arg == 27:
 				tr.Attr.SetInverse(false)
 			case arg >= 30 && arg < 40:
 				tr.Attr.SetColor(mapColor(arg-30, arg))
 			case arg >= 40 && arg < 50:
 				tr.Attr.SetBackColor(mapColor(arg-40, arg))
+			case arg >= 90 && arg <= 97:
+				tr.Attr.SetBright(true)
+				tr.Attr.SetColor(mapColor(arg-90, arg))
+			case arg >= 100 && arg <= 107:
+				// TODO: set bright background?
+				tr.Attr.SetBackColor(mapColor(arg-100, arg))
 			default:
 				log.Printf("term: unknown color %v", args)
 			}
@@ -695,8 +730,50 @@ L:
 				tr.TODOs.Add("set scrolling region %v", args)
 			}
 		})
+	case c == 't': // window manipulation
+		tr.TODOs.Add("window manip %v", args)
 	default:
 		log.Printf("term: unknown CSI %v %s", args, showChar(c))
+	}
+	return nil
+}
+
+func (t *TermReader) readDCS(r io.ByteScanner) error {
+	c, err := r.ReadByte()
+	if err != nil {
+		return err
+	}
+	switch c {
+	case '+':
+		c, err := r.ReadByte()
+		if err != nil {
+			return err
+		}
+		switch c {
+		case 'q': // request termcap/terminfo string
+			buf := bytes.Buffer{}
+		L:
+			for {
+				c, err := r.ReadByte()
+				if err != nil {
+					return err
+				}
+				switch c {
+				case '\x1b':
+					// String is terminated by the sequence
+					//  ESC \
+					if _, err := t.expect(r, '\\'); err != nil {
+						return err
+					}
+					break L
+				default:
+					buf.WriteByte(c)
+				}
+			}
+			t.TODOs.Add("request termcap string %q", buf.String())
+		default:
+			log.Printf("term: unknown DCS +%c", c)
+		}
 	}
 	return nil
 }
