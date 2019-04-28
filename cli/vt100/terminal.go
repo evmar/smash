@@ -118,7 +118,7 @@ type FeatureLog map[string]int
 
 func (f FeatureLog) Add(text string, args ...interface{}) {
 	if _, known := f[text]; !known {
-		log.Printf("TODO: "+text, args...)
+		log.Printf("vt100 TODO: "+text, args...)
 	}
 	f[text]++
 }

@@ -130,6 +130,7 @@ func (cmd *command) run() error {
 
 	var tr *vt100.TermReader
 	renderFromDirty := func() {
+		// Called with mu held.
 		allDirty := tr.Dirty.Lines[-1]
 		text := &pb.TermText{}
 		for row, l := range term.Lines {
@@ -156,10 +157,10 @@ func (cmd *command) run() error {
 			}
 		}
 
-		cmd.conn.writeMsg(&pb.ServerMsg{Msg: &pb.ServerMsg_Output{&pb.Output{
-			Cell:   cmd.req.Cell,
-			Output: &pb.Output_Text{text},
-		}}})
+		err := cmd.send(&pb.Output_Text{text})
+		if err != nil {
+			done = err
+		}
 	}
 
 	tr = vt100.NewTermReader(func(f func(t *vt100.Terminal)) {
@@ -205,14 +206,26 @@ func (cmd *command) run() error {
 		}
 	}
 
-	log.Println(done) // TODO: use error
+	mu.Lock()
+
+	// done is the error reported by the terminal.
+	// We expect EOF in normal execution.
+	if done != io.EOF {
+		if err := cmd.sendError(fmt.Sprintf("pty: %s", done.Error())); err != nil {
+			return err
+		}
+	}
+
+	// Reap the subprocess and report the exit code.
 	exitCode := 0
 	if err := cmd.cmd.Wait(); err != nil {
 		if eerr, ok := err.(*exec.ExitError); ok {
 			serr := eerr.Sys().(syscall.WaitStatus)
 			exitCode = serr.ExitStatus()
 		} else {
-			cmd.sendError(err.Error())
+			if err := cmd.sendError(err.Error()); err != nil {
+				return err
+			}
 			exitCode = 1
 		}
 	}
@@ -244,7 +257,8 @@ func serveWS(w http.ResponseWriter, r *http.Request) error {
 			go func() {
 				err := cmd.run()
 				if err != nil {
-					log.Println(err)
+					// TODO: reap command from cmds
+					log.Println("cmd", err)
 				}
 			}()
 		} else if key := msg.GetKey(); key != nil {
