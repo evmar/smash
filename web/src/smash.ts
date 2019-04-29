@@ -110,11 +110,28 @@ function decodeAttr(attr: number): Attr {
   return { fg, bg, bright };
 }
 
+const termKeyMap: { [key: string]: string } = {
+  ArrowUp: '\x1b[A',
+  ArrowDown: '\x1b[B',
+  ArrowRight: '\x1b[C',
+  ArrowLeft: '\x1b[D',
+
+  Backspace: '\x08',
+  Enter: '\x0d',
+  Escape: '\x1b',
+
+  // Add these keys to the map because we warn on any key
+  // not in the map.
+  Alt: '',
+  Control: '',
+  Shift: ''
+};
+
 class Term {
   dom = html('pre', { tabIndex: 0 });
   send = (msg: pb.KeyEvent) => {};
 
-  constructor(private id: number) {
+  constructor() {
     this.dom.onkeydown = e => this.onKeyDown(e);
     this.dom.onkeypress = e => this.onKeyPress(e);
   }
@@ -151,22 +168,37 @@ class Term {
     }
   }
 
-  onKeyDown(ev: KeyboardEvent) {
-    switch (ev.key) {
-      case 'Alt':
-      case 'Control':
-      case 'Shift':
-      case 'Unidentified':
-        return '';
-    }
-    console.log('down', ev.key, ev.char, ev.altKey);
-    //ev.preventDefault();
-  }
-  onKeyPress(ev: KeyboardEvent) {
+  sendKeys(keys: string) {
     const msg = new pb.KeyEvent();
-    msg.setCell(this.id);
-    msg.setKeys(ev.key);
+    msg.setKeys(keys);
     this.send(msg);
+  }
+
+  onKeyDown(ev: KeyboardEvent) {
+    let key = ev.key;
+    switch (key) {
+      case 'BracketLeft':
+        if (ev.ctrlKey) key = 'Escape';
+        break;
+    }
+
+    if (key.length === 1) return;
+
+    const send = termKeyMap[key];
+    if (!send) {
+      if (send === undefined) console.log('unknown key:', key);
+      return;
+    }
+    this.sendKeys(send);
+    ev.preventDefault();
+  }
+
+  onKeyPress(ev: KeyboardEvent) {
+    if (ev.key.length !== 1) {
+      console.log('long press', ev.key);
+      return;
+    }
+    this.sendKeys(ev.key);
     ev.preventDefault();
   }
 }
@@ -174,7 +206,7 @@ class Term {
 class Cell {
   dom = html('div', { className: 'cell' });
   readline = new ReadLine();
-  term = new Term(this.id);
+  term = new Term();
   onExit = (id: number) => {};
   send = (msg: pb.ClientMessage) => {};
 
@@ -183,6 +215,7 @@ class Cell {
     this.dom.appendChild(this.term.dom);
     this.term.send = key => {
       const msg = new pb.ClientMessage();
+      key.setCell(this.id);
       msg.setKey(key);
       this.send(msg);
     };
