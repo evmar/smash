@@ -8,6 +8,10 @@ cli:
 web:
 	cd web && yarn run webpack -w
 
+.PHONY: tsc
+tsc:
+	cd web && yarn run tsc -w --noEmit
+
 .PHONY: proto
 proto:
 	protoc \
