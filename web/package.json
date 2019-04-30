@@ -4,7 +4,7 @@
   "main": "index.js",
   "license": "Apache-2.0",
   "devDependencies": {
-    "@types/flatbuffers": "^1.9.1",
+    "@types/google-protobuf": "^3.2.7",
     "prettier": "^1.16.4",
     "ts-loader": "^5.3.3",
     "ts-protoc-gen": "^0.9.0",

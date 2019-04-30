@@ -7,6 +7,11 @@
   resolved "https://registry.yarnpkg.com/@types/flatbuffers/-/flatbuffers-1.9.1.tgz#1910bebfc15c8f67a287fae07bfc061f94e9d291"
   integrity sha512-TC3X0Nkj5wgvuY217VkodBtjbD3Yr0JNApDY1GW9IU5Mzm5ie1IJErqe4vRm+wy08IRz3bemaDATrdEw1CJlVQ==
 
+"@types/google-protobuf@^3.2.7":
+  version "3.2.7"
+  resolved "https://registry.yarnpkg.com/@types/google-protobuf/-/google-protobuf-3.2.7.tgz#9576ed5dd62cdb1c9f952522028a03b7cb2b69b5"
+  integrity sha512-Pb9wl5qDEwfnJeeu6Zpn5Y+waLrKETStqLZXHMGCTbkNuBBudPy4qOGN6veamyeoUBwTm2knOVeP/FlHHhhmzA==
+
 "@types/node@^11.9.5":
   version "11.9.5"
   resolved "https://registry.yarnpkg.com/@types/node/-/node-11.9.5.tgz#011eece9d3f839a806b63973e228f85967b79ed3"
