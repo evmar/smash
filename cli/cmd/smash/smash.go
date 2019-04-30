@@ -110,7 +110,11 @@ func (cmd *command) run() error {
 		}
 	}
 
-	f, err := pty.Start(cmd.cmd)
+	size := pty.Winsize{
+		Rows: 24,
+		Cols: 80,
+	}
+	f, err := pty.StartWithSize(cmd.cmd, &size)
 	if err != nil {
 		return err
 	}
