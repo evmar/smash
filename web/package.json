@@ -6,6 +6,7 @@
   "devDependencies": {
     "@types/google-protobuf": "^3.2.7",
     "prettier": "^1.16.4",
+    "source-map-explorer": "^1.8.0",
     "source-map-loader": "^0.2.4",
     "ts-protoc-gen": "^0.9.0",
     "typescript": "^3.3.3333",
