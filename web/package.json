@@ -12,7 +12,14 @@
     "webpack-cli": "^3.2.3"
   },
   "dependencies": {
+    "@types/chai": "^4.1.7",
+    "@types/mocha": "^5.2.6",
     "@types/node": "^11.9.5",
-    "google-protobuf": "^3.7.0-rc.2"
+    "chai": "^4.2.0",
+    "google-protobuf": "^3.7.0-rc.2",
+    "mocha": "^6.1.4"
+  },
+  "scripts": {
+    "test": "mocha js/test.js"
   }
 }
