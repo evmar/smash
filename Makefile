@@ -10,7 +10,7 @@ web:
 
 .PHONY: tsc
 tsc:
-	cd web && yarn run tsc -w --noEmit
+	cd web && yarn run tsc -w
 
 .PHONY: proto
 proto:
@@ -18,7 +18,7 @@ proto:
 	  -Iproto \
 	  --plugin="protoc-gen-ts=$(protoc_gen_ts)" \
 	  --go_out="cli/proto" \
-	  --js_out="import_style=commonjs,binary:web/src" \
+	  --js_out="import_style=commonjs,binary:web/js" \
 	  --ts_out="web/src" \
 	  proto/smash.proto
 
