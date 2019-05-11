@@ -1,8 +1,9 @@
 # Development notes
 
-While developing:
+While developing, in three separate terminals:
 
 ```sh
+$ make tsc   # run TypeScript compiler in watch mode
 $ make web   # auto-update the JS
 $ make cli   # run the go server
 ```
