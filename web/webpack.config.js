@@ -2,7 +2,10 @@ const path = require('path');
 
 module.exports = {
   mode: 'development',
-  entry: './js/smash.js',
+  entry: {
+    smash: './js/smash.js',
+    widgets: './js/widgets.js'
+  },
   module: {
     rules: [
       {
@@ -13,7 +16,7 @@ module.exports = {
   },
   devtool: 'source-map',
   output: {
-    filename: 'bundle.js',
+    filename: '[name].bundle.js',
     path: path.resolve(__dirname, 'dist')
   }
 };
