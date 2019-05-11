@@ -4,7 +4,7 @@ import * as http from 'http';
 import * as url from 'url';
 import * as path from 'path';
 import * as fs from 'fs';
-import puppeteer, { JSHandle } from 'puppeteer';
+import puppeteer from 'puppeteer';
 
 function runServer(): Promise<http.Server> {
   const server = http.createServer((req, res) => {
