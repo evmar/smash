@@ -12,7 +12,7 @@ class Cell {
   dom = html('div', { className: 'cell' });
   readline = new ReadLine();
   term = new Term();
-  onExit = (id: number) => {};
+  onExit = (id: number, exitCode: number) => {};
   send = (msg: pb.ClientMessage) => {};
 
   constructor(public id: number) {
@@ -30,7 +30,7 @@ class Cell {
       const exec = shell.exec(cmd);
       if (sh.isLocal(exec)) {
         this.term.dom.innerText += exec.output;
-        this.onExit(this.id);
+        this.onExit(this.id, 0);
       } else {
         spawn(this.id, exec);
       }
@@ -42,9 +42,8 @@ class Cell {
       this.term.onUpdate(msg.getTermUpdate()!);
     }
     if (msg.hasExitCode()) {
-      console.log('exit code', msg.getExitCode());
       this.term.showCursor(false);
-      this.onExit(this.id);
+      this.onExit(this.id, msg.getExitCode());
     }
   }
 }
@@ -56,8 +55,8 @@ class CellStack {
   addNew() {
     const id = this.cells.length;
     const cell = new Cell(id);
-    cell.onExit = (id: number) => {
-      this.onExit(id);
+    cell.onExit = (id: number, exitCode: number) => {
+      this.onExit(id, exitCode);
     };
     cell.send = msg => this.send(msg);
     this.cells.push(cell);
@@ -69,7 +68,7 @@ class CellStack {
     this.cells[msg.getCell()].onOutput(msg);
   }
 
-  onExit(id: number) {
+  onExit(id: number, exitCode: number) {
     this.addNew();
   }
 }
