@@ -100,11 +100,15 @@ func termLoop(tr *vt100.TermReader, r io.Reader) error {
 	}
 }
 
-func (cmd *command) run() error {
+// run synchronously runs the subprocess to completion, sending terminal
+// updates as it progresses.  It may return errors if the subprocess failed
+// to run for whatever reason (e.g. no such path), and otherwise returns
+// the subprocess exit code.
+func (cmd *command) run() (int, error) {
 	if filepath.Base(cmd.cmd.Path) == cmd.cmd.Path {
 		// TODO: should use shell env $PATH.
 		if p, err := exec.LookPath(cmd.cmd.Path); err != nil {
-			return err
+			return 0, err
 		} else {
 			cmd.cmd.Path = p
 		}
@@ -116,7 +120,7 @@ func (cmd *command) run() error {
 	}
 	f, err := pty.StartWithSize(cmd.cmd, &size)
 	if err != nil {
-		return err
+		return 0, err
 	}
 
 	cmd.stdin = make(chan []byte)
@@ -222,25 +226,29 @@ func (cmd *command) run() error {
 	// done is the error reported by the terminal.
 	// We expect EOF in normal execution.
 	if done != io.EOF {
-		if err := cmd.sendError(fmt.Sprintf("pty: %s", done.Error())); err != nil {
-			return err
-		}
+		return 0, err
 	}
 
 	// Reap the subprocess and report the exit code.
-	exitCode := 0
 	if err := cmd.cmd.Wait(); err != nil {
 		if eerr, ok := err.(*exec.ExitError); ok {
 			serr := eerr.Sys().(syscall.WaitStatus)
-			exitCode = serr.ExitStatus()
+			return serr.ExitStatus(), nil
 		} else {
-			if err := cmd.sendError(err.Error()); err != nil {
-				return err
-			}
-			exitCode = 1
+			return 0, err
 		}
 	}
-	return cmd.send(&pb.Output_ExitCode{int32(exitCode)})
+	return 0, nil
+}
+
+// runHandlingErrors calls run() and forwards any subprocess errors
+// on to the client.
+func (cmd *command) runHandlingErrors() {
+	exitCode, err := cmd.run()
+	if err != nil {
+		cmd.sendError(err.Error())
+	}
+	cmd.send(&pb.Output_ExitCode{int32(exitCode)})
 }
 
 func serveWS(w http.ResponseWriter, r *http.Request) error {
@@ -265,13 +273,7 @@ func serveWS(w http.ResponseWriter, r *http.Request) error {
 		if run := msg.GetRun(); run != nil {
 			cmd := newCmd(conn, run)
 			commands[int(run.Cell)] = cmd
-			go func() {
-				err := cmd.run()
-				if err != nil {
-					// TODO: reap command from cmds
-					log.Println("cmd", err)
-				}
-			}()
+			go cmd.runHandlingErrors()
 		} else if key := msg.GetKey(); key != nil {
 			cmd := commands[int(key.Cell)]
 			if cmd == nil {

@@ -104,6 +104,12 @@ export class Term {
     this.cursor.style.display = show ? 'block' : 'none';
   }
 
+  showError(msg: string) {
+    const div = html('div');
+    div.innerText = msg;
+    this.dom.appendChild(div);
+  }
+
   sendKeys(keys: string) {
     const msg = new pb.KeyEvent();
     msg.setKeys(keys);

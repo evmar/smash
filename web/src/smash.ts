@@ -43,6 +43,9 @@ class Cell {
     if (msg.hasTermUpdate()) {
       this.term.onUpdate(msg.getTermUpdate()!);
     }
+    if (msg.hasError()) {
+      this.term.showError(msg.getError());
+    }
     if (msg.hasExitCode()) {
       this.running = false;
       this.term.showCursor(false);
