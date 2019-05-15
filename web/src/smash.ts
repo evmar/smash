@@ -39,8 +39,8 @@ class Cell {
   }
 
   onOutput(msg: pb.Output) {
-    if (msg.hasText()) {
-      this.term.onUpdate(msg.getText()!);
+    if (msg.hasTermUpdate()) {
+      this.term.onUpdate(msg.getTermUpdate()!);
     }
     if (msg.hasExitCode()) {
       console.log('exit code', msg.getExitCode());

@@ -19,8 +19,9 @@ message KeyEvent {
   string keys = 2;
 }
 
-message TermText {
+message TermUpdate {
   repeated RowSpans rows = 1;
+  Cursor cursor = 2;
   message RowSpans {
     int32 row = 1;
     repeated Span spans = 2;
@@ -28,6 +29,10 @@ message TermText {
   message Span {
     int32 attr = 1;
     string text = 2;
+  }
+  message Cursor {
+    int32 row = 1;
+    int32 col = 2;
   }
 }
 
@@ -39,7 +44,7 @@ message Output {
   int32 cell = 1;
   oneof output {
     string error = 2;
-    TermText text = 3;
+    TermUpdate term_update = 3;
     int32 exit_code = 4;
   }
 }

@@ -122,33 +122,42 @@ export namespace KeyEvent {
   };
 }
 
-export class TermText extends jspb.Message {
+export class TermUpdate extends jspb.Message {
   clearRowsList(): void;
-  getRowsList(): Array<TermText.RowSpans>;
-  setRowsList(value: Array<TermText.RowSpans>): void;
-  addRows(value?: TermText.RowSpans, index?: number): TermText.RowSpans;
+  getRowsList(): Array<TermUpdate.RowSpans>;
+  setRowsList(value: Array<TermUpdate.RowSpans>): void;
+  addRows(value?: TermUpdate.RowSpans, index?: number): TermUpdate.RowSpans;
+
+  hasCursor(): boolean;
+  clearCursor(): void;
+  getCursor(): TermUpdate.Cursor | undefined;
+  setCursor(value?: TermUpdate.Cursor): void;
 
   serializeBinary(): Uint8Array;
-  toObject(includeInstance?: boolean): TermText.AsObject;
-  static toObject(includeInstance: boolean, msg: TermText): TermText.AsObject;
+  toObject(includeInstance?: boolean): TermUpdate.AsObject;
+  static toObject(
+    includeInstance: boolean,
+    msg: TermUpdate
+  ): TermUpdate.AsObject;
   static extensions: { [key: number]: jspb.ExtensionFieldInfo<jspb.Message> };
   static extensionsBinary: {
     [key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>;
   };
   static serializeBinaryToWriter(
-    message: TermText,
+    message: TermUpdate,
     writer: jspb.BinaryWriter
   ): void;
-  static deserializeBinary(bytes: Uint8Array): TermText;
+  static deserializeBinary(bytes: Uint8Array): TermUpdate;
   static deserializeBinaryFromReader(
-    message: TermText,
+    message: TermUpdate,
     reader: jspb.BinaryReader
-  ): TermText;
+  ): TermUpdate;
 }
 
-export namespace TermText {
+export namespace TermUpdate {
   export type AsObject = {
-    rowsList: Array<TermText.RowSpans.AsObject>;
+    rowsList: Array<TermUpdate.RowSpans.AsObject>;
+    cursor?: TermUpdate.Cursor.AsObject;
   };
 
   export class RowSpans extends jspb.Message {
@@ -156,9 +165,9 @@ export namespace TermText {
     setRow(value: number): void;
 
     clearSpansList(): void;
-    getSpansList(): Array<TermText.Span>;
-    setSpansList(value: Array<TermText.Span>): void;
-    addSpans(value?: TermText.Span, index?: number): TermText.Span;
+    getSpansList(): Array<TermUpdate.Span>;
+    setSpansList(value: Array<TermUpdate.Span>): void;
+    addSpans(value?: TermUpdate.Span, index?: number): TermUpdate.Span;
 
     serializeBinary(): Uint8Array;
     toObject(includeInstance?: boolean): RowSpans.AsObject;
@@ -181,7 +190,7 @@ export namespace TermText {
   export namespace RowSpans {
     export type AsObject = {
       row: number;
-      spansList: Array<TermText.Span.AsObject>;
+      spansList: Array<TermUpdate.Span.AsObject>;
     };
   }
 
@@ -214,6 +223,38 @@ export namespace TermText {
     export type AsObject = {
       attr: number;
       text: string;
+    };
+  }
+
+  export class Cursor extends jspb.Message {
+    getRow(): number;
+    setRow(value: number): void;
+
+    getCol(): number;
+    setCol(value: number): void;
+
+    serializeBinary(): Uint8Array;
+    toObject(includeInstance?: boolean): Cursor.AsObject;
+    static toObject(includeInstance: boolean, msg: Cursor): Cursor.AsObject;
+    static extensions: { [key: number]: jspb.ExtensionFieldInfo<jspb.Message> };
+    static extensionsBinary: {
+      [key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>;
+    };
+    static serializeBinaryToWriter(
+      message: Cursor,
+      writer: jspb.BinaryWriter
+    ): void;
+    static deserializeBinary(bytes: Uint8Array): Cursor;
+    static deserializeBinaryFromReader(
+      message: Cursor,
+      reader: jspb.BinaryReader
+    ): Cursor;
+  }
+
+  export namespace Cursor {
+    export type AsObject = {
+      row: number;
+      col: number;
     };
   }
 }
@@ -250,10 +291,10 @@ export class Output extends jspb.Message {
   getError(): string;
   setError(value: string): void;
 
-  hasText(): boolean;
-  clearText(): void;
-  getText(): TermText | undefined;
-  setText(value?: TermText): void;
+  hasTermUpdate(): boolean;
+  clearTermUpdate(): void;
+  getTermUpdate(): TermUpdate | undefined;
+  setTermUpdate(value?: TermUpdate): void;
 
   hasExitCode(): boolean;
   clearExitCode(): void;
@@ -283,14 +324,14 @@ export namespace Output {
   export type AsObject = {
     cell: number;
     error: string;
-    text?: TermText.AsObject;
+    termUpdate?: TermUpdate.AsObject;
     exitCode: number;
   };
 
   export enum OutputCase {
     OUTPUT_NOT_SET = 0,
     ERROR = 2,
-    TEXT = 3,
+    TERM_UPDATE = 3,
     EXIT_CODE = 4
   }
 }

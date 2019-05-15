@@ -41,7 +41,7 @@ export class Term {
     this.dom.onkeypress = e => this.onKeyPress(e);
   }
 
-  onUpdate(msg: pb.TermText) {
+  onUpdate(msg: pb.TermUpdate) {
     const children = this.dom.children;
     for (const rowSpans of msg.getRowsList()) {
       const row = rowSpans.getRow();

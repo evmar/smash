@@ -136,22 +136,22 @@ func (cmd *command) run() error {
 	renderFromDirty := func() {
 		// Called with mu held.
 		allDirty := tr.Dirty.Lines[-1]
-		text := &pb.TermText{}
+		update := &pb.TermUpdate{}
 		for row, l := range term.Lines {
 			if !(allDirty || tr.Dirty.Lines[row]) {
 				continue
 			}
-			rowSpans := &pb.TermText_RowSpans{
+			rowSpans := &pb.TermUpdate_RowSpans{
 				Row: int32(row),
 			}
-			text.Rows = append(text.Rows, rowSpans)
-			span := &pb.TermText_Span{}
+			update.Rows = append(update.Rows, rowSpans)
+			span := &pb.TermUpdate_Span{}
 			var attr vt100.Attr
 			for _, cell := range l {
 				if cell.Attr != attr {
 					attr = cell.Attr
 					rowSpans.Spans = append(rowSpans.Spans, span)
-					span = &pb.TermText_Span{Attr: int32(attr)}
+					span = &pb.TermUpdate_Span{Attr: int32(attr)}
 				}
 				// TODO: super inefficient.
 				span.Text += fmt.Sprintf("%c", cell.Ch)
@@ -161,7 +161,7 @@ func (cmd *command) run() error {
 			}
 		}
 
-		err := cmd.send(&pb.Output_Text{text})
+		err := cmd.send(&pb.Output_TermUpdate{update})
 		if err != nil {
 			done = err
 		}

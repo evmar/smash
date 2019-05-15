@@ -202,93 +202,101 @@ func (m *KeyEvent) GetKeys() string {
 	return ""
 }
 
-type TermText struct {
-	Rows                 []*TermText_RowSpans `protobuf:"bytes,1,rep,name=rows,proto3" json:"rows,omitempty"`
-	XXX_NoUnkeyedLiteral struct{}             `json:"-"`
-	XXX_unrecognized     []byte               `json:"-"`
-	XXX_sizecache        int32                `json:"-"`
+type TermUpdate struct {
+	Rows                 []*TermUpdate_RowSpans `protobuf:"bytes,1,rep,name=rows,proto3" json:"rows,omitempty"`
+	Cursor               *TermUpdate_Cursor     `protobuf:"bytes,2,opt,name=cursor,proto3" json:"cursor,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}               `json:"-"`
+	XXX_unrecognized     []byte                 `json:"-"`
+	XXX_sizecache        int32                  `json:"-"`
 }
 
-func (m *TermText) Reset()         { *m = TermText{} }
-func (m *TermText) String() string { return proto.CompactTextString(m) }
-func (*TermText) ProtoMessage()    {}
-func (*TermText) Descriptor() ([]byte, []int) {
+func (m *TermUpdate) Reset()         { *m = TermUpdate{} }
+func (m *TermUpdate) String() string { return proto.CompactTextString(m) }
+func (*TermUpdate) ProtoMessage()    {}
+func (*TermUpdate) Descriptor() ([]byte, []int) {
 	return fileDescriptor_85c015dadfa1ff75, []int{3}
 }
 
-func (m *TermText) XXX_Unmarshal(b []byte) error {
-	return xxx_messageInfo_TermText.Unmarshal(m, b)
+func (m *TermUpdate) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_TermUpdate.Unmarshal(m, b)
 }
-func (m *TermText) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	return xxx_messageInfo_TermText.Marshal(b, m, deterministic)
+func (m *TermUpdate) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_TermUpdate.Marshal(b, m, deterministic)
 }
-func (m *TermText) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_TermText.Merge(m, src)
+func (m *TermUpdate) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_TermUpdate.Merge(m, src)
 }
-func (m *TermText) XXX_Size() int {
-	return xxx_messageInfo_TermText.Size(m)
+func (m *TermUpdate) XXX_Size() int {
+	return xxx_messageInfo_TermUpdate.Size(m)
 }
-func (m *TermText) XXX_DiscardUnknown() {
-	xxx_messageInfo_TermText.DiscardUnknown(m)
+func (m *TermUpdate) XXX_DiscardUnknown() {
+	xxx_messageInfo_TermUpdate.DiscardUnknown(m)
 }
 
-var xxx_messageInfo_TermText proto.InternalMessageInfo
+var xxx_messageInfo_TermUpdate proto.InternalMessageInfo
 
-func (m *TermText) GetRows() []*TermText_RowSpans {
+func (m *TermUpdate) GetRows() []*TermUpdate_RowSpans {
 	if m != nil {
 		return m.Rows
 	}
 	return nil
 }
 
-type TermText_RowSpans struct {
-	Row                  int32            `protobuf:"varint,1,opt,name=row,proto3" json:"row,omitempty"`
-	Spans                []*TermText_Span `protobuf:"bytes,2,rep,name=spans,proto3" json:"spans,omitempty"`
-	XXX_NoUnkeyedLiteral struct{}         `json:"-"`
-	XXX_unrecognized     []byte           `json:"-"`
-	XXX_sizecache        int32            `json:"-"`
+func (m *TermUpdate) GetCursor() *TermUpdate_Cursor {
+	if m != nil {
+		return m.Cursor
+	}
+	return nil
 }
 
-func (m *TermText_RowSpans) Reset()         { *m = TermText_RowSpans{} }
-func (m *TermText_RowSpans) String() string { return proto.CompactTextString(m) }
-func (*TermText_RowSpans) ProtoMessage()    {}
-func (*TermText_RowSpans) Descriptor() ([]byte, []int) {
+type TermUpdate_RowSpans struct {
+	Row                  int32              `protobuf:"varint,1,opt,name=row,proto3" json:"row,omitempty"`
+	Spans                []*TermUpdate_Span `protobuf:"bytes,2,rep,name=spans,proto3" json:"spans,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}           `json:"-"`
+	XXX_unrecognized     []byte             `json:"-"`
+	XXX_sizecache        int32              `json:"-"`
+}
+
+func (m *TermUpdate_RowSpans) Reset()         { *m = TermUpdate_RowSpans{} }
+func (m *TermUpdate_RowSpans) String() string { return proto.CompactTextString(m) }
+func (*TermUpdate_RowSpans) ProtoMessage()    {}
+func (*TermUpdate_RowSpans) Descriptor() ([]byte, []int) {
 	return fileDescriptor_85c015dadfa1ff75, []int{3, 0}
 }
 
-func (m *TermText_RowSpans) XXX_Unmarshal(b []byte) error {
-	return xxx_messageInfo_TermText_RowSpans.Unmarshal(m, b)
+func (m *TermUpdate_RowSpans) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_TermUpdate_RowSpans.Unmarshal(m, b)
 }
-func (m *TermText_RowSpans) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	return xxx_messageInfo_TermText_RowSpans.Marshal(b, m, deterministic)
+func (m *TermUpdate_RowSpans) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_TermUpdate_RowSpans.Marshal(b, m, deterministic)
 }
-func (m *TermText_RowSpans) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_TermText_RowSpans.Merge(m, src)
+func (m *TermUpdate_RowSpans) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_TermUpdate_RowSpans.Merge(m, src)
 }
-func (m *TermText_RowSpans) XXX_Size() int {
-	return xxx_messageInfo_TermText_RowSpans.Size(m)
+func (m *TermUpdate_RowSpans) XXX_Size() int {
+	return xxx_messageInfo_TermUpdate_RowSpans.Size(m)
 }
-func (m *TermText_RowSpans) XXX_DiscardUnknown() {
-	xxx_messageInfo_TermText_RowSpans.DiscardUnknown(m)
+func (m *TermUpdate_RowSpans) XXX_DiscardUnknown() {
+	xxx_messageInfo_TermUpdate_RowSpans.DiscardUnknown(m)
 }
 
-var xxx_messageInfo_TermText_RowSpans proto.InternalMessageInfo
+var xxx_messageInfo_TermUpdate_RowSpans proto.InternalMessageInfo
 
-func (m *TermText_RowSpans) GetRow() int32 {
+func (m *TermUpdate_RowSpans) GetRow() int32 {
 	if m != nil {
 		return m.Row
 	}
 	return 0
 }
 
-func (m *TermText_RowSpans) GetSpans() []*TermText_Span {
+func (m *TermUpdate_RowSpans) GetSpans() []*TermUpdate_Span {
 	if m != nil {
 		return m.Spans
 	}
 	return nil
 }
 
-type TermText_Span struct {
+type TermUpdate_Span struct {
 	Attr                 int32    `protobuf:"varint,1,opt,name=attr,proto3" json:"attr,omitempty"`
 	Text                 string   `protobuf:"bytes,2,opt,name=text,proto3" json:"text,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
@@ -296,43 +304,90 @@ type TermText_Span struct {
 	XXX_sizecache        int32    `json:"-"`
 }
 
-func (m *TermText_Span) Reset()         { *m = TermText_Span{} }
-func (m *TermText_Span) String() string { return proto.CompactTextString(m) }
-func (*TermText_Span) ProtoMessage()    {}
-func (*TermText_Span) Descriptor() ([]byte, []int) {
+func (m *TermUpdate_Span) Reset()         { *m = TermUpdate_Span{} }
+func (m *TermUpdate_Span) String() string { return proto.CompactTextString(m) }
+func (*TermUpdate_Span) ProtoMessage()    {}
+func (*TermUpdate_Span) Descriptor() ([]byte, []int) {
 	return fileDescriptor_85c015dadfa1ff75, []int{3, 1}
 }
 
-func (m *TermText_Span) XXX_Unmarshal(b []byte) error {
-	return xxx_messageInfo_TermText_Span.Unmarshal(m, b)
+func (m *TermUpdate_Span) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_TermUpdate_Span.Unmarshal(m, b)
 }
-func (m *TermText_Span) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	return xxx_messageInfo_TermText_Span.Marshal(b, m, deterministic)
+func (m *TermUpdate_Span) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_TermUpdate_Span.Marshal(b, m, deterministic)
 }
-func (m *TermText_Span) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_TermText_Span.Merge(m, src)
+func (m *TermUpdate_Span) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_TermUpdate_Span.Merge(m, src)
 }
-func (m *TermText_Span) XXX_Size() int {
-	return xxx_messageInfo_TermText_Span.Size(m)
+func (m *TermUpdate_Span) XXX_Size() int {
+	return xxx_messageInfo_TermUpdate_Span.Size(m)
 }
-func (m *TermText_Span) XXX_DiscardUnknown() {
-	xxx_messageInfo_TermText_Span.DiscardUnknown(m)
+func (m *TermUpdate_Span) XXX_DiscardUnknown() {
+	xxx_messageInfo_TermUpdate_Span.DiscardUnknown(m)
 }
 
-var xxx_messageInfo_TermText_Span proto.InternalMessageInfo
+var xxx_messageInfo_TermUpdate_Span proto.InternalMessageInfo
 
-func (m *TermText_Span) GetAttr() int32 {
+func (m *TermUpdate_Span) GetAttr() int32 {
 	if m != nil {
 		return m.Attr
 	}
 	return 0
 }
 
-func (m *TermText_Span) GetText() string {
+func (m *TermUpdate_Span) GetText() string {
 	if m != nil {
 		return m.Text
 	}
 	return ""
+}
+
+type TermUpdate_Cursor struct {
+	Row                  int32    `protobuf:"varint,1,opt,name=row,proto3" json:"row,omitempty"`
+	Col                  int32    `protobuf:"varint,2,opt,name=col,proto3" json:"col,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
+}
+
+func (m *TermUpdate_Cursor) Reset()         { *m = TermUpdate_Cursor{} }
+func (m *TermUpdate_Cursor) String() string { return proto.CompactTextString(m) }
+func (*TermUpdate_Cursor) ProtoMessage()    {}
+func (*TermUpdate_Cursor) Descriptor() ([]byte, []int) {
+	return fileDescriptor_85c015dadfa1ff75, []int{3, 2}
+}
+
+func (m *TermUpdate_Cursor) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_TermUpdate_Cursor.Unmarshal(m, b)
+}
+func (m *TermUpdate_Cursor) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_TermUpdate_Cursor.Marshal(b, m, deterministic)
+}
+func (m *TermUpdate_Cursor) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_TermUpdate_Cursor.Merge(m, src)
+}
+func (m *TermUpdate_Cursor) XXX_Size() int {
+	return xxx_messageInfo_TermUpdate_Cursor.Size(m)
+}
+func (m *TermUpdate_Cursor) XXX_DiscardUnknown() {
+	xxx_messageInfo_TermUpdate_Cursor.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_TermUpdate_Cursor proto.InternalMessageInfo
+
+func (m *TermUpdate_Cursor) GetRow() int32 {
+	if m != nil {
+		return m.Row
+	}
+	return 0
+}
+
+func (m *TermUpdate_Cursor) GetCol() int32 {
+	if m != nil {
+		return m.Col
+	}
+	return 0
 }
 
 type TermState struct {
@@ -370,7 +425,7 @@ type Output struct {
 	Cell int32 `protobuf:"varint,1,opt,name=cell,proto3" json:"cell,omitempty"`
 	// Types that are valid to be assigned to Output:
 	//	*Output_Error
-	//	*Output_Text
+	//	*Output_TermUpdate
 	//	*Output_ExitCode
 	Output               isOutput_Output `protobuf_oneof:"output"`
 	XXX_NoUnkeyedLiteral struct{}        `json:"-"`
@@ -418,8 +473,8 @@ type Output_Error struct {
 	Error string `protobuf:"bytes,2,opt,name=error,proto3,oneof"`
 }
 
-type Output_Text struct {
-	Text *TermText `protobuf:"bytes,3,opt,name=text,proto3,oneof"`
+type Output_TermUpdate struct {
+	TermUpdate *TermUpdate `protobuf:"bytes,3,opt,name=term_update,json=termUpdate,proto3,oneof"`
 }
 
 type Output_ExitCode struct {
@@ -428,7 +483,7 @@ type Output_ExitCode struct {
 
 func (*Output_Error) isOutput_Output() {}
 
-func (*Output_Text) isOutput_Output() {}
+func (*Output_TermUpdate) isOutput_Output() {}
 
 func (*Output_ExitCode) isOutput_Output() {}
 
@@ -446,9 +501,9 @@ func (m *Output) GetError() string {
 	return ""
 }
 
-func (m *Output) GetText() *TermText {
-	if x, ok := m.GetOutput().(*Output_Text); ok {
-		return x.Text
+func (m *Output) GetTermUpdate() *TermUpdate {
+	if x, ok := m.GetOutput().(*Output_TermUpdate); ok {
+		return x.TermUpdate
 	}
 	return nil
 }
@@ -464,7 +519,7 @@ func (m *Output) GetExitCode() int32 {
 func (*Output) XXX_OneofWrappers() []interface{} {
 	return []interface{}{
 		(*Output_Error)(nil),
-		(*Output_Text)(nil),
+		(*Output_TermUpdate)(nil),
 		(*Output_ExitCode)(nil),
 	}
 }
@@ -538,9 +593,10 @@ func init() {
 	proto.RegisterType((*ClientMessage)(nil), "proto.ClientMessage")
 	proto.RegisterType((*RunRequest)(nil), "proto.RunRequest")
 	proto.RegisterType((*KeyEvent)(nil), "proto.KeyEvent")
-	proto.RegisterType((*TermText)(nil), "proto.TermText")
-	proto.RegisterType((*TermText_RowSpans)(nil), "proto.TermText.RowSpans")
-	proto.RegisterType((*TermText_Span)(nil), "proto.TermText.Span")
+	proto.RegisterType((*TermUpdate)(nil), "proto.TermUpdate")
+	proto.RegisterType((*TermUpdate_RowSpans)(nil), "proto.TermUpdate.RowSpans")
+	proto.RegisterType((*TermUpdate_Span)(nil), "proto.TermUpdate.Span")
+	proto.RegisterType((*TermUpdate_Cursor)(nil), "proto.TermUpdate.Cursor")
 	proto.RegisterType((*TermState)(nil), "proto.TermState")
 	proto.RegisterType((*Output)(nil), "proto.Output")
 	proto.RegisterType((*ServerMsg)(nil), "proto.ServerMsg")
@@ -549,29 +605,32 @@ func init() {
 func init() { proto.RegisterFile("smash.proto", fileDescriptor_85c015dadfa1ff75) }
 
 var fileDescriptor_85c015dadfa1ff75 = []byte{
-	// 382 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x6c, 0x92, 0x51, 0x6b, 0xe2, 0x40,
-	0x14, 0x85, 0x13, 0x27, 0x91, 0xe4, 0x06, 0xd9, 0xdd, 0x61, 0x59, 0x82, 0xb0, 0x20, 0x59, 0x64,
-	0x65, 0x59, 0xf2, 0x60, 0x1f, 0xfb, 0xa6, 0xb4, 0x04, 0x8a, 0x14, 0x46, 0xdf, 0x4b, 0xd4, 0x4b,
-	0x2a, 0x6a, 0xc6, 0xce, 0x4c, 0x8c, 0x79, 0xef, 0x2f, 0xea, 0x2f, 0x2c, 0x33, 0x99, 0x50, 0x5a,
-	0x7c, 0xf2, 0xcc, 0xbd, 0xc7, 0xef, 0x9c, 0x21, 0x03, 0x91, 0x3c, 0xe6, 0xf2, 0x39, 0x3d, 0x09,
-	0xae, 0x38, 0xf5, 0xcd, 0x4f, 0xb2, 0x86, 0xc1, 0xfc, 0xb0, 0xc3, 0x52, 0x2d, 0x50, 0xca, 0xbc,
-	0x40, 0x3a, 0x06, 0x22, 0xaa, 0x32, 0x76, 0x47, 0xee, 0x24, 0x9a, 0xfe, 0x68, 0xcd, 0x29, 0xab,
-	0x4a, 0x86, 0x2f, 0x15, 0x4a, 0x95, 0x39, 0x4c, 0xef, 0xe9, 0x1f, 0x20, 0x7b, 0x6c, 0xe2, 0x9e,
-	0xb1, 0x7d, 0xb3, 0xb6, 0x07, 0x6c, 0xee, 0xce, 0x58, 0x1a, 0xd3, 0x1e, 0x9b, 0x99, 0x0f, 0xe4,
-	0x28, 0x8b, 0xe4, 0x1e, 0xe0, 0x03, 0x40, 0x29, 0x78, 0x1b, 0x3c, 0x1c, 0x4c, 0x82, 0xcf, 0x8c,
-	0xa6, 0xdf, 0x81, 0x6c, 0xea, 0xad, 0xa1, 0x85, 0x4c, 0x4b, 0xed, 0xca, 0x45, 0x71, 0x8e, 0xc9,
-	0x88, 0x4c, 0x42, 0x66, 0x74, 0x32, 0x85, 0xa0, 0x4b, 0xb8, 0x4a, 0xa1, 0xe0, 0xed, 0xb1, 0x91,
-	0x16, 0x63, 0x74, 0xf2, 0xe6, 0x42, 0xb0, 0x42, 0x71, 0x5c, 0xe1, 0x45, 0xd1, 0xff, 0xe0, 0x09,
-	0x5e, 0xcb, 0xd8, 0x1d, 0x91, 0x49, 0x34, 0x8d, 0x6d, 0xeb, 0x6e, 0x9d, 0x32, 0x5e, 0x2f, 0x4f,
-	0x79, 0x29, 0x99, 0x71, 0x0d, 0x33, 0x08, 0xba, 0x89, 0x2e, 0x28, 0x78, 0x6d, 0xd3, 0xb4, 0xa4,
-	0xff, 0xc0, 0x97, 0x7a, 0x15, 0xf7, 0x0c, 0xec, 0xe7, 0x57, 0x98, 0xfe, 0x1f, 0x6b, 0x2d, 0xc3,
-	0x14, 0x3c, 0x7d, 0x34, 0x97, 0x52, 0x4a, 0x74, 0xa5, 0xb5, 0xd6, 0x33, 0x85, 0x17, 0xd5, 0x95,
-	0xd6, 0x3a, 0x89, 0x20, 0xd4, 0x9c, 0xa5, 0xca, 0x15, 0x26, 0xaf, 0x2e, 0xf4, 0x1f, 0x2b, 0x75,
-	0xaa, 0xae, 0x5f, 0xfa, 0x17, 0xf8, 0x28, 0x04, 0x17, 0x2d, 0x20, 0x73, 0x58, 0x7b, 0xa4, 0x63,
-	0xcb, 0x25, 0x9f, 0xbe, 0x50, 0x57, 0x2f, 0x73, 0xda, 0x28, 0xfa, 0x1b, 0x42, 0xbc, 0xec, 0xd4,
-	0xd3, 0x86, 0x6f, 0x31, 0xf6, 0x34, 0x37, 0x73, 0x58, 0xa0, 0x47, 0x73, 0xbe, 0xc5, 0x59, 0x00,
-	0x7d, 0x6e, 0xb2, 0x93, 0x5b, 0x08, 0x97, 0x28, 0xce, 0x28, 0x16, 0xb2, 0xa0, 0x7f, 0xbb, 0xb1,
-	0x7d, 0x27, 0x03, 0x8b, 0x6f, 0x7b, 0x66, 0x0e, 0xb3, 0x6b, 0xfb, 0x02, 0xd6, 0x7d, 0xb3, 0xbe,
-	0x79, 0x0f, 0x00, 0x00, 0xff, 0xff, 0x4e, 0xec, 0x1b, 0x30, 0x82, 0x02, 0x00, 0x00,
+	// 427 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x6c, 0x52, 0xc1, 0x8a, 0xdb, 0x30,
+	0x10, 0x75, 0x22, 0xdb, 0xc4, 0x63, 0x96, 0xb6, 0x3a, 0x2c, 0x22, 0x50, 0x08, 0x2e, 0xa5, 0x39,
+	0x2c, 0xa6, 0xa4, 0xbd, 0xf5, 0xb6, 0xa1, 0xc5, 0xb4, 0x2c, 0x05, 0xa5, 0x3d, 0x2f, 0xde, 0x64,
+	0x48, 0x97, 0x24, 0x56, 0x2a, 0xc9, 0xc9, 0xe6, 0x3b, 0x7a, 0xe9, 0xe7, 0x96, 0x19, 0xcb, 0x84,
+	0xb2, 0x39, 0xf9, 0x49, 0xf3, 0xf4, 0xde, 0x9b, 0xf1, 0x40, 0xee, 0x76, 0xb5, 0xfb, 0x55, 0xee,
+	0xad, 0xf1, 0x46, 0x26, 0xfc, 0x29, 0x1e, 0xe0, 0x6a, 0xbe, 0x7d, 0xc4, 0xc6, 0xdf, 0xa1, 0x73,
+	0xf5, 0x1a, 0xe5, 0x5b, 0x10, 0xb6, 0x6d, 0xd4, 0x60, 0x32, 0x98, 0xe6, 0xb3, 0x57, 0x1d, 0xb9,
+	0xd4, 0x6d, 0xa3, 0xf1, 0x77, 0x8b, 0xce, 0x57, 0x91, 0xa6, 0xba, 0x7c, 0x03, 0x62, 0x83, 0x27,
+	0x35, 0x64, 0xda, 0x8b, 0x40, 0xfb, 0x86, 0xa7, 0xcf, 0x07, 0x6c, 0x98, 0xb4, 0xc1, 0xd3, 0x6d,
+	0x02, 0x62, 0xe7, 0xd6, 0xc5, 0x17, 0x80, 0xb3, 0x80, 0x94, 0x10, 0x2f, 0x71, 0xbb, 0x65, 0x87,
+	0x44, 0x33, 0x96, 0x2f, 0x41, 0x2c, 0x8f, 0x2b, 0x56, 0xcb, 0x34, 0x41, 0x62, 0xd5, 0x76, 0x7d,
+	0x50, 0x62, 0x22, 0xa6, 0x99, 0x66, 0x5c, 0xcc, 0x60, 0xd4, 0x3b, 0x5c, 0x54, 0x91, 0x10, 0x6f,
+	0xf0, 0xe4, 0x82, 0x0c, 0xe3, 0xe2, 0xef, 0x10, 0xe0, 0x07, 0xda, 0xdd, 0xcf, 0xfd, 0xaa, 0xf6,
+	0x28, 0x4b, 0x88, 0xad, 0x39, 0x3a, 0x35, 0x98, 0x88, 0x69, 0x3e, 0x1b, 0x87, 0xdc, 0x67, 0x42,
+	0xa9, 0xcd, 0x71, 0xb1, 0xaf, 0x1b, 0xa7, 0x99, 0x27, 0xdf, 0x43, 0xba, 0x6c, 0xad, 0x33, 0x36,
+	0x74, 0xaa, 0x9e, 0xbf, 0x98, 0x73, 0x5d, 0x07, 0xde, 0xf8, 0x2b, 0x8c, 0x7a, 0x0d, 0x6a, 0xcb,
+	0x9a, 0x63, 0xc8, 0x48, 0x50, 0xde, 0x40, 0xe2, 0xa8, 0xa4, 0x86, 0x1c, 0xe0, 0xfa, 0xb9, 0x1c,
+	0xbd, 0xd4, 0x1d, 0x69, 0x5c, 0x42, 0x4c, 0x47, 0x1e, 0x86, 0xf7, 0xb6, 0x6f, 0x96, 0x30, 0xdd,
+	0x79, 0x7c, 0xf2, 0x7d, 0xb3, 0x84, 0xc7, 0x37, 0x90, 0x76, 0x69, 0x2e, 0x38, 0xd3, 0x88, 0xcd,
+	0x96, 0xe9, 0x89, 0x26, 0x58, 0xe4, 0x90, 0x91, 0xef, 0xc2, 0xd7, 0x1e, 0x8b, 0x3f, 0x03, 0x48,
+	0xbf, 0xb7, 0x7e, 0xdf, 0x5e, 0x1e, 0xed, 0x35, 0x24, 0x68, 0x6d, 0x18, 0x43, 0x56, 0x45, 0xba,
+	0x3b, 0xca, 0x8f, 0x90, 0x7b, 0xb4, 0xbb, 0xfb, 0x96, 0xc3, 0x2b, 0xf1, 0xdf, 0xd6, 0x9c, 0xbb,
+	0xaa, 0x22, 0x0d, 0xfe, 0xfc, 0x17, 0x5e, 0x43, 0x86, 0x4f, 0x8f, 0xfe, 0x7e, 0x69, 0x56, 0xa8,
+	0x62, 0xb2, 0xa9, 0x22, 0x3d, 0xa2, 0xab, 0xb9, 0x59, 0xe1, 0xed, 0x08, 0x52, 0xc3, 0x51, 0x8a,
+	0x4f, 0x90, 0x2d, 0xd0, 0x1e, 0xd0, 0xde, 0xb9, 0xb5, 0x7c, 0xd7, 0x5f, 0x87, 0xe5, 0xbc, 0x0a,
+	0x36, 0x5d, 0xec, 0x2a, 0xd2, 0xa1, 0x1c, 0xd6, 0xee, 0x21, 0xe5, 0xf2, 0x87, 0x7f, 0x01, 0x00,
+	0x00, 0xff, 0xff, 0xb6, 0xfc, 0xdc, 0xe0, 0xf7, 0x02, 0x00, 0x00,
 }
