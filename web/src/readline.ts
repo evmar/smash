@@ -28,6 +28,13 @@ export class ReadLine {
   }) as HTMLInputElement;
   oncommit = (_: string) => {};
 
+  /**
+   * The selection span at time of last blur.
+   * This is restored on focus, to defeat the browser behavior of
+   * select all on focus.
+   */
+  selection: [number, number] = [0, 0];
+
   constructor() {
     this.prompt.innerText = '> ';
     this.dom.appendChild(this.prompt);
@@ -40,6 +47,14 @@ export class ReadLine {
     this.input.onkeypress = ev => {
       this.keypress(ev);
     };
+
+    // Catch focus/blur events, per docs on this.selection.
+    this.input.addEventListener('blur', () => {
+      this.selection = [this.input.selectionStart!, this.input.selectionEnd!];
+    });
+    this.input.addEventListener('focus', () => {
+      [this.input.selectionStart, this.input.selectionEnd] = this.selection;
+    });
   }
 
   focus() {
