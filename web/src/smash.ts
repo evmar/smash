@@ -18,7 +18,6 @@ class Cell {
 
   constructor(public id: number) {
     this.dom.appendChild(this.readline.dom);
-    this.dom.appendChild(this.term.dom);
     this.term.send = key => {
       const msg = new pb.ClientMessage();
       key.setCell(this.id);
@@ -27,6 +26,7 @@ class Cell {
     };
 
     this.readline.oncommit = cmd => {
+      this.dom.appendChild(this.term.dom);
       this.term.dom.focus();
       const exec = shell.exec(cmd);
       if (sh.isLocal(exec)) {
