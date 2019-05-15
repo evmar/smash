@@ -33,18 +33,34 @@ const termKeyMap: { [key: string]: string } = {
 };
 
 export class Term {
-  dom = html('pre', { tabIndex: 0 });
+  dom = html('pre', { tabIndex: 0, className: 'term' });
+  cursor = html('div', { className: 'term-cursor' });
+  cellSize = { width: 0, height: 0 };
   send = (msg: pb.KeyEvent) => {};
 
   constructor() {
     this.dom.onkeydown = e => this.onKeyDown(e);
     this.dom.onkeypress = e => this.onKeyPress(e);
+    this.dom.appendChild(this.cursor);
+    this.measure();
+  }
+
+  measure() {
+    document.body.appendChild(this.dom);
+    this.cursor.innerText = 'A';
+    const { width, height } = getComputedStyle(this.cursor);
+    document.body.removeChild(this.dom);
+    this.cursor.innerText = '';
+    this.cursor.style.width = width;
+    this.cursor.style.height = height;
+    this.cellSize.width = Number(width!.replace('px', ''));
+    this.cellSize.height = Number(height!.replace('px', ''));
   }
 
   onUpdate(msg: pb.TermUpdate) {
     const children = this.dom.children;
     for (const rowSpans of msg.getRowsList()) {
-      const row = rowSpans.getRow();
+      const row = rowSpans.getRow() + 1; // +1 to avoid this.cursor
       for (
         var childCount = children.length;
         childCount < row + 1;
@@ -71,6 +87,16 @@ export class Term {
         }
       }
     }
+    const cursor = msg.getCursor();
+    if (cursor) {
+      this.showCursor(!cursor.getHidden());
+      this.cursor.style.left = cursor.getCol() * this.cellSize.width + 'px';
+      this.cursor.style.top = cursor.getRow() * this.cellSize.height + 'px';
+    }
+  }
+
+  showCursor(show: boolean) {
+    this.cursor.style.display = show ? 'block' : 'none';
   }
 
   sendKeys(keys: string) {

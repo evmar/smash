@@ -33,11 +33,8 @@ message TermUpdate {
   message Cursor {
     int32 row = 1;
     int32 col = 2;
+    bool hidden = 3;
   }
-}
-
-message TermState {
-  // e.g. cursor position
 }
 
 message Output {

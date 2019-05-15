@@ -233,6 +233,9 @@ export namespace TermUpdate {
     getCol(): number;
     setCol(value: number): void;
 
+    getHidden(): boolean;
+    setHidden(value: boolean): void;
+
     serializeBinary(): Uint8Array;
     toObject(includeInstance?: boolean): Cursor.AsObject;
     static toObject(includeInstance: boolean, msg: Cursor): Cursor.AsObject;
@@ -255,31 +258,9 @@ export namespace TermUpdate {
     export type AsObject = {
       row: number;
       col: number;
+      hidden: boolean;
     };
   }
-}
-
-export class TermState extends jspb.Message {
-  serializeBinary(): Uint8Array;
-  toObject(includeInstance?: boolean): TermState.AsObject;
-  static toObject(includeInstance: boolean, msg: TermState): TermState.AsObject;
-  static extensions: { [key: number]: jspb.ExtensionFieldInfo<jspb.Message> };
-  static extensionsBinary: {
-    [key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>;
-  };
-  static serializeBinaryToWriter(
-    message: TermState,
-    writer: jspb.BinaryWriter
-  ): void;
-  static deserializeBinary(bytes: Uint8Array): TermState;
-  static deserializeBinaryFromReader(
-    message: TermState,
-    reader: jspb.BinaryReader
-  ): TermState;
-}
-
-export namespace TermState {
-  export type AsObject = {};
 }
 
 export class Output extends jspb.Message {

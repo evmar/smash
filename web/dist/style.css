@@ -108,3 +108,12 @@ pre {
 .bg8 {
   background: #d3d7cf;
 }
+
+.term {
+  position: relative;
+  overflow: hidden; /* hide offscreen cursor */
+}
+.term-cursor {
+  position: absolute;
+  background: rgba(255, 0, 0, 0.3);
+}

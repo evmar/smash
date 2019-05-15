@@ -137,6 +137,13 @@ func (cmd *command) run() error {
 		// Called with mu held.
 		allDirty := tr.Dirty.Lines[-1]
 		update := &pb.TermUpdate{}
+		if tr.Dirty.Cursor {
+			update.Cursor = &pb.TermUpdate_Cursor{
+				Row:    int32(term.Row),
+				Col:    int32(term.Col),
+				Hidden: term.HideCursor,
+			}
+		}
 		for row, l := range term.Lines {
 			if !(allDirty || tr.Dirty.Lines[row]) {
 				continue

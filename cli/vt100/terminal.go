@@ -645,6 +645,7 @@ L:
 				// "very visible cursor" state.
 			case 25: // show cursor
 				t.HideCursor = !set
+				tr.Dirty.Cursor = !set
 			case 1000, 1001, 1002: // mouse
 				tr.TODOs.Add("mouse handling")
 			case 1049: // alternate screen buffer

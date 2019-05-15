@@ -27,7 +27,6 @@ class Cell {
 
     this.readline.oncommit = cmd => {
       this.term.dom.focus();
-      console.log(document.activeElement);
       const exec = shell.exec(cmd);
       if (sh.isLocal(exec)) {
         this.term.dom.innerText += exec.output;
@@ -44,6 +43,7 @@ class Cell {
     }
     if (msg.hasExitCode()) {
       console.log('exit code', msg.getExitCode());
+      this.term.showCursor(false);
       this.onExit(this.id);
     }
   }
