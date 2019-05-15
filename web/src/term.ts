@@ -57,6 +57,10 @@ export class Term {
     this.cellSize.height = Number(height!.replace('px', ''));
   }
 
+  focus() {
+    this.dom.focus();
+  }
+
   onUpdate(msg: pb.TermUpdate) {
     const children = this.dom.children;
     for (const rowSpans of msg.getRowsList()) {

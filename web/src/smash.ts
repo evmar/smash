@@ -12,6 +12,7 @@ class Cell {
   dom = html('div', { className: 'cell' });
   readline = new ReadLine();
   term = new Term();
+  running = false;
   onExit = (id: number, exitCode: number) => {};
   send = (msg: pb.ClientMessage) => {};
 
@@ -32,6 +33,7 @@ class Cell {
         this.term.dom.innerText += exec.output;
         this.onExit(this.id, 0);
       } else {
+        this.running = true;
         spawn(this.id, exec);
       }
     };
@@ -42,8 +44,17 @@ class Cell {
       this.term.onUpdate(msg.getTermUpdate()!);
     }
     if (msg.hasExitCode()) {
+      this.running = false;
       this.term.showCursor(false);
       this.onExit(this.id, msg.getExitCode());
+    }
+  }
+
+  focus() {
+    if (this.running) {
+      this.term.focus();
+    } else {
+      this.readline.focus();
     }
   }
 }
@@ -70,6 +81,10 @@ class CellStack {
 
   onExit(id: number, exitCode: number) {
     this.addNew();
+  }
+
+  focus() {
+    this.cells[this.cells.length - 1].focus();
   }
 }
 
@@ -118,6 +133,16 @@ async function main() {
 
   cellStack = new CellStack();
   cellStack.addNew();
+
+  // Clicking on the page, if it tries to focus the document body,
+  // should redirect focus to the relevant place in the cell stack.
+  // This approach feels hacky but I experimented with focus events
+  // and couldn't get the desired behavior.
+  document.addEventListener('click', () => {
+    if (document.activeElement === document.body) {
+      cellStack.focus();
+    }
+  });
 
   ws = await connect();
   ws.onclose = ev => {

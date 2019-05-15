@@ -42,6 +42,10 @@ export class ReadLine {
     };
   }
 
+  focus() {
+    this.input.focus();
+  }
+
   keydown(ev: KeyboardEvent) {
     const key = translateKey(ev);
     if (!key) return;
