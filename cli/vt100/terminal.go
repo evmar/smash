@@ -174,6 +174,7 @@ func (t *TermDirty) IsDirty() bool {
 
 func (t *TermDirty) Reset() {
 	t.Lines = make(map[int]bool)
+	t.Cursor = false
 }
 
 // TermReader carries in-progress terminal state during vt100 emulation.
@@ -276,9 +277,9 @@ func (tr *TermReader) writeRunes(rs []rune, attr Attr) {
 	tr.WithTerm(func(t *Terminal) {
 		for _, r := range rs {
 			t.writeRune(r, attr)
-			tr.Dirty.Cursor = true
 			tr.Dirty.Lines[t.Row] = true
 		}
+		tr.Dirty.Cursor = true
 	})
 }
 
@@ -645,7 +646,7 @@ L:
 				// "very visible cursor" state.
 			case 25: // show cursor
 				t.HideCursor = !set
-				tr.Dirty.Cursor = !set
+				tr.Dirty.Cursor = true
 			case 1000, 1001, 1002: // mouse
 				tr.TODOs.Add("mouse handling")
 			case 1049: // alternate screen buffer
