@@ -22,6 +22,7 @@ const termKeyMap: { [key: string]: string } = {
   ArrowLeft: '\x1b[D',
 
   Backspace: '\x08',
+  Tab: '\x09',
   Enter: '\x0d',
   Escape: '\x1b',
 
@@ -121,7 +122,7 @@ export class Term {
 
     const send = termKeyMap[key];
     if (!send) {
-      if (send === undefined) console.log('unknown key:', key);
+      if (send === undefined) console.log('term: unknown key:', key);
       return;
     }
     this.sendKeys(send);
