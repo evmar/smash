@@ -68,9 +68,17 @@ export class ReadLine {
       case 'C-a':
         this.input.selectionStart = this.input.selectionEnd = 0;
         break;
+      case 'C-b':
+        this.input.selectionStart = this.input.selectionEnd =
+          this.input.selectionStart! - 1;
+        break;
       case 'C-e':
         const len = this.input.value.length;
         this.input.selectionStart = this.input.selectionEnd = len;
+        break;
+      case 'C-f':
+        this.input.selectionStart = this.input.selectionEnd =
+          this.input.selectionStart! + 1;
         break;
       case 'C-k':
         this.input.value = this.input.value.substr(
@@ -78,9 +86,13 @@ export class ReadLine {
           this.input.selectionStart!
         );
         break;
+      case 'C-u':
+        this.input.value = this.input.value.substr(this.input.selectionStart!);
+        break;
       case 'C-J': // browser: inspector
       case 'C-l': // browser: location
       case 'C-r': // browser: reload
+      case 'C-R': // browser: reload
         // Allow default handling.
         return;
       default:
