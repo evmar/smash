@@ -7,6 +7,19 @@ pre {
   margin: 0;
   outline: 0;
 }
+button {
+  font: inherit;
+}
+.error-popup {
+  display: flex;
+  align-items: baseline;
+  border: solid 1px #f77;
+  background: #fee;
+  padding: 1ex 1.5ex;
+  position: fixed;
+  left: 4ex;
+  bottom: 2ex;
+}
 .readline {
   display: flex;
   padding: 2px 1px;

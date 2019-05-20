@@ -37,7 +37,7 @@ export class Term {
   dom = html('pre', { tabIndex: 0, className: 'term' });
   cursor = html('div', { className: 'term-cursor' });
   cellSize = { width: 0, height: 0 };
-  send = (msg: pb.KeyEvent) => {};
+  send = (msg: pb.KeyEvent): boolean => false;
 
   constructor() {
     this.dom.onkeydown = e => this.onKeyDown(e);
@@ -113,7 +113,7 @@ export class Term {
   sendKeys(keys: string) {
     const msg = new pb.KeyEvent();
     msg.setKeys(keys);
-    this.send(msg);
+    return this.send(msg);
   }
 
   onKeyDown(ev: KeyboardEvent) {

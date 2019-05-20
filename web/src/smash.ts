@@ -4,9 +4,95 @@ import { html } from './html';
 import { ReadLine } from './readline';
 import { Term } from './term';
 
-let ws: WebSocket | null = null;
-let shell = new sh.Shell();
-let cellStack: CellStack;
+class ServerConnection {
+  ws: WebSocket | null = null;
+  onMessage = (msg: pb.ServerMsg) => {};
+  errorDom: HTMLElement | null = null;
+
+  async connect(): Promise<void> {
+    const url = new URL('/ws', window.location.href);
+    url.protocol = url.protocol.replace('http', 'ws');
+    const ws = new WebSocket(url.href);
+    ws.binaryType = 'arraybuffer';
+    ws.onmessage = event => {
+      const msg = pb.ServerMsg.deserializeBinary(new Uint8Array(event.data));
+      this.onMessage(msg);
+    };
+    this.ws = await new Promise(res => {
+      ws.onopen = () => {
+        res(ws);
+      };
+      ws.onerror = (err: Event) => {
+        this.showError(`websocket connection failed`);
+        res(null);
+      };
+    });
+
+    if (!this.ws) return;
+
+    this.ws.onopen = ev => {
+      console.error(`unexpected ws open:`, ev);
+    };
+    this.ws.onclose = ev => {
+      let msg = 'connection closed';
+      if (ev.reason) msg += `: ${ev.reason}`;
+      this.showError(msg);
+      this.ws = null;
+    };
+    this.ws.onerror = err => {
+      this.showError(`connection error: ${err}`);
+      this.ws = null;
+    };
+  }
+
+  reconnect() {
+    if (!this.errorDom) return;
+    document.body.removeChild(this.errorDom);
+    this.errorDom = null;
+    this.connect();
+  }
+
+  send(msg: pb.ClientMessage): boolean {
+    if (!this.ws) return false;
+    this.ws.send(msg.serializeBinary());
+    return true;
+  }
+
+  spawn(id: number, cmd: sh.ExecRemote): boolean {
+    const run = new pb.RunRequest();
+    run.setCell(id);
+    run.setCwd(cmd.cwd);
+    run.setArgvList(cmd.cmd);
+    const msg = new pb.ClientMessage();
+    msg.setRun(run);
+    return this.send(msg);
+  }
+
+  showError(msg: string) {
+    console.error(msg);
+    if (!this.errorDom) {
+      this.errorDom = html(
+        'div',
+        { className: 'error-popup' },
+        html('div', {}, document.createTextNode(msg)),
+        html('div', { style: { width: '1ex' } }),
+        html(
+          'button',
+          {
+            onclick: () => {
+              this.reconnect();
+            }
+          },
+          document.createTextNode('reconnect')
+        )
+      );
+      document.body.appendChild(this.errorDom);
+    }
+  }
+}
+
+const conn = new ServerConnection();
+const shell = new sh.Shell();
 
 class Cell {
   dom = html('div', { className: 'cell' });
@@ -14,7 +100,7 @@ class Cell {
   term = new Term();
   running = false;
   onExit = (id: number, exitCode: number) => {};
-  send = (msg: pb.ClientMessage) => {};
+  send = (msg: pb.ClientMessage): boolean => false;
 
   constructor(public id: number) {
     this.dom.appendChild(this.readline.dom);
@@ -22,7 +108,7 @@ class Cell {
       const msg = new pb.ClientMessage();
       key.setCell(this.id);
       msg.setKey(key);
-      this.send(msg);
+      return this.send(msg);
     };
 
     this.readline.oncommit = cmd => {
@@ -34,7 +120,7 @@ class Cell {
         this.onExit(this.id, 0);
       } else {
         this.running = true;
-        spawn(this.id, exec);
+        conn.spawn(this.id, exec);
       }
     };
   }
@@ -64,7 +150,7 @@ class Cell {
 
 class CellStack {
   cells: Cell[] = [];
-  send = (msg: pb.ClientMessage) => {};
+  send = (msg: pb.ClientMessage): boolean => false;
 
   addNew() {
     const id = this.cells.length;
@@ -91,50 +177,24 @@ class CellStack {
   }
 }
 
-function spawn(id: number, cmd: sh.ExecRemote) {
-  if (!ws) return;
-  const run = new pb.RunRequest();
-  run.setCell(id);
-  run.setCwd(cmd.cwd);
-  run.setArgvList(cmd.cmd);
-  const msg = new pb.ClientMessage();
-  msg.setRun(run);
-  ws.send(msg.serializeBinary());
-}
-
-function handleMessage(ev: MessageEvent) {
-  const msg = pb.ServerMsg.deserializeBinary(new Uint8Array(ev.data));
-  switch (msg.getMsgCase()) {
-    case pb.ServerMsg.MsgCase.OUTPUT: {
-      const m = msg.getOutput()!;
-      cellStack.onOutput(m);
-      break;
-    }
-  }
-}
-
-async function connect(): Promise<WebSocket> {
-  const url = new URL('/ws', window.location.href);
-  url.protocol = url.protocol.replace('http', 'ws');
-  const ws = new WebSocket(url.href);
-  ws.binaryType = 'arraybuffer';
-  ws.onmessage = handleMessage;
-  return new Promise((res, rej) => {
-    ws.onopen = () => {
-      res(ws);
-    };
-    ws.onerror = err => {
-      rej(err);
-    };
-  });
-}
-
 async function main() {
   // Register an unused service worker so 'add to homescreen' works.
   // TODO: even when we do this, we still get a URL bar?!
   // await navigator.serviceWorker.register('worker.js');
 
-  cellStack = new CellStack();
+  const cellStack = new CellStack();
+
+  conn.onMessage = msg => {
+    switch (msg.getMsgCase()) {
+      case pb.ServerMsg.MsgCase.OUTPUT: {
+        const m = msg.getOutput()!;
+        cellStack.onOutput(m);
+        break;
+      }
+    }
+  };
+  await conn.connect();
+
   cellStack.addNew();
 
   // Clicking on the page, if it tries to focus the document body,
@@ -147,19 +207,7 @@ async function main() {
     }
   });
 
-  ws = await connect();
-  ws.onclose = ev => {
-    console.error(`connection closed: ${ev.code} (${ev.reason})`);
-    ws = null;
-  };
-  ws.onerror = err => {
-    console.error(`connection failed: ${err}`);
-    ws = null;
-  };
-  cellStack.send = msg => {
-    if (!ws) return;
-    ws.send(msg.serializeBinary());
-  };
+  cellStack.send = msg => conn.send(msg);
 }
 
 main().catch(err => {
