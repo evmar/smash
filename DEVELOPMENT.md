@@ -43,3 +43,11 @@ $ convert -size 32x32 -gravity center -background white -fill black label:">" ic
 Run `script` then the command to capture raw terminal output.
 
 Run `infocmp -L` to understand what the terminal outputs mean.
+
+## bash
+
+To experiment with the bash completion support, run:
+
+```
+$ cd cli && go run ./bash/demo
+```
