@@ -40,6 +40,14 @@ Go tests use the Go test runner:
 $ cd cli; go test ./...
 ```
 
+To bring up a page to poke in a browser:
+
+```sh
+$ make serve
+```
+
+and visit `http://localhost:9001/local.html`.
+
 ## Chrome PWA
 
 PWAs only work on https or localhost. For one of these on ChromeOS,

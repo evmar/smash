@@ -1,35 +1,10 @@
 import { ReadLine } from './readline';
 import { expect } from 'chai';
 import * as http from 'http';
-import * as url from 'url';
-import * as path from 'path';
-import * as fs from 'fs';
 import puppeteer from 'puppeteer';
 
-function runServer(): Promise<http.Server> {
-  const server = http.createServer((req, res) => {
-    const reqUrl = url.parse(req.url || '/');
-    let reqPath = path.normalize(reqUrl.path || '/');
-    if (reqPath.endsWith('/')) reqPath += 'index.html';
-    if (!reqPath.startsWith('/')) {
-      console.error('bad request', reqPath);
-      throw new Error('bad request');
-    }
-    reqPath = path.join('dist', reqPath);
+import { runServer, port } from './server';
 
-    const file = fs.createReadStream(reqPath);
-    file.pipe(res);
-  });
-  server.listen(port);
-  return new Promise(resolve => {
-    server.on('listening', () => {
-      console.log(`test server listening on ${port}`);
-      resolve(server);
-    });
-  });
-}
-
-const port = 9001;
 let server: http.Server;
 let browser: puppeteer.Browser;
 
@@ -54,7 +29,7 @@ describe('readline', async function() {
 
   beforeEach(async () => {
     page = await browser.newPage();
-    await page.goto(`http://localhost:${port}/widgets.html`);
+    await page.goto(`http://localhost:${port}/test.html`);
     readline = await page.evaluateHandle(() => {
       const readline = new smash.ReadLine();
       document.body.appendChild(readline.dom);

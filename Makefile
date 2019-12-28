@@ -25,3 +25,7 @@ proto:
 .PHONY: fmt
 fmt:
 	./fmt.sh --write
+
+.PHONY: serve
+serve:
+	cd web && node js/server.js

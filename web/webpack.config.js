@@ -4,7 +4,8 @@ module.exports = {
   mode: 'development',
   entry: {
     smash: './js/smash.js',
-    widgets: './js/widgets.js'
+    widgets: './js/widgets.js',
+    local: './js/local.js'
   },
   module: {
     rules: [
