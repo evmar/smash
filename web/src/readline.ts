@@ -14,7 +14,12 @@ function translateKey(ev: KeyboardEvent): string {
   let name = '';
   if (ev.altKey) name += 'M-';
   if (ev.ctrlKey) name += 'C-';
-  if (name.length === 0) return '';
+  switch (ev.key) {
+    case 'Tab':
+      break;
+    default:
+      if (name.length === 0) return '';
+  }
   name += ev.key;
   return name;
 }
