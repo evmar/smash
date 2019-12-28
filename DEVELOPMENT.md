@@ -26,6 +26,20 @@ $ make proto
 
 Regenerates the protobuf APIs.
 
+## Testing
+
+HTML/JS-only tests are in `web/src/test.ts`, driving a headless Chrome:
+
+```sh
+$ cd web; npm run test
+```
+
+Go tests use the Go test runner:
+
+```sh
+$ cd cli; go test ./...
+```
+
 ## Chrome PWA
 
 PWAs only work on https or localhost. For one of these on ChromeOS,
