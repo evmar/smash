@@ -1,4 +1,5 @@
 import * as path from 'path';
+import { AliasMap } from './alias';
 
 function parseCmd(cmd: string): string[] {
   return cmd.split(/\s+/);
@@ -18,11 +19,13 @@ export function isLocal(cmd: ExecLocal | ExecRemote): cmd is ExecLocal {
 }
 
 export class Shell {
+  aliases = new AliasMap();
   cwd = '/';
 
   exec(cmd: string): ExecLocal | ExecRemote {
-    const argv = parseCmd(cmd);
+    let argv = parseCmd(cmd);
     if (argv.length === 0) return { output: '' };
+    argv = this.aliases.expand(argv);
     switch (argv[0]) {
       case 'cd':
         if (argv.length > 2) {
