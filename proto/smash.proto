@@ -1,6 +1,7 @@
 syntax = "proto3";
 package proto;
 
+// Message from client to server.
 message ClientMessage {
   oneof msg {
     RunRequest run = 1;
@@ -8,20 +9,26 @@ message ClientMessage {
   }
 }
 
+// Request to spawn a command.
 message RunRequest {
   int32 cell = 1;
   string cwd = 2;
   repeated string argv = 3;
 }
 
+// Keystroke sent to running command.
 message KeyEvent {
   int32 cell = 1;
   string keys = 2;
 }
 
+// Termial update, server -> client.
 message TermUpdate {
+  // Updates to specific rows of output.
   repeated RowSpans rows = 1;
+  // Cursor position.
   Cursor cursor = 2;
+
   message RowSpans {
     int32 row = 1;
     repeated Span spans = 2;
@@ -37,11 +44,16 @@ message TermUpdate {
   }
 }
 
+// Message from server to client about a running subprocess.
 message Output {
   int32 cell = 1;
   oneof output {
+    // An error occurred outside of the subprocess, e.g. the subprocess
+    // aborted.
     string error = 2;
+    // Update from a running subprocess.
     TermUpdate term_update = 3;
+    // Subprocess terminated successfully with an exit code.
     int32 exit_code = 4;
   }
 }
