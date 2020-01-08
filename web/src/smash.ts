@@ -98,7 +98,7 @@ class Cell {
   dom = html('div', { className: 'cell' });
   readline = new ReadLine();
   term = new Term();
-  running = false;
+  running: sh.ExecRemote | null = null;
   onExit = (id: number, exitCode: number) => {};
   send = (msg: pb.ClientMessage): boolean => false;
 
@@ -119,8 +119,9 @@ class Cell {
         this.term.dom.innerText += exec.output;
         this.onExit(this.id, 0);
       } else {
-        this.running = true;
+        this.running = exec;
         conn.spawn(this.id, exec);
+        // The result of spawning will come back in via a message in onOutput().
       }
     };
   }
@@ -133,9 +134,14 @@ class Cell {
       this.term.showError(msg.getError());
     }
     if (msg.hasExitCode()) {
-      this.running = false;
+      // Command completed.
+      const exitCode = msg.getExitCode();
+      if (this.running && this.running.onComplete) {
+        this.running.onComplete(exitCode);
+      }
+      this.running = null;
       this.term.showCursor(false);
-      this.onExit(this.id, msg.getExitCode());
+      this.onExit(this.id, exitCode);
     }
   }
 

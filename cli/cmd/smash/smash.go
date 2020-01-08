@@ -105,6 +105,21 @@ func termLoop(tr *vt100.TermReader, r io.Reader) error {
 // to run for whatever reason (e.g. no such path), and otherwise returns
 // the subprocess exit code.
 func (cmd *command) run() (int, error) {
+	if cmd.cmd.Path == "cd" {
+		if len(cmd.cmd.Args) != 2 {
+			return 0, fmt.Errorf("bad arguments to cd")
+		}
+		dir := cmd.cmd.Args[1]
+		st, err := os.Stat(dir)
+		if err != nil {
+			return 0, err
+		}
+		if !st.IsDir() {
+			return 0, fmt.Errorf("%s: not a directory", dir)
+		}
+		return 0, nil
+	}
+
 	if filepath.Base(cmd.cmd.Path) == cmd.cmd.Path {
 		// TODO: should use shell env $PATH.
 		if p, err := exec.LookPath(cmd.cmd.Path); err != nil {

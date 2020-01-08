@@ -8,6 +8,7 @@ function parseCmd(cmd: string): string[] {
 export interface ExecRemote {
   cwd: string;
   cmd: string[];
+  onComplete?: (exitCode: number) => void;
 }
 
 export interface ExecLocal {
@@ -30,17 +31,25 @@ export class Shell {
       case 'cd':
         if (argv.length > 2) {
           return { output: 'usage: cd [DIR]' };
-        } else if (argv.length === 1) {
-          return { output: '' };
-        } else {
-          const arg = argv[1];
-          if (arg.startsWith('/')) {
-            this.cwd = path.normalize(arg);
-          } else {
-            this.cwd = path.join(this.cwd, arg);
-          }
-          return { output: '' };
         }
+        let arg = argv[1];
+        if (!arg) {
+          return { output: 'TODO empty cd' };
+        }
+        if (arg.startsWith('/')) {
+          arg = path.normalize(arg);
+        } else {
+          arg = path.join(this.cwd, arg);
+        }
+        return {
+          cwd: this.cwd,
+          cmd: ['cd', arg],
+          onComplete: (exitCode: number) => {
+            if (exitCode === 0) {
+              this.cwd = arg;
+            }
+          }
+        };
       default:
         return { cwd: this.cwd, cmd: argv };
     }
