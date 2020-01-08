@@ -94,6 +94,9 @@ export class ReadLine {
       case 'C-u':
         this.input.value = this.input.value.substr(this.input.selectionStart!);
         break;
+      case 'C-x': // browser: cut
+      case 'C-c': // browser: copy
+      case 'C-v': // browser: paste
       case 'C-J': // browser: inspector
       case 'C-l': // browser: location
       case 'C-r': // browser: reload
