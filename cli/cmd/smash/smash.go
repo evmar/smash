@@ -13,6 +13,7 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/evmar/smash/bash"
 	pb "github.com/evmar/smash/proto"
 	"github.com/evmar/smash/vt100"
 	"github.com/golang/protobuf/proto"
@@ -275,8 +276,9 @@ func serveWS(w http.ResponseWriter, r *http.Request) error {
 		ws: wsConn,
 	}
 
-	aliases := map[string]string{
-		"ls": "ls --color",
+	aliases, err := bash.GetAliases()
+	if err != nil {
+		return err
 	}
 	err = conn.writeMsg(&pb.ServerMsg{Msg: &pb.ServerMsg_Hello{&pb.Hello{
 		Alias: aliases,
