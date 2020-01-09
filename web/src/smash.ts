@@ -1,6 +1,6 @@
 import * as pb from './smash_pb';
 import * as sh from './shell';
-import { html } from './html';
+import { html, htext } from './html';
 import { ReadLine } from './readline';
 import { Term } from './term';
 import * as jspb from 'google-protobuf';
@@ -113,17 +113,31 @@ class Cell {
     };
 
     this.readline.oncommit = cmd => {
-      this.dom.appendChild(this.term.dom);
-      this.term.dom.focus();
       const exec = shell.exec(cmd);
-      if (sh.isLocal(exec)) {
-        this.term.dom.innerText += exec.output;
-        this.onExit(this.id, 0);
-      } else {
-        this.running = exec;
-        conn.spawn(this.id, exec);
+      switch (exec.kind) {
+        case 'string':
+          this.term.dom.innerText += exec.output;
+          this.onExit(this.id, 0);
+          break;
+        case 'table':
+          const table = html(
+            'table',
+            {},
+            html('tr', {}, ...exec.headers.map(h => html('th', {}, htext(h)))),
+            ...exec.rows.map(r =>
+              html('tr', {}, ...r.map(t => html('td', {}, htext(t))))
+            )
+          );
+          this.term.dom = table;
+          this.onExit(this.id, 0);
+          break;
+        case 'remote':
+          this.running = exec;
+          conn.spawn(this.id, exec);
         // The result of spawning will come back in via a message in onOutput().
       }
+      this.dom.appendChild(this.term.dom);
+      this.term.dom.focus();
     };
   }
 

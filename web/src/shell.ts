@@ -6,44 +6,57 @@ export function parseCmd(cmd: string): string[] {
 }
 
 export interface ExecRemote {
+  kind: 'remote';
   cwd: string;
   cmd: string[];
   onComplete?: (exitCode: number) => void;
 }
 
-export interface ExecLocal {
+export interface TableOutput {
+  kind: 'table';
+  headers: string[];
+  rows: string[][];
+}
+
+export interface StringOutput {
+  kind: 'string';
   output: string;
 }
 
-export function isLocal(cmd: ExecLocal | ExecRemote): cmd is ExecLocal {
-  return 'output' in cmd;
+type ExecOutput = ExecRemote | TableOutput | StringOutput;
+
+function strOutput(msg: string): ExecOutput {
+  return { kind: 'string', output: msg };
 }
 
 export class Shell {
   aliases = new AliasMap();
   cwd = '/';
 
-  exec(cmd: string): ExecLocal | ExecRemote {
+  exec(cmd: string): ExecOutput {
     let argv = parseCmd(cmd);
-    if (argv.length === 0) return { output: '' };
+    if (argv.length === 0) return strOutput('');
     argv = this.aliases.expand(argv);
     switch (argv[0]) {
       case 'alias':
         if (argv.length > 2) {
-          return { output: 'usage: alias [CMD]' };
+          return strOutput('usage: alias [CMD]');
         }
         if (argv.length > 1) {
-          return { output: 'TODO: alias CMD' };
+          return strOutput('TODO: alias CMD');
         }
-        return { output: this.aliases.dump() };
-        break;
+        return {
+          kind: 'table',
+          headers: ['alias', 'expansion'],
+          rows: Array.from(this.aliases.aliases)
+        };
       case 'cd':
         if (argv.length > 2) {
-          return { output: 'usage: cd [DIR]' };
+          return strOutput('usage: cd [DIR]');
         }
         let arg = argv[1];
         if (!arg) {
-          return { output: 'TODO empty cd' };
+          return strOutput('TODO empty cd');
         }
         if (arg.startsWith('/')) {
           arg = path.normalize(arg);
@@ -51,6 +64,7 @@ export class Shell {
           arg = path.join(this.cwd, arg);
         }
         return {
+          kind: 'remote',
           cwd: this.cwd,
           cmd: ['cd', arg],
           onComplete: (exitCode: number) => {
@@ -60,7 +74,7 @@ export class Shell {
           }
         };
       default:
-        return { cwd: this.cwd, cmd: argv };
+        return { kind: 'remote', cwd: this.cwd, cmd: argv };
     }
   }
 }

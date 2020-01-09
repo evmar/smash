@@ -19,3 +19,7 @@ export function html(
   }
   return tag;
 }
+
+export function htext(text: string): Node {
+  return document.createTextNode(text);
+}
