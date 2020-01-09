@@ -44,6 +44,14 @@ message TermUpdate {
   }
 }
 
+// Message from server to client on connection.
+message Hello {
+  // Command aliases, from alias name to expansion.
+  map<string, string> alias = 1;
+
+  // TODO: running cells and their state.
+}
+
 // Message from server to client about a running subprocess.
 message Output {
   int32 cell = 1;
@@ -60,6 +68,7 @@ message Output {
 
 message ServerMsg {
   oneof msg {
-    Output output = 1;
+    Hello hello = 1;
+    Output output = 2;
   }
 }

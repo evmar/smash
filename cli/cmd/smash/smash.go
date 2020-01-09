@@ -274,6 +274,17 @@ func serveWS(w http.ResponseWriter, r *http.Request) error {
 	conn := &conn{
 		ws: wsConn,
 	}
+
+	aliases := map[string]string{
+		"ls": "ls --color",
+	}
+	err = conn.writeMsg(&pb.ServerMsg{Msg: &pb.ServerMsg_Hello{&pb.Hello{
+		Alias: aliases,
+	}}})
+	if err != nil {
+		return err
+	}
+
 	commands := map[int]*command{}
 	for {
 		_, buf, err := conn.ws.ReadMessage()

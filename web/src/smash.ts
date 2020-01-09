@@ -3,6 +3,7 @@ import * as sh from './shell';
 import { html } from './html';
 import { ReadLine } from './readline';
 import { Term } from './term';
+import * as jspb from 'google-protobuf';
 
 class ServerConnection {
   ws: WebSocket | null = null;
@@ -188,6 +189,23 @@ async function main() {
   // TODO: even when we do this, we still get a URL bar?!
   // await navigator.serviceWorker.register('worker.js');
 
+  async function connect(): Promise<pb.Hello> {
+    return new Promise(async (resolve, reject) => {
+      conn.onMessage = msg => {
+        if (msg.getMsgCase() !== pb.ServerMsg.MsgCase.HELLO) {
+          reject(`unexpected message ${msg.toObject()}`);
+          return;
+        }
+        resolve(msg.getHello());
+      };
+      await conn.connect();
+    });
+  }
+  const hello = await connect();
+  shell.aliases.setAliases(
+    new Map<string, string>(hello.getAliasMap().getEntryList())
+  );
+
   const cellStack = new CellStack();
 
   conn.onMessage = msg => {
@@ -197,9 +215,10 @@ async function main() {
         cellStack.onOutput(m);
         break;
       }
+      default:
+        console.error('unexpected message', msg.toObject());
     }
   };
-  await conn.connect();
 
   cellStack.addNew();
 

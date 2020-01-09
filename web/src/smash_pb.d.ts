@@ -263,6 +263,33 @@ export namespace TermUpdate {
   }
 }
 
+export class Hello extends jspb.Message {
+  getAliasMap(): jspb.Map<string, string>;
+  clearAliasMap(): void;
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): Hello.AsObject;
+  static toObject(includeInstance: boolean, msg: Hello): Hello.AsObject;
+  static extensions: { [key: number]: jspb.ExtensionFieldInfo<jspb.Message> };
+  static extensionsBinary: {
+    [key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>;
+  };
+  static serializeBinaryToWriter(
+    message: Hello,
+    writer: jspb.BinaryWriter
+  ): void;
+  static deserializeBinary(bytes: Uint8Array): Hello;
+  static deserializeBinaryFromReader(
+    message: Hello,
+    reader: jspb.BinaryReader
+  ): Hello;
+}
+
+export namespace Hello {
+  export type AsObject = {
+    aliasMap: Array<[string, string]>;
+  };
+}
+
 export class Output extends jspb.Message {
   getCell(): number;
   setCell(value: number): void;
@@ -318,6 +345,11 @@ export namespace Output {
 }
 
 export class ServerMsg extends jspb.Message {
+  hasHello(): boolean;
+  clearHello(): void;
+  getHello(): Hello | undefined;
+  setHello(value?: Hello): void;
+
   hasOutput(): boolean;
   clearOutput(): void;
   getOutput(): Output | undefined;
@@ -344,11 +376,13 @@ export class ServerMsg extends jspb.Message {
 
 export namespace ServerMsg {
   export type AsObject = {
+    hello?: Hello.AsObject;
     output?: Output.AsObject;
   };
 
   export enum MsgCase {
     MSG_NOT_SET = 0,
-    OUTPUT = 1
+    HELLO = 1,
+    OUTPUT = 2
   }
 }

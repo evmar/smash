@@ -1,7 +1,7 @@
 import * as path from 'path';
 import { AliasMap } from './alias';
 
-function parseCmd(cmd: string): string[] {
+export function parseCmd(cmd: string): string[] {
   return cmd.split(/\s+/);
 }
 
@@ -28,6 +28,15 @@ export class Shell {
     if (argv.length === 0) return { output: '' };
     argv = this.aliases.expand(argv);
     switch (argv[0]) {
+      case 'alias':
+        if (argv.length > 2) {
+          return { output: 'usage: alias [CMD]' };
+        }
+        if (argv.length > 1) {
+          return { output: 'TODO: alias CMD' };
+        }
+        return { output: this.aliases.dump() };
+        break;
       case 'cd':
         if (argv.length > 2) {
           return { output: 'usage: cd [DIR]' };
