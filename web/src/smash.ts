@@ -117,7 +117,6 @@ class Cell {
       switch (exec.kind) {
         case 'string':
           this.term.dom.innerText += exec.output;
-          this.onExit(this.id, 0);
           break;
         case 'table':
           const table = html(
@@ -129,15 +128,18 @@ class Cell {
             )
           );
           this.term.dom = table;
-          this.onExit(this.id, 0);
           break;
         case 'remote':
           this.running = exec;
           conn.spawn(this.id, exec);
-        // The result of spawning will come back in via a message in onOutput().
+          // The result of spawning will come back in via a message in onOutput().
+          break;
       }
       this.dom.appendChild(this.term.dom);
       this.term.dom.focus();
+      if (!this.running) {
+        this.onExit(this.id, 0);
+      }
     };
   }
 
