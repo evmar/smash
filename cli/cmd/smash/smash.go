@@ -263,6 +263,7 @@ func (cmd *command) runHandlingErrors() {
 	exitCode, err := cmd.run()
 	if err != nil {
 		cmd.sendError(err.Error())
+		exitCode = 1
 	}
 	cmd.send(&pb.Output_ExitCode{int32(exitCode)})
 }
