@@ -34,10 +34,7 @@ export class Shell {
   env = new Map<string, string>();
   cwd = '/';
 
-  exec(cmd: string): ExecOutput {
-    let argv = parseCmd(cmd);
-    if (argv.length === 0) return strOutput('');
-    argv = this.aliases.expand(argv);
+  handleBuiltin(argv: string[]): ExecOutput | undefined {
     switch (argv[0]) {
       case 'alias':
         if (argv.length > 2) {
@@ -75,13 +72,21 @@ export class Shell {
           }
         };
       case 'env':
+        if (argv.length > 1) return;
         return {
           kind: 'table',
           headers: ['var', 'value'],
           rows: Array.from(this.env)
         };
-      default:
-        return { kind: 'remote', cwd: this.cwd, cmd: argv };
     }
+  }
+
+  exec(cmd: string): ExecOutput {
+    let argv = parseCmd(cmd);
+    if (argv.length === 0) return strOutput('');
+    argv = this.aliases.expand(argv);
+    const out = this.handleBuiltin(argv);
+    if (out) return out;
+    return { kind: 'remote', cwd: this.cwd, cmd: argv };
   }
 }
