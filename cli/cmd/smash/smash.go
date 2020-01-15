@@ -9,6 +9,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strings"
 	"sync"
 	"syscall"
 	"time"
@@ -268,6 +269,18 @@ func (cmd *command) runHandlingErrors() {
 	cmd.send(&pb.Output_ExitCode{int32(exitCode)})
 }
 
+func getEnv() map[string]string {
+	env := map[string]string{}
+	for _, keyval := range os.Environ() {
+		eq := strings.Index(keyval, "=")
+		if eq < 0 {
+			panic("bad env?")
+		}
+		env[keyval[:eq]] = keyval[eq+1:]
+	}
+	return env
+}
+
 func serveWS(w http.ResponseWriter, r *http.Request) error {
 	wsConn, err := upgrader.Upgrade(w, r, nil)
 	if err != nil {
@@ -283,6 +296,7 @@ func serveWS(w http.ResponseWriter, r *http.Request) error {
 	}
 	err = conn.writeMsg(&pb.ServerMsg{Msg: &pb.ServerMsg_Hello{&pb.Hello{
 		Alias: aliases,
+		Env:   getEnv(),
 	}}})
 	if err != nil {
 		return err

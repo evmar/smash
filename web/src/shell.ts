@@ -31,6 +31,7 @@ function strOutput(msg: string): ExecOutput {
 
 export class Shell {
   aliases = new AliasMap();
+  env = new Map<string, string>();
   cwd = '/';
 
   exec(cmd: string): ExecOutput {
@@ -72,6 +73,12 @@ export class Shell {
               this.cwd = arg;
             }
           }
+        };
+      case 'env':
+        return {
+          kind: 'table',
+          headers: ['var', 'value'],
+          rows: Array.from(this.env)
         };
       default:
         return { kind: 'remote', cwd: this.cwd, cmd: argv };

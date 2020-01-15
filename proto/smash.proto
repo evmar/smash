@@ -49,6 +49,9 @@ message Hello {
   // Command aliases, from alias name to expansion.
   map<string, string> alias = 1;
 
+  // Environment variables
+  map<string, string> env = 2;
+
   // TODO: running cells and their state.
 }
 

@@ -266,6 +266,8 @@ export namespace TermUpdate {
 export class Hello extends jspb.Message {
   getAliasMap(): jspb.Map<string, string>;
   clearAliasMap(): void;
+  getEnvMap(): jspb.Map<string, string>;
+  clearEnvMap(): void;
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): Hello.AsObject;
   static toObject(includeInstance: boolean, msg: Hello): Hello.AsObject;
@@ -287,6 +289,7 @@ export class Hello extends jspb.Message {
 export namespace Hello {
   export type AsObject = {
     aliasMap: Array<[string, string]>;
+    envMap: Array<[string, string]>;
   };
 }
 

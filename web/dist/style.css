@@ -10,6 +10,9 @@ pre {
 button {
   font: inherit;
 }
+table .value {
+  word-break: break-all;
+}
 .error-popup {
   display: flex;
   align-items: baseline;

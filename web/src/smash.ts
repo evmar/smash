@@ -124,7 +124,13 @@ class Cell {
             {},
             html('tr', {}, ...exec.headers.map(h => html('th', {}, htext(h)))),
             ...exec.rows.map(r =>
-              html('tr', {}, ...r.map(t => html('td', {}, htext(t))))
+              html(
+                'tr',
+                {},
+                ...r.map((t, i) =>
+                  html('td', { className: i > 0 ? 'value' : '' }, htext(t))
+                )
+              )
             )
           );
           this.term.dom = table;
@@ -221,6 +227,7 @@ async function main() {
   shell.aliases.setAliases(
     new Map<string, string>(hello.getAliasMap().getEntryList())
   );
+  shell.env = new Map(hello.getEnvMap().getEntryList());
 
   const cellStack = new CellStack();
 
