@@ -25,11 +25,16 @@ table .value {
 }
 .readline {
   display: flex;
+  align-items: baseline;
   padding: 2px 1px;
 }
 .readline:focus-within {
   background: #eee;
 }
+.readline input {
+  font-weight: bold;
+}
+
 .prompt {
   white-space: pre;
   cursor: pointer;

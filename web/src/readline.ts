@@ -63,7 +63,7 @@ export class ReadLine {
   }
 
   setPrompt(text: string) {
-    this.prompt.innerText = `${text}> `;
+    this.prompt.innerText = `${text}$ `;
   }
 
   focus() {
