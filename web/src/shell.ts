@@ -2,7 +2,9 @@ import * as path from 'path';
 import { AliasMap } from './alias';
 
 export function parseCmd(cmd: string): string[] {
-  return cmd.split(/\s+/);
+  const parts = cmd.split(/\s+/);
+  if (parts.length === 1 && parts[0] === '') return [];
+  return parts;
 }
 
 export interface ExecRemote {
@@ -38,7 +40,16 @@ export class Shell {
     this.cwd = this.env.get('HOME') || '/';
   }
 
-  handleBuiltin(argv: string[]): ExecOutput | undefined {
+  cwdForPrompt() {
+    let cwd = this.cwd;
+    const home = this.env.get('HOME');
+    if (home && cwd.startsWith(home)) {
+      cwd = '~' + cwd.substring(home.length);
+    }
+    return cwd;
+  }
+
+  private handleBuiltin(argv: string[]): ExecOutput | undefined {
     switch (argv[0]) {
       case 'alias':
         if (argv.length > 2) {

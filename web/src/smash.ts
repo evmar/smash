@@ -184,7 +184,7 @@ class CellStack {
   addNew() {
     const id = this.cells.length;
     const cell = new Cell(id);
-    cell.readline.setPrompt(shell.cwd);
+    cell.readline.setPrompt(shell.cwdForPrompt());
     cell.onExit = (id: number, exitCode: number) => {
       this.onExit(id, exitCode);
     };
