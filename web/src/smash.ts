@@ -229,6 +229,7 @@ async function main() {
     new Map<string, string>(hello.getAliasMap().getEntryList())
   );
   shell.env = new Map(hello.getEnvMap().getEntryList());
+  shell.init();
 
   const cellStack = new CellStack();
 

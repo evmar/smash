@@ -34,6 +34,10 @@ export class Shell {
   env = new Map<string, string>();
   cwd = '/';
 
+  init() {
+    this.cwd = this.env.get('HOME') || '/';
+  }
+
   handleBuiltin(argv: string[]): ExecOutput | undefined {
     switch (argv[0]) {
       case 'alias':
