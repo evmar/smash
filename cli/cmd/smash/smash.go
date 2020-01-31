@@ -326,6 +326,17 @@ func serveWS(w http.ResponseWriter, r *http.Request) error {
 			// TODO: what if cmd failed?
 			// TODO: what if pipe is blocked?
 			cmd.stdin <- []byte(key.Keys)
+		} else if complete := msg.GetComplete(); complete != nil {
+			err = conn.writeMsg(&pb.ServerMsg{Msg: &pb.ServerMsg_Complete{&pb.CompleteResponse{
+				Id:          complete.Id,
+				Pos:         complete.Pos,
+				Completions: []string{"hello"},
+			}}})
+			if err != nil {
+				log.Println(err) // TODO
+			}
+		} else {
+			log.Println("unhandled msg", msg)
 		}
 	}
 	return nil

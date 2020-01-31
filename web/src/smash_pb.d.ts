@@ -4,6 +4,11 @@
 import * as jspb from 'google-protobuf';
 
 export class ClientMessage extends jspb.Message {
+  hasComplete(): boolean;
+  clearComplete(): void;
+  getComplete(): CompleteRequest | undefined;
+  setComplete(value?: CompleteRequest): void;
+
   hasRun(): boolean;
   clearRun(): void;
   getRun(): RunRequest | undefined;
@@ -38,15 +43,105 @@ export class ClientMessage extends jspb.Message {
 
 export namespace ClientMessage {
   export type AsObject = {
+    complete?: CompleteRequest.AsObject;
     run?: RunRequest.AsObject;
     key?: KeyEvent.AsObject;
   };
 
   export enum MsgCase {
     MSG_NOT_SET = 0,
-    RUN = 1,
-    KEY = 2
+    COMPLETE = 1,
+    RUN = 2,
+    KEY = 3
   }
+}
+
+export class CompleteRequest extends jspb.Message {
+  getId(): number;
+  setId(value: number): void;
+
+  getCwd(): string;
+  setCwd(value: string): void;
+
+  getInput(): string;
+  setInput(value: string): void;
+
+  getPos(): number;
+  setPos(value: number): void;
+
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): CompleteRequest.AsObject;
+  static toObject(
+    includeInstance: boolean,
+    msg: CompleteRequest
+  ): CompleteRequest.AsObject;
+  static extensions: { [key: number]: jspb.ExtensionFieldInfo<jspb.Message> };
+  static extensionsBinary: {
+    [key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>;
+  };
+  static serializeBinaryToWriter(
+    message: CompleteRequest,
+    writer: jspb.BinaryWriter
+  ): void;
+  static deserializeBinary(bytes: Uint8Array): CompleteRequest;
+  static deserializeBinaryFromReader(
+    message: CompleteRequest,
+    reader: jspb.BinaryReader
+  ): CompleteRequest;
+}
+
+export namespace CompleteRequest {
+  export type AsObject = {
+    id: number;
+    cwd: string;
+    input: string;
+    pos: number;
+  };
+}
+
+export class CompleteResponse extends jspb.Message {
+  getId(): number;
+  setId(value: number): void;
+
+  getError(): string;
+  setError(value: string): void;
+
+  getPos(): number;
+  setPos(value: number): void;
+
+  clearCompletionsList(): void;
+  getCompletionsList(): Array<string>;
+  setCompletionsList(value: Array<string>): void;
+  addCompletions(value: string, index?: number): string;
+
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): CompleteResponse.AsObject;
+  static toObject(
+    includeInstance: boolean,
+    msg: CompleteResponse
+  ): CompleteResponse.AsObject;
+  static extensions: { [key: number]: jspb.ExtensionFieldInfo<jspb.Message> };
+  static extensionsBinary: {
+    [key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>;
+  };
+  static serializeBinaryToWriter(
+    message: CompleteResponse,
+    writer: jspb.BinaryWriter
+  ): void;
+  static deserializeBinary(bytes: Uint8Array): CompleteResponse;
+  static deserializeBinaryFromReader(
+    message: CompleteResponse,
+    reader: jspb.BinaryReader
+  ): CompleteResponse;
+}
+
+export namespace CompleteResponse {
+  export type AsObject = {
+    id: number;
+    error: string;
+    pos: number;
+    completionsList: Array<string>;
+  };
 }
 
 export class RunRequest extends jspb.Message {
@@ -353,6 +448,11 @@ export class ServerMsg extends jspb.Message {
   getHello(): Hello | undefined;
   setHello(value?: Hello): void;
 
+  hasComplete(): boolean;
+  clearComplete(): void;
+  getComplete(): CompleteResponse | undefined;
+  setComplete(value?: CompleteResponse): void;
+
   hasOutput(): boolean;
   clearOutput(): void;
   getOutput(): Output | undefined;
@@ -380,12 +480,14 @@ export class ServerMsg extends jspb.Message {
 export namespace ServerMsg {
   export type AsObject = {
     hello?: Hello.AsObject;
+    complete?: CompleteResponse.AsObject;
     output?: Output.AsObject;
   };
 
   export enum MsgCase {
     MSG_NOT_SET = 0,
     HELLO = 1,
-    OUTPUT = 2
+    COMPLETE = 2,
+    OUTPUT = 3
   }
 }

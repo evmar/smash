@@ -24,6 +24,15 @@ function translateKey(ev: KeyboardEvent): string {
   return name;
 }
 
+export interface CompleteRequest {
+  input: string;
+  pos: number;
+}
+
+export interface CompleteResponse {
+  completions: string[];
+}
+
 export class ReadLine {
   dom = html('div', { className: 'readline' });
   prompt = html('div', { className: 'prompt' });
@@ -32,6 +41,12 @@ export class ReadLine {
     spellcheck: false
   }) as HTMLInputElement;
   oncommit = (_: string) => {};
+
+  oncomplete: (
+    req: CompleteRequest
+  ) => Promise<CompleteResponse> = async () => {
+    throw 'notimpl';
+  };
 
   /**
    * The selection span at time of last blur.
@@ -70,10 +85,17 @@ export class ReadLine {
     this.input.focus();
   }
 
-  keydown(ev: KeyboardEvent) {
+  async keydown(ev: KeyboardEvent) {
     const key = translateKey(ev);
     if (!key) return;
     switch (key) {
+      case 'Tab':
+        const pos = this.input.selectionStart || 0;
+        const req: CompleteRequest = { input: this.input.value, pos };
+        ev.preventDefault();
+        const resp = await this.oncomplete(req);
+        console.log('completion:', resp.completions);
+        break;
       case 'C-a':
         this.input.selectionStart = this.input.selectionEnd = 0;
         break;

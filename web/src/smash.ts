@@ -1,6 +1,7 @@
 import * as pb from './smash_pb';
 import * as sh from './shell';
 import { html, htext } from './html';
+import * as readline from './readline';
 import { ReadLine } from './readline';
 import { Term } from './term';
 import * as jspb from 'google-protobuf';
@@ -95,6 +96,12 @@ class ServerConnection {
 const conn = new ServerConnection();
 const shell = new sh.Shell();
 
+interface PendingComplete {
+  id: number;
+  resolve: (resp: readline.CompleteResponse) => void;
+  reject: () => void;
+}
+
 class Cell {
   dom = html('div', { className: 'cell' });
   readline = new ReadLine();
@@ -103,6 +110,8 @@ class Cell {
   onExit = (id: number, exitCode: number) => {};
   send = (msg: pb.ClientMessage): boolean => false;
 
+  pendingComplete?: PendingComplete;
+
   constructor(public id: number) {
     this.dom.appendChild(this.readline.dom);
     this.term.send = key => {
@@ -110,6 +119,27 @@ class Cell {
       key.setCell(this.id);
       msg.setKey(key);
       return this.send(msg);
+    };
+
+    this.readline.oncomplete = async req => {
+      return new Promise((resolve, reject) => {
+        const reqPb = new pb.CompleteRequest();
+        reqPb.setId(0);
+        reqPb.setInput(req.input);
+        reqPb.setPos(req.pos);
+        const msg = new pb.ClientMessage();
+        msg.setComplete(reqPb);
+        if (!this.send(msg)) {
+          // TOOD
+          console.error('send failed');
+          reject();
+        }
+        this.pendingComplete = {
+          id: 0,
+          resolve,
+          reject
+        };
+      });
     };
 
     this.readline.oncommit = cmd => {
@@ -168,6 +198,12 @@ class Cell {
     }
   }
 
+  onCompleteResponse(msg: pb.CompleteResponse) {
+    if (!this.pendingComplete) return;
+    this.pendingComplete.resolve({ completions: msg.getCompletionsList() });
+    this.pendingComplete = undefined;
+  }
+
   focus() {
     if (this.running) {
       this.term.focus();
@@ -202,8 +238,12 @@ class CellStack {
     this.addNew();
   }
 
+  getLastCell(): Cell {
+    return this.cells[this.cells.length - 1];
+  }
+
   focus() {
-    this.cells[this.cells.length - 1].focus();
+    this.getLastCell().focus();
   }
 }
 
@@ -235,6 +275,10 @@ async function main() {
 
   conn.onMessage = msg => {
     switch (msg.getMsgCase()) {
+      case pb.ServerMsg.MsgCase.COMPLETE: {
+        cellStack.getLastCell().onCompleteResponse(msg.getComplete()!);
+        break;
+      }
       case pb.ServerMsg.MsgCase.OUTPUT: {
         const m = msg.getOutput()!;
         cellStack.onOutput(m);

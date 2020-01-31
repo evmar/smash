@@ -4,9 +4,26 @@ package proto;
 // Message from client to server.
 message ClientMessage {
   oneof msg {
-    RunRequest run = 1;
-    KeyEvent key = 2;
+    CompleteRequest complete = 1;
+    RunRequest run = 2;
+    KeyEvent key = 3;
   }
+}
+
+// Request to complete a partial command-line input.
+message CompleteRequest {
+  int32 id = 1;
+  string cwd = 2;
+  string input = 3;
+  int32 pos = 4;
+}
+
+// Response to a CompleteRequest.
+message CompleteResponse {
+  int32 id = 1;
+  string error = 2;
+  int32 pos = 3;
+  repeated string completions = 4;
 }
 
 // Request to spawn a command.
@@ -72,6 +89,7 @@ message Output {
 message ServerMsg {
   oneof msg {
     Hello hello = 1;
-    Output output = 2;
+    CompleteResponse complete = 2;
+    Output output = 3;
   }
 }
