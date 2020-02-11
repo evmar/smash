@@ -33,19 +33,28 @@ table .value {
 }
 .readline input {
   font-weight: bold;
+  font: inherit;
+  width: 100%;
+  border: 0;
+  outline: none;
+  background: transparent;
 }
 
 .prompt {
   white-space: pre;
   cursor: pointer;
 }
-.input {
-  font: inherit;
+.input-box {
+  position: relative;
   flex: 1;
-  border: 0;
-  outline: none;
-  background: transparent;
 }
+.popup {
+  position: absolute;
+  background: white;
+  box-shadow: 1px 1px 2px 1px #aaa;
+  padding: 2px 4px;
+}
+
 .measure {
   position: absolute;
   visibility: hidden;

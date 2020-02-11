@@ -200,7 +200,10 @@ class Cell {
 
   onCompleteResponse(msg: pb.CompleteResponse) {
     if (!this.pendingComplete) return;
-    this.pendingComplete.resolve({ completions: msg.getCompletionsList() });
+    this.pendingComplete.resolve({
+      completions: msg.getCompletionsList(),
+      pos: msg.getPos()
+    });
     this.pendingComplete = undefined;
   }
 

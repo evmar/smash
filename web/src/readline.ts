@@ -1,4 +1,4 @@
-import { html } from './html';
+import { html, htext } from './html';
 
 function translateKey(ev: KeyboardEvent): string {
   switch (ev.key) {
@@ -14,12 +14,6 @@ function translateKey(ev: KeyboardEvent): string {
   let name = '';
   if (ev.altKey) name += 'M-';
   if (ev.ctrlKey) name += 'C-';
-  switch (ev.key) {
-    case 'Tab':
-      break;
-    default:
-      if (name.length === 0) return '';
-  }
   name += ev.key;
   return name;
 }
@@ -31,13 +25,61 @@ export interface CompleteRequest {
 
 export interface CompleteResponse {
   completions: string[];
+  pos: number;
+}
+
+class CompletePopup {
+  dom = html('div', { className: 'popup', style: { display: 'none' } });
+  oncommit: (text: string) => void = () => {};
+
+  constructor(readonly req: CompleteRequest, readonly resp: CompleteResponse) {}
+
+  show(parent: HTMLElement) {
+    const measure = html(
+      'div',
+      { style: { position: 'absolute', visibility: 'hidden' } },
+      // TODO: if there's no input, then we need some text in the
+      // measure to cause it to have height.
+      htext(this.req.pos ? this.req.input.substring(0, this.req.pos) : '|')
+    );
+    parent.appendChild(measure);
+    let { width, height } = getComputedStyle(measure);
+    parent.removeChild(measure);
+
+    parent.appendChild(this.dom);
+
+    this.dom.style.top = parseFloat(height) + 4 + 'px';
+    this.dom.style.left = parseFloat(width) - 4 + 'px';
+    this.dom.innerText = this.resp.completions.join('\n');
+    this.dom.style.display = 'block';
+  }
+
+  hide() {
+    this.dom.parentNode!.removeChild(this.dom);
+  }
+
+  /** @param key The key name as produced by translateKey(). */
+  handleKey(key: string): boolean {
+    switch (key) {
+      case 'Tab':
+        // Don't allow additional popups.
+        return true;
+      case 'Enter':
+        this.oncommit(this.resp.completions[0]);
+        return true;
+      case 'Escape':
+        this.oncommit('');
+        return true;
+    }
+    return false;
+  }
 }
 
 export class ReadLine {
   dom = html('div', { className: 'readline' });
   prompt = html('div', { className: 'prompt' });
+  inputBox = html('div', { className: 'input-box' });
   input = html('input', {
-    className: 'input',
     spellcheck: false
   }) as HTMLInputElement;
   oncommit = (_: string) => {};
@@ -47,6 +89,9 @@ export class ReadLine {
   ) => Promise<CompleteResponse> = async () => {
     throw 'notimpl';
   };
+
+  pendingComplete: Promise<CompleteResponse> | undefined;
+  popup: CompletePopup | undefined;
 
   /**
    * The selection span at time of last blur.
@@ -59,18 +104,25 @@ export class ReadLine {
     this.prompt.innerText = '> ';
     this.dom.appendChild(this.prompt);
 
-    this.dom.appendChild(this.input);
+    this.inputBox.appendChild(this.input);
+    this.dom.appendChild(this.inputBox);
 
     this.input.onkeydown = ev => {
-      this.keydown(ev);
+      const key = translateKey(ev);
+      if (!key) return;
+      if (this.handleKey(key)) ev.preventDefault();
     };
     this.input.onkeypress = ev => {
-      this.keypress(ev);
+      const key = ev.key;
+      if (!key) return;
+      if (this.handleKey(key)) ev.preventDefault();
     };
 
     // Catch focus/blur events, per docs on this.selection.
     this.input.addEventListener('blur', () => {
       this.selection = [this.input.selectionStart!, this.input.selectionEnd!];
+      this.pendingComplete = undefined;
+      this.hidePopup();
     });
     this.input.addEventListener('focus', () => {
       [this.input.selectionStart, this.input.selectionEnd] = this.selection;
@@ -85,16 +137,34 @@ export class ReadLine {
     this.input.focus();
   }
 
-  async keydown(ev: KeyboardEvent) {
-    const key = translateKey(ev);
-    if (!key) return;
+  hidePopup() {
+    if (!this.popup) return;
+    this.popup.hide();
+    this.popup = undefined;
+  }
+
+  /** @param key The key name as produced by translateKey(). */
+  handleKey(key: string): boolean {
+    if (this.popup && this.popup.handleKey(key)) return true;
+    if (this.pendingComplete) this.pendingComplete = undefined;
+    this.hidePopup();
     switch (key) {
+      case 'Enter':
+        this.oncommit(this.input.value);
+        break;
       case 'Tab':
         const pos = this.input.selectionStart || 0;
         const req: CompleteRequest = { input: this.input.value, pos };
-        ev.preventDefault();
-        const resp = await this.oncomplete(req);
-        console.log('completion:', resp.completions);
+        const pending = (this.pendingComplete = this.oncomplete(req));
+        pending.then(resp => {
+          if (pending !== this.pendingComplete) return;
+          this.popup = new CompletePopup(req, resp);
+          this.popup.show(this.inputBox);
+          this.popup.oncommit = (text: string) => {
+            this.input.value += text;
+            this.hidePopup();
+          };
+        });
         break;
       case 'C-a':
         this.input.selectionStart = this.input.selectionEnd = 0;
@@ -117,6 +187,10 @@ export class ReadLine {
           this.input.selectionStart!
         );
         break;
+      case 'C-n':
+      case 'C-p':
+        // TODO: implement history.  Swallow for now.
+        break;
       case 'C-u':
         this.input.value = this.input.value.substr(this.input.selectionStart!);
         break;
@@ -128,22 +202,10 @@ export class ReadLine {
       case 'C-r': // browser: reload
       case 'C-R': // browser: reload
         // Allow default handling.
-        return;
+        return false;
       default:
-        if (key.startsWith('C-Arrow')) return;
-        console.log('TODO:', key, ev);
+        return false;
     }
-    ev.preventDefault();
-  }
-
-  keypress(ev: KeyboardEvent) {
-    switch (ev.key) {
-      case 'Enter':
-        this.oncommit(this.input.value);
-        break;
-      default:
-        return;
-    }
-    ev.preventDefault();
+    return true;
   }
 }
