@@ -163,26 +163,18 @@ export class ReadLine {
         const pending = (this.pendingComplete = this.oncomplete(req));
         pending.then(resp => {
           if (pending !== this.pendingComplete) return;
-          this.popup = new CompletePopup(req, resp);
-          this.popup.show(this.inputBox);
-          this.popup.oncommit = (text: string, pos: number) => {
-            // The completion for a partial input may include
-            // some of that partial input.  Elide any text from
-            // the completion that already exists in the input
-            // at that same position.
-            let overlap = 0;
-            while (
-              pos + overlap < this.input.value.length &&
-              this.input.value[pos + overlap] === text[overlap]
-            ) {
-              overlap++;
-            }
-            this.input.value =
-              this.input.value.substring(0, pos) +
-              text +
-              this.input.value.substring(pos + overlap);
-            this.hidePopup();
-          };
+          this.pendingComplete = undefined;
+          if (resp.completions.length === 1) {
+            // Accept the completion immediately.
+            this.handleCompletion(resp.completions[0], resp.pos);
+          } else if (resp.completions.length > 1) {
+            // Show a popup for the completions.
+            this.popup = new CompletePopup(req, resp);
+            this.popup.show(this.inputBox);
+            this.popup.oncommit = (text: string, pos: number) => {
+              this.handleCompletion(text, pos);
+            };
+          }
         });
         break;
       case 'C-a':
@@ -226,5 +218,23 @@ export class ReadLine {
         return false;
     }
     return true;
+  }
+
+  handleCompletion(text: string, pos: number) {
+    // The completion for a partial input may include some of that
+    // partial input.  Elide any text from the completion that already
+    // exists in the input at that same position.
+    let overlap = 0;
+    while (
+      pos + overlap < this.input.value.length &&
+      this.input.value[pos + overlap] === text[overlap]
+    ) {
+      overlap++;
+    }
+    this.input.value =
+      this.input.value.substring(0, pos) +
+      text +
+      this.input.value.substring(pos + overlap);
+    this.hidePopup();
   }
 }
