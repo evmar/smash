@@ -1,4 +1,4 @@
-import { Shell, ExecOutput } from './shell';
+import { Shell, ExecOutput, parseCmd } from './shell';
 import { expect } from 'chai';
 
 async function fakeExec(out: ExecOutput): Promise<void> {
@@ -11,6 +11,19 @@ async function fakeExec(out: ExecOutput): Promise<void> {
 
 describe('shell', async function() {
   const env = new Map<string, string>([['HOME', '/home/evmar']]);
+
+  describe('parser', function() {
+    it('parses simple input', function() {
+      expect(parseCmd('')).deep.equal([]);
+      expect(parseCmd('cd')).deep.equal(['cd']);
+      expect(parseCmd('cd foo/bar')).deep.equal(['cd', 'foo/bar']);
+    });
+
+    it('ignores whitespace', function() {
+      expect(parseCmd('cd ')).deep.equal(['cd']);
+      expect(parseCmd('cd  foo/bar   zz')).deep.equal(['cd', 'foo/bar', 'zz']);
+    });
+  });
 
   it('elides homedir', function() {
     const sh = new Shell(env);

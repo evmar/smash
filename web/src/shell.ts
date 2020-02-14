@@ -2,7 +2,7 @@ import * as path from 'path';
 import { AliasMap } from './alias';
 
 export function parseCmd(cmd: string): string[] {
-  const parts = cmd.split(/\s+/);
+  const parts = cmd.trim().split(/\s+/);
   if (parts.length === 1 && parts[0] === '') return [];
   return parts;
 }
