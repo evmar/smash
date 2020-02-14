@@ -30,28 +30,33 @@ export interface CompleteResponse {
 
 class CompletePopup {
   dom = html('div', { className: 'popup', style: { display: 'none' } });
-  oncommit: (text: string) => void = () => {};
+  oncommit: (text: string, pos: number) => void = () => {};
 
   constructor(readonly req: CompleteRequest, readonly resp: CompleteResponse) {}
 
   show(parent: HTMLElement) {
+    console.log(this.req, this.resp);
+    const measureText = this.req.input.substring(0, this.resp.pos) + '\u200b';
     const measure = html(
       'div',
-      { style: { position: 'absolute', visibility: 'hidden' } },
-      // TODO: if there's no input, then we need some text in the
-      // measure to cause it to have height.
-      htext(this.req.pos ? this.req.input.substring(0, this.req.pos) : '|')
+      {
+        style: { position: 'absolute', visibility: 'hidden', whiteSpace: 'pre' }
+      },
+      htext(measureText)
     );
     parent.appendChild(measure);
     let { width, height } = getComputedStyle(measure);
     parent.removeChild(measure);
 
-    parent.appendChild(this.dom);
-
+    const inputPaddingLeft = 2;
+    const popupPaddingLeft = 4;
     this.dom.style.top = parseFloat(height) + 4 + 'px';
-    this.dom.style.left = parseFloat(width) - 4 + 'px';
+    this.dom.style.left =
+      parseFloat(width) + inputPaddingLeft - popupPaddingLeft + 'px';
     this.dom.innerText = this.resp.completions.join('\n');
     this.dom.style.display = 'block';
+
+    parent.appendChild(this.dom);
   }
 
   hide() {
@@ -65,10 +70,10 @@ class CompletePopup {
         // Don't allow additional popups.
         return true;
       case 'Enter':
-        this.oncommit(this.resp.completions[0]);
+        this.oncommit(this.resp.completions[0], this.resp.pos);
         return true;
       case 'Escape':
-        this.oncommit('');
+        this.oncommit('', this.resp.pos);
         return true;
     }
     return false;
@@ -160,8 +165,22 @@ export class ReadLine {
           if (pending !== this.pendingComplete) return;
           this.popup = new CompletePopup(req, resp);
           this.popup.show(this.inputBox);
-          this.popup.oncommit = (text: string) => {
-            this.input.value += text;
+          this.popup.oncommit = (text: string, pos: number) => {
+            // The completion for a partial input may include
+            // some of that partial input.  Elide any text from
+            // the completion that already exists in the input
+            // at that same position.
+            let overlap = 0;
+            while (
+              pos + overlap < this.input.value.length &&
+              this.input.value[pos + overlap] === text[overlap]
+            ) {
+              overlap++;
+            }
+            this.input.value =
+              this.input.value.substring(0, pos) +
+              text +
+              this.input.value.substring(pos + overlap);
             this.hidePopup();
           };
         });

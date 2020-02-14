@@ -125,6 +125,7 @@ class Cell {
       return new Promise((resolve, reject) => {
         const reqPb = new pb.CompleteRequest();
         reqPb.setId(0);
+        reqPb.setCwd(shell.cwd);
         reqPb.setInput(req.input);
         reqPb.setPos(req.pos);
         const msg = new pb.ClientMessage();

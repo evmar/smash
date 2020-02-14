@@ -22,6 +22,8 @@ import (
 	"github.com/kr/pty"
 )
 
+var completer *bash.Bash
+
 var upgrader = websocket.Upgrader{
 	ReadBufferSize:    1024,
 	WriteBufferSize:   1024,
@@ -327,14 +329,26 @@ func serveWS(w http.ResponseWriter, r *http.Request) error {
 			// TODO: what if pipe is blocked?
 			cmd.stdin <- []byte(key.Keys)
 		} else if complete := msg.GetComplete(); complete != nil {
-			err = conn.writeMsg(&pb.ServerMsg{Msg: &pb.ServerMsg_Complete{&pb.CompleteResponse{
-				Id:          complete.Id,
-				Pos:         complete.Pos,
-				Completions: []string{"hello"},
-			}}})
-			if err != nil {
-				log.Println(err) // TODO
+			if complete.Cwd == "" {
+				panic("incomplete complete request")
 			}
+			go func() {
+				if err := completer.Chdir(complete.Cwd); err != nil {
+					log.Println(err) // TODO
+				}
+				pos, completions, err := completer.Complete(complete.Input[0:complete.Pos])
+				if err != nil {
+					log.Println(err) // TODO
+				}
+				err = conn.writeMsg(&pb.ServerMsg{Msg: &pb.ServerMsg_Complete{&pb.CompleteResponse{
+					Id:          complete.Id,
+					Pos:         int32(pos),
+					Completions: completions,
+				}}})
+				if err != nil {
+					log.Println(err) // TODO
+				}
+			}()
 		} else {
 			log.Println("unhandled msg", msg)
 		}
@@ -343,6 +357,12 @@ func serveWS(w http.ResponseWriter, r *http.Request) error {
 }
 
 func main() {
+	b, err := bash.StartBash()
+	if err != nil {
+		log.Fatal(err)
+	}
+	completer = b
+
 	http.Handle("/", http.FileServer(http.Dir("../web/dist")))
 	http.HandleFunc("/ws", func(w http.ResponseWriter, r *http.Request) {
 		if err := serveWS(w, r); err != nil {
