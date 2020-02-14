@@ -80,6 +80,18 @@ class CompletePopup {
   }
 }
 
+/** Returns the length of the longest prefix shared by all input strings. */
+function longestSharedPrefixLength(strs: string[]): number {
+  for (let len = 0; ; len++) {
+    let c = -1;
+    for (const str of strs) {
+      if (len === str.length) return len;
+      if (c === -1) c = str.charCodeAt(len);
+      else if (str.charCodeAt(len) !== c) return len;
+    }
+  }
+}
+
 export class ReadLine {
   dom = html('div', { className: 'readline' });
   prompt = html('div', { className: 'prompt' });
@@ -164,15 +176,22 @@ export class ReadLine {
         pending.then(resp => {
           if (pending !== this.pendingComplete) return;
           this.pendingComplete = undefined;
-          if (resp.completions.length === 1) {
-            // Accept the completion immediately.
-            this.handleCompletion(resp.completions[0], resp.pos);
-          } else if (resp.completions.length > 1) {
+          const len = longestSharedPrefixLength(resp.completions);
+          if (len > 0) {
+            this.applyCompletion(
+              resp.completions[0].substring(0, len),
+              resp.pos
+            );
+          }
+          // If there was only one completion, it's already been applied, so
+          // there is nothing else to do.
+          if (resp.completions.length > 1) {
             // Show a popup for the completions.
             this.popup = new CompletePopup(req, resp);
             this.popup.show(this.inputBox);
             this.popup.oncommit = (text: string, pos: number) => {
-              this.handleCompletion(text, pos);
+              this.applyCompletion(text, pos);
+              this.hidePopup();
             };
           }
         });
@@ -220,7 +239,7 @@ export class ReadLine {
     return true;
   }
 
-  handleCompletion(text: string, pos: number) {
+  applyCompletion(text: string, pos: number) {
     // The completion for a partial input may include some of that
     // partial input.  Elide any text from the completion that already
     // exists in the input at that same position.
@@ -235,6 +254,5 @@ export class ReadLine {
       this.input.value.substring(0, pos) +
       text +
       this.input.value.substring(pos + overlap);
-    this.hidePopup();
   }
 }
