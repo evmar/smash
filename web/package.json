@@ -24,6 +24,7 @@
     "puppeteer": "^1.15.0"
   },
   "scripts": {
-    "test": "mocha js/test.js"
+    "browser-test": "mocha js/test.js",
+    "local-test": "mocha js/shell_test.js"
   }
 }

@@ -25,7 +25,7 @@ export interface StringOutput {
   output: string;
 }
 
-type ExecOutput = ExecRemote | TableOutput | StringOutput;
+export type ExecOutput = ExecRemote | TableOutput | StringOutput;
 
 function strOutput(msg: string): ExecOutput {
   return { kind: 'string', output: msg };
@@ -33,8 +33,9 @@ function strOutput(msg: string): ExecOutput {
 
 export class Shell {
   aliases = new AliasMap();
-  env = new Map<string, string>();
   cwd = '/';
+
+  constructor(public env = new Map<string, string>()) {}
 
   init() {
     this.cwd = this.env.get('HOME') || '/';
@@ -47,6 +48,33 @@ export class Shell {
       cwd = '~' + cwd.substring(home.length);
     }
     return cwd;
+  }
+
+  builtinCd(argv: string[]): ExecOutput {
+    if (argv.length > 1) {
+      return strOutput('usage: cd [DIR]');
+    }
+    let arg = argv[0];
+    if (!arg) {
+      arg = this.env.get('HOME') || '/';
+    }
+    if (!arg.startsWith('/')) {
+      arg = path.join(this.cwd, arg);
+    }
+    arg = path.normalize(arg);
+    if (arg.length > 1 && arg.endsWith('/')) {
+      arg = arg.substring(0, arg.length - 1);
+    }
+    return {
+      kind: 'remote',
+      cwd: this.cwd,
+      cmd: ['cd', arg],
+      onComplete: (exitCode: number) => {
+        if (exitCode === 0) {
+          this.cwd = arg;
+        }
+      }
+    };
   }
 
   private handleBuiltin(argv: string[]): ExecOutput | undefined {
@@ -64,30 +92,7 @@ export class Shell {
           rows: Array.from(this.aliases.aliases)
         };
       case 'cd':
-        if (argv.length > 2) {
-          return strOutput('usage: cd [DIR]');
-        }
-        let arg = argv[1];
-        if (!arg) {
-          return strOutput('TODO empty cd');
-        }
-        if (!arg.startsWith('/')) {
-          arg = path.join(this.cwd, arg);
-        }
-        arg = path.normalize(arg);
-        if (arg.length > 1 && arg.endsWith('/')) {
-          arg = arg.substring(0, arg.length - 1);
-        }
-        return {
-          kind: 'remote',
-          cwd: this.cwd,
-          cmd: ['cd', arg],
-          onComplete: (exitCode: number) => {
-            if (exitCode === 0) {
-              this.cwd = arg;
-            }
-          }
-        };
+        return this.builtinCd(argv.slice(1));
       case 'env':
         if (argv.length > 1) return;
         return {
