@@ -71,10 +71,12 @@ export class Shell {
         if (!arg) {
           return strOutput('TODO empty cd');
         }
-        if (arg.startsWith('/')) {
-          arg = path.normalize(arg);
-        } else {
+        if (!arg.startsWith('/')) {
           arg = path.join(this.cwd, arg);
+        }
+        arg = path.normalize(arg);
+        if (arg.length > 1 && arg.endsWith('/')) {
+          arg = arg.substring(0, arg.length - 1);
         }
         return {
           kind: 'remote',
