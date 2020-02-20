@@ -176,6 +176,7 @@ export class ReadLine {
         pending.then(resp => {
           if (pending !== this.pendingComplete) return;
           this.pendingComplete = undefined;
+          if (resp.completions.length === 0) return;
           const len = longestSharedPrefixLength(resp.completions);
           if (len > 0) {
             this.applyCompletion(
