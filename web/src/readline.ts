@@ -29,34 +29,60 @@ export interface CompleteResponse {
 }
 
 class CompletePopup {
-  dom = html('div', { className: 'popup', style: { display: 'none' } });
+  dom = html('div', { className: 'popup' });
   oncommit: (text: string, pos: number) => void = () => {};
+  textSize!: { width: number; height: number };
 
   constructor(readonly req: CompleteRequest, readonly resp: CompleteResponse) {}
 
   show(parent: HTMLElement) {
-    console.log(this.req, this.resp);
-    const measureText = this.req.input.substring(0, this.resp.pos) + '\u200b';
+    this.textSize = this.measure(
+      parent,
+      this.req.input.substring(0, this.resp.pos) + '\u200b'
+    );
+
+    this.dom.innerText = this.resp.completions.join('\n');
+    parent.appendChild(this.dom);
+    this.position();
+  }
+
+  /** Measures the size of the given text as if it were contained in the parent. */
+  private measure(
+    parent: HTMLElement,
+    text: string
+  ): { width: number; height: number } {
     const measure = html(
       'div',
       {
         style: { position: 'absolute', visibility: 'hidden', whiteSpace: 'pre' }
       },
-      htext(measureText)
+      htext(text)
     );
     parent.appendChild(measure);
-    let { width, height } = getComputedStyle(measure);
+    const { width, height } = getComputedStyle(measure);
     parent.removeChild(measure);
+    return { width: parseFloat(width), height: parseFloat(height) };
+  }
+
+  /** Positions this.dom. */
+  private position() {
+    const popupHeight = this.dom.offsetHeight;
+    let popupY = 0;
+    for (let node = this.dom; node; node = node.offsetParent as HTMLElement) {
+      popupY += node.offsetTop;
+    }
 
     const inputPaddingLeft = 2;
     const popupPaddingLeft = 4;
-    this.dom.style.top = parseFloat(height) + 4 + 'px';
+    if (popupY + popupHeight > window.innerHeight) {
+      this.dom.style.top = '';
+      this.dom.style.bottom = `${this.textSize.height + 4}px`;
+    } else {
+      this.dom.style.top = `${this.textSize.height + 4}px`;
+      this.dom.style.bottom = '';
+    }
     this.dom.style.left =
-      parseFloat(width) + inputPaddingLeft - popupPaddingLeft + 'px';
-    this.dom.innerText = this.resp.completions.join('\n');
-    this.dom.style.display = 'block';
-
-    parent.appendChild(this.dom);
+      this.textSize.width + inputPaddingLeft - popupPaddingLeft + 'px';
   }
 
   hide() {
