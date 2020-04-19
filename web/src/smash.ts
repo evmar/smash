@@ -4,93 +4,7 @@ import { html, htext } from './html';
 import * as readline from './readline';
 import { ReadLine } from './readline';
 import { Term } from './term';
-
-class ServerConnection {
-  ws: WebSocket | null = null;
-  onMessage = (msg: pb.ServerMsg) => {};
-  errorDom: HTMLElement | null = null;
-
-  async connect(): Promise<void> {
-    const url = new URL('/ws', window.location.href);
-    url.protocol = url.protocol.replace('http', 'ws');
-    const ws = new WebSocket(url.href);
-    ws.binaryType = 'arraybuffer';
-    ws.onmessage = (event) => {
-      const msg = pb.ServerMsg.deserializeBinary(new Uint8Array(event.data));
-      this.onMessage(msg);
-    };
-    this.ws = await new Promise((res) => {
-      ws.onopen = () => {
-        res(ws);
-      };
-      ws.onerror = (err: Event) => {
-        this.showError(`websocket connection failed`);
-        res(null);
-      };
-    });
-
-    if (!this.ws) return;
-
-    this.ws.onopen = (ev) => {
-      console.error(`unexpected ws open:`, ev);
-    };
-    this.ws.onclose = (ev) => {
-      let msg = 'connection closed';
-      if (ev.reason) msg += `: ${ev.reason}`;
-      this.showError(msg);
-      this.ws = null;
-    };
-    this.ws.onerror = (err) => {
-      this.showError(`connection error: ${err}`);
-      this.ws = null;
-    };
-  }
-
-  reconnect() {
-    if (!this.errorDom) return;
-    document.body.removeChild(this.errorDom);
-    this.errorDom = null;
-    this.connect();
-  }
-
-  send(msg: pb.ClientMessage): boolean {
-    if (!this.ws) return false;
-    this.ws.send(msg.serializeBinary());
-    return true;
-  }
-
-  spawn(id: number, cmd: sh.ExecRemote): boolean {
-    const run = new pb.RunRequest();
-    run.setCell(id);
-    run.setCwd(cmd.cwd);
-    run.setArgvList(cmd.cmd);
-    const msg = new pb.ClientMessage();
-    msg.setRun(run);
-    return this.send(msg);
-  }
-
-  showError(msg: string) {
-    console.error(msg);
-    if (!this.errorDom) {
-      this.errorDom = html(
-        'div',
-        { className: 'error-popup' },
-        html('div', {}, document.createTextNode(msg)),
-        html('div', { style: { width: '1ex' } }),
-        html(
-          'button',
-          {
-            onclick: () => {
-              this.reconnect();
-            },
-          },
-          document.createTextNode('reconnect')
-        )
-      );
-      document.body.appendChild(this.errorDom);
-    }
-  }
-}
+import { ServerConnection } from './connection';
 
 const conn = new ServerConnection();
 const shell = new sh.Shell();
@@ -259,42 +173,35 @@ async function main() {
   // TODO: even when we do this, we still get a URL bar?!
   // await navigator.serviceWorker.register('worker.js');
 
-  async function connect(): Promise<pb.Hello> {
-    return new Promise(async (resolve, reject) => {
-      conn.onMessage = (msg) => {
-        if (msg.getMsgCase() !== pb.ServerMsg.MsgCase.HELLO) {
-          reject(`unexpected message ${msg.toObject()}`);
-          return;
-        }
-        resolve(msg.getHello());
-      };
-      await conn.connect();
-    });
-  }
-  const hello = await connect();
-  shell.aliases.setAliases(
-    new Map<string, string>(hello.getAliasMap().getEntryList())
-  );
-  shell.env = new Map(hello.getEnvMap().getEntryList());
-  shell.init();
-
   const cellStack = new CellStack();
 
-  conn.onMessage = (msg) => {
-    switch (msg.getMsgCase()) {
-      case pb.ServerMsg.MsgCase.COMPLETE: {
-        cellStack.getLastCell().onCompleteResponse(msg.getComplete()!);
-        break;
+  conn.delegates = {
+    connect: (hello) => {
+      shell.aliases.setAliases(
+        new Map<string, string>(hello.getAliasMap().getEntryList())
+      );
+      shell.env = new Map(hello.getEnvMap().getEntryList());
+      shell.init();
+    },
+
+    message: (msg) => {
+      switch (msg.getMsgCase()) {
+        case pb.ServerMsg.MsgCase.COMPLETE: {
+          cellStack.getLastCell().onCompleteResponse(msg.getComplete()!);
+          break;
+        }
+        case pb.ServerMsg.MsgCase.OUTPUT: {
+          const m = msg.getOutput()!;
+          cellStack.onOutput(m);
+          break;
+        }
+        default:
+          console.error('unexpected message', msg.toObject());
       }
-      case pb.ServerMsg.MsgCase.OUTPUT: {
-        const m = msg.getOutput()!;
-        cellStack.onOutput(m);
-        break;
-      }
-      default:
-        console.error('unexpected message', msg.toObject());
-    }
+    },
   };
+
+  await conn.connect();
 
   cellStack.addNew();
 
