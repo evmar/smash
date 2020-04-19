@@ -1,4 +1,4 @@
-# Development notes
+# smash: Development notes
 
 While developing, in three separate terminals:
 

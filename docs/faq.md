@@ -1,4 +1,4 @@
-# Frequently Asked Questions
+# smash: Frequently Asked Questions
 
 ## Why is [thing X] different than the way it normally works?
 
