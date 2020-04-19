@@ -7,6 +7,9 @@ import (
 )
 
 func parseAliases(text string) (map[string]string, error) {
+	if text == "" {
+		return map[string]string{}, nil
+	}
 	re := regexp.MustCompile(`(?m)^alias (\w+)='(.*?)'\n`)
 	match := re.FindAllStringSubmatch(text, -1)
 	if match == nil {
