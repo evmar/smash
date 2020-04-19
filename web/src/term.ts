@@ -1,4 +1,4 @@
-import { html } from './html';
+import { html, htext } from './html';
 import * as pb from './smash_pb';
 
 interface Attr {
@@ -81,7 +81,7 @@ export class Term {
         childCount < row + 1;
         childCount++
       ) {
-        this.dom.appendChild(html('div'));
+        this.dom.appendChild(html('div', {}, htext(' ')));
       }
       const child = children[row] as HTMLElement;
       const spans = rowSpans.getSpansList();
