@@ -45,7 +45,6 @@ table .value {
   cursor: pointer;
 }
 .input-box {
-  position: relative;
   flex: 1;
 }
 .popup {

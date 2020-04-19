@@ -29,7 +29,7 @@ export interface CompleteResponse {
 }
 
 class CompletePopup {
-  dom = html('div', { className: 'popup' });
+  dom = html('div', { className: 'popup', style: { overflow: 'hidden' } });
   oncommit: (text: string, pos: number) => void = () => {};
   textSize!: { width: number; height: number };
 
@@ -66,23 +66,36 @@ class CompletePopup {
 
   /** Positions this.dom. */
   private position() {
+    const { x, y } = (this.dom.parentNode as HTMLElement).getClientRects()[0];
     const popupHeight = this.dom.offsetHeight;
-    let popupY = 0;
-    for (let node = this.dom; node; node = node.offsetParent as HTMLElement) {
-      popupY += node.offsetTop;
+
+    // Popup may not fit.  Options in order of preference:
+    // 1. Pop up below, if it fits.
+    // 2. Pop up above, if it fits.
+    // 3. Pop up in whichever side has more space, but truncated
+
+    const spaceAbove = y;
+    const spaceBelow = window.innerHeight - (y + this.textSize.height);
+    if (spaceBelow >= popupHeight) {
+      this.dom.style.top = `${y + this.textSize.height}px`;
+      this.dom.style.bottom = '';
+    } else if (spaceAbove >= popupHeight) {
+      this.dom.style.top = '';
+      this.dom.style.bottom = `${window.innerHeight - y}px`;
+    } else {
+      if (spaceBelow >= spaceAbove) {
+        this.dom.style.top = `${y + this.textSize.height}px`;
+        this.dom.style.bottom = '10px';
+      } else {
+        this.dom.style.top = '10px';
+        this.dom.style.bottom = `${window.innerHeight - y}px`;
+      }
     }
 
     const inputPaddingLeft = 2;
     const popupPaddingLeft = 4;
-    if (popupY + popupHeight > window.innerHeight) {
-      this.dom.style.top = '';
-      this.dom.style.bottom = `${this.textSize.height + 4}px`;
-    } else {
-      this.dom.style.top = `${this.textSize.height + 4}px`;
-      this.dom.style.bottom = '';
-    }
     this.dom.style.left =
-      this.textSize.width + inputPaddingLeft - popupPaddingLeft + 'px';
+      x + inputPaddingLeft - popupPaddingLeft + this.textSize.width + 'px';
   }
 
   hide() {
