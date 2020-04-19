@@ -109,6 +109,6 @@ export class Shell {
     argv = this.aliases.expand(argv);
     const out = this.handleBuiltin(argv);
     if (out) return out;
-    return { kind: 'remote', cwd: this.cwd, cmd: argv };
+    return { kind: 'remote', cwd: this.cwd, cmd: ['/bin/sh', '-c', cmd] };
   }
 }
