@@ -73,13 +73,19 @@ func TestColor(t *testing.T) {
 	assert.Equal(t, false, tr.Attr.Inverse())
 	assert.Equal(t, 0, tr.Attr.Color())
 
-	mustRun(t, tr, "\x1b[1;34m")
+	mustRun(t, tr, "\x1b[1;34m") // set bright blue
 	assert.Equal(t, true, tr.Attr.Bright())
 	assert.Equal(t, 5, tr.Attr.Color())
 	assert.Equal(t, "", term.ToString())
 
-	mustRun(t, tr, "\x1b[7m")
+	mustRun(t, tr, "\x1b[7m") // set inverse
 	assert.Equal(t, true, tr.Attr.Inverse())
+
+	assert.Equal(t, true, tr.Attr.Bright())
+	mustRun(t, tr, "\x1b[22m") // normal intensity
+	assert.Equal(t, false, tr.Attr.Bright())
+
+	mustRun(t, tr, "\x1b[2m") // "faint" intensity, not implemented
 
 	mustRun(t, tr, "\x1b[m")
 	assert.Equal(t, Attr(0), tr.Attr)
@@ -103,6 +109,11 @@ func TestEraseLine(t *testing.T) {
 	assert.Equal(t, "hel", term.ToString())
 	mustRun(t, tr, "\x1b[1K")
 	assert.Equal(t, "   ", term.ToString())
+
+	mustRun(t, tr, "hello")
+	term.Col -= 2
+	mustRun(t, tr, "\x1b[2K")
+	assert.Equal(t, "", term.ToString())
 }
 
 func TestEraseDisplay(t *testing.T) {

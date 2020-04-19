@@ -572,7 +572,7 @@ L:
 					t.Lines[t.Row][i] = Cell{' ', 0}
 				}
 			case 2:
-				tr.TODOs.Add("erase all line")
+				t.Lines[t.Row] = t.Lines[t.Row][0:0]
 			default:
 				log.Printf("term: unknown erase in line %v", args)
 			}
@@ -664,7 +664,7 @@ L:
 			}
 			// TODO: tr.Dirty
 		})
-	case c == 'm': // reset
+	case c == 'm': // character attributes
 		if len(args) == 0 {
 			args = append(args, 0)
 		}
@@ -674,8 +674,12 @@ L:
 				tr.Attr = 0
 			case arg == 1:
 				tr.Attr.SetBright(true)
+			case arg == 2: // faint
+				// ignore
 			case arg == 7:
 				tr.Attr.SetInverse(true)
+			case arg == 22: // clear bold
+				tr.Attr.SetBright(false)
 			case arg == 23: // clear italics
 				// ignore
 			case arg == 29: // clear crossed-out
