@@ -1,9 +1,9 @@
 body {
   font-family: sans-serif;
+  font-size: 15px;
 }
 pre {
   font-family: WebKitWorkaround, monospace;
-  font-size: 15px;
   margin: 0;
   outline: 0;
 }
