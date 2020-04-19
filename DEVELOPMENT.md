@@ -3,8 +3,8 @@
 While developing, in three separate terminals:
 
 ```sh
-$ make tsc   # run TypeScript compiler in watch mode
-$ make web   # auto-update the JS
+$ make tsc arg=-w  # run TypeScript compiler in watch mode
+$ make web arg=-w  # auto-update the JS
 $ make cli   # run the go server
 ```
 

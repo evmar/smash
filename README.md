@@ -1,4 +1,4 @@
-smash, a terminal emulator experiment
+# smash, a terminal emulator experiment
 
 All day long I work using a shell under a terminal emulator -- a
 combination of software that hasn't changed much in 30 years. Why? I
@@ -33,6 +33,19 @@ Smash is _not_:
   more primitive and more sophisticated.
 
 - Native UI for local interactions like text editing and scrollback.
+
+## Getting started
+
+### Prereqs
+
+- golang
+- node+yarn
+
+### Building
+
+```sh
+$ make tsc web cli
+```
 
 ## Related work
 

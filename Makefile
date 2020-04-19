@@ -6,11 +6,11 @@ cli:
 
 .PHONY: web
 web:
-	cd web && yarn run webpack -w
+	cd web && yarn run webpack $(arg)
 
 .PHONY: tsc
 tsc:
-	cd web && yarn run tsc -w
+	cd web && yarn run tsc $(arg)
 
 .PHONY: proto
 proto:
