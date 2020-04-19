@@ -52,7 +52,7 @@ export namespace ClientMessage {
     MSG_NOT_SET = 0,
     COMPLETE = 1,
     RUN = 2,
-    KEY = 3
+    KEY = 3,
   }
 }
 
@@ -438,7 +438,7 @@ export namespace Output {
     OUTPUT_NOT_SET = 0,
     ERROR = 2,
     TERM_UPDATE = 3,
-    EXIT_CODE = 4
+    EXIT_CODE = 4,
   }
 }
 
@@ -488,6 +488,6 @@ export namespace ServerMsg {
     MSG_NOT_SET = 0,
     HELLO = 1,
     COMPLETE = 2,
-    OUTPUT = 3
+    OUTPUT = 3,
   }
 }

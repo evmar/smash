@@ -23,7 +23,7 @@ after(async () => {
   server.close();
 });
 
-describe('readline', async function() {
+describe('readline', async function () {
   let page: puppeteer.Page;
   let readline: puppeteer.JSHandle;
 

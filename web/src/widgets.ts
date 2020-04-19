@@ -1,7 +1,7 @@
 import { ReadLine } from './readline';
 
 export const exported = {
-  ReadLine
+  ReadLine,
 };
 
 (window as any)['smash'] = exported;

@@ -24,7 +24,7 @@ export function runServer(): Promise<http.Server> {
     file.pipe(res);
   });
   server.listen(port);
-  return new Promise(resolve => {
+  return new Promise((resolve) => {
     server.on('listening', () => {
       console.log(`test server listening on ${port}`);
       resolve(server);

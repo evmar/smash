@@ -1,5 +1,5 @@
-import * as path from 'path';
 import { AliasMap } from './alias';
+import * as path from './path';
 
 export function parseCmd(cmd: string): string[] {
   const parts = cmd.trim().split(/\s+/);
@@ -73,7 +73,7 @@ export class Shell {
         if (exitCode === 0) {
           this.cwd = arg;
         }
-      }
+      },
     };
   }
 
@@ -89,7 +89,7 @@ export class Shell {
         return {
           kind: 'table',
           headers: ['alias', 'expansion'],
-          rows: Array.from(this.aliases.aliases)
+          rows: Array.from(this.aliases.aliases),
         };
       case 'cd':
         return this.builtinCd(argv.slice(1));
@@ -98,7 +98,7 @@ export class Shell {
         return {
           kind: 'table',
           headers: ['var', 'value'],
-          rows: Array.from(this.env)
+          rows: Array.from(this.env),
         };
     }
   }

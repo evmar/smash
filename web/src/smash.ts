@@ -4,7 +4,6 @@ import { html, htext } from './html';
 import * as readline from './readline';
 import { ReadLine } from './readline';
 import { Term } from './term';
-import * as jspb from 'google-protobuf';
 
 class ServerConnection {
   ws: WebSocket | null = null;
@@ -16,11 +15,11 @@ class ServerConnection {
     url.protocol = url.protocol.replace('http', 'ws');
     const ws = new WebSocket(url.href);
     ws.binaryType = 'arraybuffer';
-    ws.onmessage = event => {
+    ws.onmessage = (event) => {
       const msg = pb.ServerMsg.deserializeBinary(new Uint8Array(event.data));
       this.onMessage(msg);
     };
-    this.ws = await new Promise(res => {
+    this.ws = await new Promise((res) => {
       ws.onopen = () => {
         res(ws);
       };
@@ -32,16 +31,16 @@ class ServerConnection {
 
     if (!this.ws) return;
 
-    this.ws.onopen = ev => {
+    this.ws.onopen = (ev) => {
       console.error(`unexpected ws open:`, ev);
     };
-    this.ws.onclose = ev => {
+    this.ws.onclose = (ev) => {
       let msg = 'connection closed';
       if (ev.reason) msg += `: ${ev.reason}`;
       this.showError(msg);
       this.ws = null;
     };
-    this.ws.onerror = err => {
+    this.ws.onerror = (err) => {
       this.showError(`connection error: ${err}`);
       this.ws = null;
     };
@@ -83,7 +82,7 @@ class ServerConnection {
           {
             onclick: () => {
               this.reconnect();
-            }
+            },
           },
           document.createTextNode('reconnect')
         )
@@ -114,14 +113,14 @@ class Cell {
 
   constructor(public id: number) {
     this.dom.appendChild(this.readline.dom);
-    this.term.send = key => {
+    this.term.send = (key) => {
       const msg = new pb.ClientMessage();
       key.setCell(this.id);
       msg.setKey(key);
       return this.send(msg);
     };
 
-    this.readline.oncomplete = async req => {
+    this.readline.oncomplete = async (req) => {
       return new Promise((resolve, reject) => {
         const reqPb = new pb.CompleteRequest();
         reqPb.setId(0);
@@ -138,12 +137,12 @@ class Cell {
         this.pendingComplete = {
           id: 0,
           resolve,
-          reject
+          reject,
         };
       });
     };
 
-    this.readline.oncommit = cmd => {
+    this.readline.oncommit = (cmd) => {
       const exec = shell.exec(cmd);
       switch (exec.kind) {
         case 'string':
@@ -153,8 +152,12 @@ class Cell {
           const table = html(
             'table',
             {},
-            html('tr', {}, ...exec.headers.map(h => html('th', {}, htext(h)))),
-            ...exec.rows.map(r =>
+            html(
+              'tr',
+              {},
+              ...exec.headers.map((h) => html('th', {}, htext(h)))
+            ),
+            ...exec.rows.map((r) =>
               html(
                 'tr',
                 {},
@@ -203,7 +206,7 @@ class Cell {
     if (!this.pendingComplete) return;
     this.pendingComplete.resolve({
       completions: msg.getCompletionsList(),
-      pos: msg.getPos()
+      pos: msg.getPos(),
     });
     this.pendingComplete = undefined;
   }
@@ -228,7 +231,7 @@ class CellStack {
     cell.onExit = (id: number, exitCode: number) => {
       this.onExit(id, exitCode);
     };
-    cell.send = msg => this.send(msg);
+    cell.send = (msg) => this.send(msg);
     this.cells.push(cell);
     document.body.appendChild(cell.dom);
     cell.readline.input.focus();
@@ -258,7 +261,7 @@ async function main() {
 
   async function connect(): Promise<pb.Hello> {
     return new Promise(async (resolve, reject) => {
-      conn.onMessage = msg => {
+      conn.onMessage = (msg) => {
         if (msg.getMsgCase() !== pb.ServerMsg.MsgCase.HELLO) {
           reject(`unexpected message ${msg.toObject()}`);
           return;
@@ -277,7 +280,7 @@ async function main() {
 
   const cellStack = new CellStack();
 
-  conn.onMessage = msg => {
+  conn.onMessage = (msg) => {
     switch (msg.getMsgCase()) {
       case pb.ServerMsg.MsgCase.COMPLETE: {
         cellStack.getLastCell().onCompleteResponse(msg.getComplete()!);
@@ -305,9 +308,9 @@ async function main() {
     }
   });
 
-  cellStack.send = msg => conn.send(msg);
+  cellStack.send = (msg) => conn.send(msg);
 }
 
-main().catch(err => {
+main().catch((err) => {
   console.error(err);
 });

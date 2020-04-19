@@ -9,23 +9,23 @@ async function fakeExec(out: ExecOutput): Promise<void> {
   });
 }
 
-describe('shell', async function() {
+describe('shell', async function () {
   const env = new Map<string, string>([['HOME', '/home/evmar']]);
 
-  describe('parser', function() {
-    it('parses simple input', function() {
+  describe('parser', function () {
+    it('parses simple input', function () {
       expect(parseCmd('')).deep.equal([]);
       expect(parseCmd('cd')).deep.equal(['cd']);
       expect(parseCmd('cd foo/bar')).deep.equal(['cd', 'foo/bar']);
     });
 
-    it('ignores whitespace', function() {
+    it('ignores whitespace', function () {
       expect(parseCmd('cd ')).deep.equal(['cd']);
       expect(parseCmd('cd  foo/bar   zz')).deep.equal(['cd', 'foo/bar', 'zz']);
     });
   });
 
-  it('elides homedir', function() {
+  it('elides homedir', function () {
     const sh = new Shell(env);
     sh.cwd = '/home/evmar';
     expect(sh.cwdForPrompt()).equal('~');
@@ -33,14 +33,14 @@ describe('shell', async function() {
     expect(sh.cwdForPrompt()).equal('~/test');
   });
 
-  describe('cd', function() {
-    it('goes home', async function() {
+  describe('cd', function () {
+    it('goes home', async function () {
       const sh = new Shell(env);
       await fakeExec(sh.builtinCd([]));
       expect(sh.cwd).equal('/home/evmar');
     });
 
-    it('normalizes paths', async function() {
+    it('normalizes paths', async function () {
       const sh = new Shell(env);
       await fakeExec(sh.builtinCd([]));
       await fakeExec(sh.builtinCd(['foo//bar/']));

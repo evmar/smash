@@ -30,7 +30,7 @@ const termKeyMap: { [key: string]: string } = {
   // not in the map.
   Alt: '',
   Control: '',
-  Shift: ''
+  Shift: '',
 };
 
 export class Term {
@@ -40,8 +40,8 @@ export class Term {
   send = (msg: pb.KeyEvent): boolean => false;
 
   constructor() {
-    this.dom.onkeydown = e => this.onKeyDown(e);
-    this.dom.onkeypress = e => this.onKeyPress(e);
+    this.dom.onkeydown = (e) => this.onKeyDown(e);
+    this.dom.onkeypress = (e) => this.onKeyPress(e);
     this.dom.appendChild(this.cursor);
     this.measure();
   }

@@ -54,7 +54,11 @@ class CompletePopup {
     const measure = html(
       'div',
       {
-        style: { position: 'absolute', visibility: 'hidden', whiteSpace: 'pre' }
+        style: {
+          position: 'absolute',
+          visibility: 'hidden',
+          whiteSpace: 'pre',
+        },
       },
       htext(text)
     );
@@ -136,7 +140,7 @@ export class ReadLine {
   prompt = html('div', { className: 'prompt' });
   inputBox = html('div', { className: 'input-box' });
   input = html('input', {
-    spellcheck: false
+    spellcheck: false,
   }) as HTMLInputElement;
   oncommit = (_: string) => {};
 
@@ -163,12 +167,12 @@ export class ReadLine {
     this.inputBox.appendChild(this.input);
     this.dom.appendChild(this.inputBox);
 
-    this.input.onkeydown = ev => {
+    this.input.onkeydown = (ev) => {
       const key = translateKey(ev);
       if (!key) return;
       if (this.handleKey(key)) ev.preventDefault();
     };
-    this.input.onkeypress = ev => {
+    this.input.onkeypress = (ev) => {
       const key = ev.key;
       if (!key) return;
       if (this.handleKey(key)) ev.preventDefault();
@@ -212,7 +216,7 @@ export class ReadLine {
         const pos = this.input.selectionStart || 0;
         const req: CompleteRequest = { input: this.input.value, pos };
         const pending = (this.pendingComplete = this.oncomplete(req));
-        pending.then(resp => {
+        pending.then((resp) => {
           if (pending !== this.pendingComplete) return;
           this.pendingComplete = undefined;
           if (resp.completions.length === 0) return;
