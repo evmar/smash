@@ -98,16 +98,6 @@ export class ServerConnection {
     return true;
   }
 
-  spawn(id: number, cmd: shell.ExecRemote): boolean {
-    const run = new pb.RunRequest();
-    run.setCell(id);
-    run.setCwd(cmd.cwd);
-    run.setArgvList(cmd.cmd);
-    const msg = new pb.ClientMessage();
-    msg.setRun(run);
-    return this.send(msg);
-  }
-
   private removeDOM() {
     if (!this.dom) return;
     this.dom.parentElement!.removeChild(this.dom);

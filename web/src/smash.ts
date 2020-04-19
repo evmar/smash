@@ -6,7 +6,6 @@ import { ReadLine } from './readline';
 import { Term } from './term';
 import { ServerConnection } from './connection';
 
-const conn = new ServerConnection();
 const shell = new sh.Shell();
 
 interface PendingComplete {
@@ -20,18 +19,26 @@ class Cell {
   readline = new ReadLine();
   term = new Term();
   running: sh.ExecRemote | null = null;
-  onExit = (id: number, exitCode: number) => {};
-  send = (msg: pb.ClientMessage): boolean => false;
+
+  delegates = {
+    /** Called when the subprocess exits. */
+    exit: (id: number, exitCode: number) => {},
+
+    /** Sends a server message. */
+    send: (msg: pb.ClientMessage): boolean => false,
+  };
 
   pendingComplete?: PendingComplete;
 
   constructor(public id: number) {
     this.dom.appendChild(this.readline.dom);
-    this.term.send = (key) => {
-      const msg = new pb.ClientMessage();
-      key.setCell(this.id);
-      msg.setKey(key);
-      return this.send(msg);
+    this.term.delegates = {
+      key: (key) => {
+        const msg = new pb.ClientMessage();
+        key.setCell(this.id);
+        msg.setKey(key);
+        return this.delegates.send(msg);
+      },
     };
 
     this.readline.oncomplete = async (req) => {
@@ -43,7 +50,7 @@ class Cell {
         reqPb.setPos(req.pos);
         const msg = new pb.ClientMessage();
         msg.setComplete(reqPb);
-        if (!this.send(msg)) {
+        if (!this.delegates.send(msg)) {
           // TOOD
           console.error('send failed');
           reject();
@@ -85,16 +92,26 @@ class Cell {
           break;
         case 'remote':
           this.running = exec;
-          conn.spawn(this.id, exec);
+          this.spawn(this.id, exec);
           // The result of spawning will come back in via a message in onOutput().
           break;
       }
       this.dom.appendChild(this.term.dom);
       this.term.dom.focus();
       if (!this.running) {
-        this.onExit(this.id, 0);
+        this.delegates.exit(this.id, 0);
       }
     };
+  }
+
+  spawn(id: number, cmd: sh.ExecRemote): boolean {
+    const run = new pb.RunRequest();
+    run.setCell(id);
+    run.setCwd(cmd.cwd);
+    run.setArgvList(cmd.cmd);
+    const msg = new pb.ClientMessage();
+    msg.setRun(run);
+    return this.delegates.send(msg);
   }
 
   onOutput(msg: pb.Output) {
@@ -112,7 +129,7 @@ class Cell {
       }
       this.running = null;
       this.term.showCursor(false);
-      this.onExit(this.id, exitCode);
+      this.delegates.exit(this.id, exitCode);
     }
   }
 
@@ -136,16 +153,20 @@ class Cell {
 
 class CellStack {
   cells: Cell[] = [];
-  send = (msg: pb.ClientMessage): boolean => false;
+  delegates = {
+    send: (msg: pb.ClientMessage): boolean => false,
+  };
 
   addNew() {
     const id = this.cells.length;
     const cell = new Cell(id);
     cell.readline.setPrompt(shell.cwdForPrompt());
-    cell.onExit = (id: number, exitCode: number) => {
-      this.onExit(id, exitCode);
+    cell.delegates = {
+      send: this.delegates.send,
+      exit: (id: number, exitCode: number) => {
+        this.onExit(id, exitCode);
+      },
     };
-    cell.send = (msg) => this.send(msg);
     this.cells.push(cell);
     document.body.appendChild(cell.dom);
     cell.readline.input.focus();
@@ -173,7 +194,12 @@ async function main() {
   // TODO: even when we do this, we still get a URL bar?!
   // await navigator.serviceWorker.register('worker.js');
 
+  const conn = new ServerConnection();
   const cellStack = new CellStack();
+
+  cellStack.delegates = {
+    send: (msg) => conn.send(msg),
+  };
 
   conn.delegates = {
     connect: (hello) => {
@@ -214,8 +240,6 @@ async function main() {
       cellStack.focus();
     }
   });
-
-  cellStack.send = (msg) => conn.send(msg);
 }
 
 main().catch((err) => {
