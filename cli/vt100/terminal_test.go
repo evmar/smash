@@ -162,6 +162,8 @@ func TestMoveTo(t *testing.T) {
 	assert.Equal(t, "Xello", term.ToString())
 	mustRun(t, tr, "\x1b[1;3HX")
 	assert.Equal(t, "XeXlo", term.ToString())
+	mustRun(t, tr, "\x1b[0;0HY")
+	assert.Equal(t, "YeXlo", term.ToString())
 }
 
 func TestMoveToLine(t *testing.T) {

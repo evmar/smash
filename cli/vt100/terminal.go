@@ -530,6 +530,12 @@ L:
 		row := 1
 		col := 1
 		readArgs(args, &row, &col)
+		if row == 0 {
+			row = 1
+		}
+		if col == 0 {
+			col = 1
+		}
 		tr.WithTerm(func(t *Terminal) {
 			t.Row = t.Top + row - 1
 			t.Col = col - 1
