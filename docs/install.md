@@ -12,5 +12,6 @@ See also [development notes](development.md).
 ## Building
 
 ```sh
+$ (cd web && yarn)
 $ make tsc web cli
 ```
