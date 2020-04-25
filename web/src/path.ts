@@ -5,7 +5,7 @@
 export function join(a: string, b: string): string {
   if (b.startsWith('/')) return b;
   if (a.endsWith('/')) return a;
-  return `${a}/${b}`;
+  return normalize(`${a}/${b}`);
 }
 
 export function normalize(path: string): string {
@@ -13,6 +13,9 @@ export function normalize(path: string): string {
   const partsOut: string[] = [];
   for (const part of partsIn) {
     switch (part) {
+      case '':
+        if (partsOut.length > 0) continue;
+        break;
       case '.':
         if (partsOut.length > 0) continue;
         break;
