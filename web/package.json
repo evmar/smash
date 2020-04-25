@@ -25,6 +25,6 @@
   },
   "scripts": {
     "browser-test": "mocha js/test.js",
-    "local-test": "mocha js/path_test.js js/shell_test.js"
+    "local-test": "mocha js/path_test.js js/readline_test.js js/shell_test.js"
   }
 }

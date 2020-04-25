@@ -135,6 +135,17 @@ function longestSharedPrefixLength(strs: string[]): number {
   }
 }
 
+export function backwardWordBoundary(text: string, pos: number): number {
+  for (; pos > 0; pos--) {
+    if (text.charAt(pos - 1) !== ' ') break;
+  }
+  for (; pos > 0; pos--) {
+    if (text.charAt(pos - 1) === ' ') break;
+  }
+
+  return pos;
+}
+
 export class ReadLine {
   dom = html('div', { className: 'readline' });
   prompt = html('div', { className: 'prompt' });
@@ -209,6 +220,17 @@ export class ReadLine {
     if (this.pendingComplete) this.pendingComplete = undefined;
     this.hidePopup();
     switch (key) {
+      case 'Delete': // At least on ChromeOS, this is M-Backspace.
+      case 'M-Backspace': {
+        // backward-kill-word
+
+        const pos = this.input.selectionStart || 0;
+        const start = backwardWordBoundary(this.input.value, pos);
+        this.input.value =
+          this.input.value.substring(0, start) +
+          this.input.value.substring(pos);
+        break;
+      }
       case 'Enter':
         this.oncommit(this.input.value);
         break;
@@ -273,11 +295,11 @@ export class ReadLine {
       case 'C-v': // browser: paste
       case 'C-J': // browser: inspector
       case 'C-l': // browser: location
-      case 'C-r': // browser: reload
       case 'C-R': // browser: reload
         // Allow default handling.
         return false;
       default:
+        console.log(key);
         return false;
     }
     return true;
