@@ -72,6 +72,10 @@ export class Term {
     this.dom.focus();
   }
 
+  preventFocus() {
+    this.dom.removeAttribute('tabindex');
+  }
+
   onUpdate(msg: pb.TermUpdate) {
     const children = this.dom.children;
     for (const rowSpans of msg.getRowsList()) {

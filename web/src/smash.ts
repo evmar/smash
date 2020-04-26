@@ -129,6 +129,7 @@ class Cell {
       }
       this.running = null;
       this.term.showCursor(false);
+      this.term.preventFocus();
       this.delegates.exit(this.id, exitCode);
     }
   }
