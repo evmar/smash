@@ -30,8 +30,11 @@ export interface CompleteResponse {
 
 class CompletePopup {
   dom = html('div', { className: 'popup', style: { overflow: 'hidden' } });
-  oncommit: (text: string, pos: number) => void = () => {};
   textSize!: { width: number; height: number };
+
+  delegates = {
+    oncommit: (text: string, pos: number): void => {},
+  };
 
   constructor(readonly req: CompleteRequest, readonly resp: CompleteResponse) {}
 
@@ -126,10 +129,10 @@ class CompletePopup {
         // Don't allow additional popups.
         return true;
       case 'Enter':
-        this.oncommit(this.resp.completions[0], this.resp.pos);
+        this.delegates.oncommit(this.resp.completions[0], this.resp.pos);
         return true;
       case 'Escape':
-        this.oncommit('', this.resp.pos);
+        this.delegates.oncommit('', this.resp.pos);
         return true;
     }
     return false;
@@ -166,12 +169,12 @@ export class ReadLine {
   input = html('input', {
     spellcheck: false,
   }) as HTMLInputElement;
-  oncommit = (_: string) => {};
 
-  oncomplete: (
-    req: CompleteRequest
-  ) => Promise<CompleteResponse> = async () => {
-    throw 'notimpl';
+  delegates = {
+    oncommit: (text: string): void => {},
+    oncomplete: async (req: CompleteRequest): Promise<CompleteResponse> => {
+      throw 'notimpl';
+    },
   };
 
   pendingComplete: Promise<CompleteResponse> | undefined;
@@ -245,12 +248,12 @@ export class ReadLine {
         break;
       }
       case 'Enter':
-        this.oncommit(this.input.value);
+        this.delegates.oncommit(this.input.value);
         break;
       case 'Tab':
         const pos = this.input.selectionStart || 0;
         const req: CompleteRequest = { input: this.input.value, pos };
-        const pending = (this.pendingComplete = this.oncomplete(req));
+        const pending = (this.pendingComplete = this.delegates.oncomplete(req));
         pending.then((resp) => {
           if (pending !== this.pendingComplete) return;
           this.pendingComplete = undefined;
@@ -268,9 +271,11 @@ export class ReadLine {
             // Show a popup for the completions.
             this.popup = new CompletePopup(req, resp);
             this.popup.show(this.inputBox);
-            this.popup.oncommit = (text: string, pos: number) => {
-              this.applyCompletion(text, pos);
-              this.hidePopup();
+            this.popup.delegates = {
+              oncommit: (text: string, pos: number) => {
+                this.applyCompletion(text, pos);
+                this.hidePopup();
+              },
             };
           }
         });

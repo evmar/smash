@@ -41,66 +41,68 @@ class Cell {
       },
     };
 
-    this.readline.oncomplete = async (req) => {
-      return new Promise((resolve, reject) => {
-        const reqPb = new pb.CompleteRequest();
-        reqPb.setId(0);
-        reqPb.setCwd(shell.cwd);
-        reqPb.setInput(req.input);
-        reqPb.setPos(req.pos);
-        const msg = new pb.ClientMessage();
-        msg.setComplete(reqPb);
-        if (!this.delegates.send(msg)) {
-          // TOOD
-          console.error('send failed');
-          reject();
-        }
-        this.pendingComplete = {
-          id: 0,
-          resolve,
-          reject,
-        };
-      });
-    };
+    this.readline.delegates = {
+      oncomplete: async (req) => {
+        return new Promise((resolve, reject) => {
+          const reqPb = new pb.CompleteRequest();
+          reqPb.setId(0);
+          reqPb.setCwd(shell.cwd);
+          reqPb.setInput(req.input);
+          reqPb.setPos(req.pos);
+          const msg = new pb.ClientMessage();
+          msg.setComplete(reqPb);
+          if (!this.delegates.send(msg)) {
+            // TOOD
+            console.error('send failed');
+            reject();
+          }
+          this.pendingComplete = {
+            id: 0,
+            resolve,
+            reject,
+          };
+        });
+      },
 
-    this.readline.oncommit = (cmd) => {
-      const exec = shell.exec(cmd);
-      switch (exec.kind) {
-        case 'string':
-          this.term.dom.innerText += exec.output;
-          break;
-        case 'table':
-          const table = html(
-            'table',
-            {},
-            html(
-              'tr',
+      oncommit: (cmd) => {
+        const exec = shell.exec(cmd);
+        switch (exec.kind) {
+          case 'string':
+            this.term.dom.innerText += exec.output;
+            break;
+          case 'table':
+            const table = html(
+              'table',
               {},
-              ...exec.headers.map((h) => html('th', {}, htext(h)))
-            ),
-            ...exec.rows.map((r) =>
               html(
                 'tr',
                 {},
-                ...r.map((t, i) =>
-                  html('td', { className: i > 0 ? 'value' : '' }, htext(t))
+                ...exec.headers.map((h) => html('th', {}, htext(h)))
+              ),
+              ...exec.rows.map((r) =>
+                html(
+                  'tr',
+                  {},
+                  ...r.map((t, i) =>
+                    html('td', { className: i > 0 ? 'value' : '' }, htext(t))
+                  )
                 )
               )
-            )
-          );
-          this.term.dom = table;
-          break;
-        case 'remote':
-          this.running = exec;
-          this.spawn(this.id, exec);
-          // The result of spawning will come back in via a message in onOutput().
-          break;
-      }
-      this.dom.appendChild(this.term.dom);
-      this.term.dom.focus();
-      if (!this.running) {
-        this.delegates.exit(this.id, 0);
-      }
+            );
+            this.term.dom = table;
+            break;
+          case 'remote':
+            this.running = exec;
+            this.spawn(this.id, exec);
+            // The result of spawning will come back in via a message in onOutput().
+            break;
+        }
+        this.dom.appendChild(this.term.dom);
+        this.term.dom.focus();
+        if (!this.running) {
+          this.delegates.exit(this.id, 0);
+        }
+      },
     };
   }
 
