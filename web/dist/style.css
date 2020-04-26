@@ -46,6 +46,7 @@ table .value {
 }
 .input-box {
   flex: 1;
+  position: relative;
 }
 .popup {
   position: absolute;

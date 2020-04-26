@@ -70,36 +70,49 @@ class CompletePopup {
 
   /** Positions this.dom. */
   private position() {
-    const { x, y } = (this.dom.parentNode as HTMLElement).getClientRects()[0];
-    const popupHeight = this.dom.offsetHeight;
-
-    // Popup may not fit.  Options in order of preference:
+    // Careful about units here.  The element is positioned relative to the input
+    // box, but we want to measure things in terms of whether they fit in the current
+    // viewport.
+    //
+    // Also, the popup may not fit.  Options in order of preference:
     // 1. Pop up below, if it fits.
     // 2. Pop up above, if it fits.
-    // 3. Pop up in whichever side has more space, but truncated
+    // 3. Pop up in whichever side has more space, but truncated.
 
-    const spaceAbove = y;
-    const spaceBelow = window.innerHeight - (y + this.textSize.height);
+    // promptX/promptY are in viewport coordinates.
+    const promptY = (this.dom.parentNode as HTMLElement).getClientRects()[0].y;
+    const popupHeight = this.dom.offsetHeight;
+
+    const spaceAbove = promptY;
+    const spaceBelow = window.innerHeight - (promptY + this.textSize.height);
+
+    let placeBelow: boolean;
     if (spaceBelow >= popupHeight) {
-      this.dom.style.top = `${y + this.textSize.height}px`;
-      this.dom.style.bottom = '';
+      placeBelow = true;
     } else if (spaceAbove >= popupHeight) {
-      this.dom.style.top = '';
-      this.dom.style.bottom = `${window.innerHeight - y}px`;
+      placeBelow = false;
     } else {
-      if (spaceBelow >= spaceAbove) {
-        this.dom.style.top = `${y + this.textSize.height}px`;
-        this.dom.style.bottom = '10px';
-      } else {
-        this.dom.style.top = '10px';
-        this.dom.style.bottom = `${window.innerHeight - y}px`;
-      }
+      placeBelow = spaceBelow >= spaceAbove;
     }
 
-    const inputPaddingLeft = 2;
+    const popupPaddingY = 2 + 2; // 2 above, 2 below
+    const popupShadowY = 4; // arbitrary fudge factor
+    const popupSizeMargin = popupPaddingY + popupShadowY;
+
+    if (placeBelow) {
+      this.dom.style.top = `${this.textSize.height}px`;
+      this.dom.style.bottom = '';
+      this.dom.style.height =
+        spaceBelow >= popupHeight ? '' : `${spaceBelow - popupSizeMargin}px`;
+    } else {
+      this.dom.style.top = '';
+      this.dom.style.bottom = `${this.textSize.height}px`;
+      this.dom.style.height =
+        spaceAbove >= popupHeight ? '' : `${spaceAbove - popupSizeMargin}px`;
+    }
+
     const popupPaddingLeft = 4;
-    this.dom.style.left =
-      x + inputPaddingLeft - popupPaddingLeft + this.textSize.width + 'px';
+    this.dom.style.left = `${this.textSize.width - popupPaddingLeft}px`;
   }
 
   hide() {
