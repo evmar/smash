@@ -35,7 +35,7 @@ const termKeyMap: { [key: string]: string } = {
 
 /**
  * Client side DOM of terminal emulation.
- * 
+ *
  * The actual vt100 etc. emulation happens on the server.
  * This client receives screen updates and forwards keystrokes.
  */
@@ -47,7 +47,7 @@ export class Term {
   delegates = {
     /** Sends a keyboard event to the terminal's subprocess. */
     key: (msg: pb.KeyEvent): boolean => false,
-  }
+  };
 
   constructor() {
     this.dom.onkeydown = (e) => this.onKeyDown(e);

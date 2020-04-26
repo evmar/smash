@@ -44,7 +44,10 @@ async function handshake(ws: WebSocket): Promise<pb.Hello> {
   return hello;
 }
 
-async function connectAndHandshake(): Promise<{ws: WebSocket, hello: pb.Hello}> {
+async function connectAndHandshake(): Promise<{
+  ws: WebSocket;
+  hello: pb.Hello;
+}> {
   const url = new URL('/ws', window.location.href);
   url.protocol = url.protocol.replace('http', 'ws');
   const ws = new WebSocket(url.href);
