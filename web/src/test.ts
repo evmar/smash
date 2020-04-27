@@ -1,7 +1,7 @@
 import { ReadLine } from './readline';
 import { expect } from 'chai';
 import * as http from 'http';
-import puppeteer from 'puppeteer';
+import * as puppeteer from 'puppeteer';
 
 import { runServer, port } from './server';
 
