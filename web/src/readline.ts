@@ -317,7 +317,6 @@ export class ReadLine {
         // Allow default handling.
         return false;
       default:
-        console.log(key);
         return false;
     }
     return true;
