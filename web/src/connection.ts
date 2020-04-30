@@ -5,9 +5,13 @@
 import * as proto from './proto';
 import { html } from './html';
 
+const TRACE_MESSAGES = false;
+
 /** Parses a WebSocket MessageEvent as a server-sent message. */
 function parseMessage(event: MessageEvent): proto.ServerMsg {
-  return new proto.Reader(new DataView(event.data)).readServerMsg();
+  const msg = new proto.Reader(new DataView(event.data)).readServerMsg();
+  if (TRACE_MESSAGES) console.log('<', msg);
+  return msg;
 }
 
 /** Promisifies WebSocket connection. */
@@ -95,6 +99,7 @@ export class ServerConnection {
   }
 
   send(msg: proto.ClientMessage): boolean {
+    if (TRACE_MESSAGES) console.log('>', msg);
     if (!this.ws) return false;
     // Write once with an empty buffer to measure, then a second time after
     // creating the buffer.
