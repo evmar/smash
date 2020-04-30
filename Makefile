@@ -14,13 +14,8 @@ tsc:
 
 .PHONY: proto
 proto:
-	protoc \
-	  -Iproto \
-	  --plugin="protoc-gen-ts=$(protoc_gen_ts)" \
-	  --go_out="cli/proto" \
-	  --js_out="import_style=commonjs,binary:web/js" \
-	  --ts_out="web/src" \
-	  proto/smash.proto
+	node proto/gen.js ts proto/smash.d.ts > web/src/proto.ts
+	node proto/gen.js go proto/smash.d.ts > cli/proto/smash.go
 
 .PHONY: fmt
 fmt:

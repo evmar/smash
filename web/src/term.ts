@@ -1,5 +1,5 @@
 import { html, htext } from './html';
-import * as pb from './smash_pb';
+import * as proto from './proto';
 
 interface Attr {
   fg: number;
@@ -46,7 +46,7 @@ export class Term {
 
   delegates = {
     /** Sends a keyboard event to the terminal's subprocess. */
-    key: (msg: pb.KeyEvent): boolean => false,
+    key: (msg: proto.KeyEvent): boolean => false,
   };
 
   constructor() {
@@ -76,10 +76,10 @@ export class Term {
     this.dom.removeAttribute('tabindex');
   }
 
-  onUpdate(msg: pb.TermUpdate) {
+  onUpdate(msg: proto.TermUpdate) {
     const children = this.dom.children;
-    for (const rowSpans of msg.getRowsList()) {
-      const row = rowSpans.getRow() + 1; // +1 to avoid this.cursor
+    for (const rowSpans of msg.rows) {
+      const row = rowSpans.row + 1; // +1 to avoid this.cursor
       for (
         var childCount = children.length;
         childCount < row + 1;
@@ -88,7 +88,7 @@ export class Term {
         this.dom.appendChild(html('div', {}, htext(' ')));
       }
       const child = children[row] as HTMLElement;
-      const spans = rowSpans.getSpansList();
+      const spans = rowSpans.spans;
       if (spans.length === 0) {
         // Empty line. Set text to something non-empty so the div isn't
         // collapsed.
@@ -96,21 +96,21 @@ export class Term {
       } else {
         child.innerText = '';
         for (const span of spans) {
-          const { fg, bg, bright } = decodeAttr(span.getAttr());
+          const { fg, bg, bright } = decodeAttr(span.attr);
           const hspan = html('span');
           if (bright) hspan.classList.add(`bright`);
           if (fg > 0) hspan.classList.add(`fg${fg}`);
           if (bg > 0) hspan.classList.add(`bg${bg}`);
-          hspan.innerText = span.getText();
+          hspan.innerText = span.text;
           child.appendChild(hspan);
         }
       }
     }
-    const cursor = msg.getCursor();
+    const cursor = msg.cursor;
     if (cursor) {
-      this.showCursor(!cursor.getHidden());
-      this.cursor.style.left = cursor.getCol() * this.cellSize.width + 'px';
-      this.cursor.style.top = cursor.getRow() * this.cellSize.height + 'px';
+      this.showCursor(!cursor.hidden);
+      this.cursor.style.left = cursor.col * this.cellSize.width + 'px';
+      this.cursor.style.top = cursor.row * this.cellSize.height + 'px';
     }
   }
 
@@ -125,8 +125,7 @@ export class Term {
   }
 
   sendKeys(keys: string) {
-    const msg = new pb.KeyEvent();
-    msg.setKeys(keys);
+    const msg = new proto.KeyEvent({ cell: 0, keys });
     return this.delegates.key(msg);
   }
 

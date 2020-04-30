@@ -2,13 +2,12 @@
  * WebSocket connection setup and UI for reconnecting.
  */
 
-import * as pb from './smash_pb';
-import * as shell from './shell';
+import * as proto from './proto';
 import { html } from './html';
 
 /** Parses a WebSocket MessageEvent as a server-sent message. */
-function parseMessage(event: MessageEvent): pb.ServerMsg {
-  return pb.ServerMsg.deserializeBinary(new Uint8Array(event.data));
+function parseMessage(event: MessageEvent): proto.ServerMsg {
+  return new proto.Reader(new DataView(event.data)).readServerMsg();
 }
 
 /** Promisifies WebSocket connection. */
@@ -27,8 +26,8 @@ function connect(ws: WebSocket): Promise<void> {
 }
 
 /** Waits for the server hello message. */
-async function handshake(ws: WebSocket): Promise<pb.Hello> {
-  const msg = await new Promise<pb.ServerMsg>((res, rej) => {
+async function handshake(ws: WebSocket): Promise<proto.Hello> {
+  const msg = await new Promise<proto.ServerMsg>((res, rej) => {
     ws.onmessage = (event) => {
       res(parseMessage(event));
     };
@@ -39,14 +38,14 @@ async function handshake(ws: WebSocket): Promise<pb.Hello> {
     };
   });
 
-  const hello = msg.getHello();
-  if (!hello) throw new Error(`expected hello message, got ${msg.toObject()}`);
-  return hello;
+  if (!(msg.alt instanceof proto.Hello))
+    throw new Error(`expected hello message, got ${msg}`);
+  return msg.alt;
 }
 
 async function connectAndHandshake(): Promise<{
   ws: WebSocket;
-  hello: pb.Hello;
+  hello: proto.Hello;
 }> {
   const url = new URL('/ws', window.location.href);
   url.protocol = url.protocol.replace('http', 'ws');
@@ -63,8 +62,8 @@ async function connectAndHandshake(): Promise<{
 /** Maintains a WebSocket connection to the server, showing reconnect UI if necessary. */
 export class ServerConnection {
   delegates = {
-    connect: (msg: pb.Hello) => {},
-    message: (msg: pb.ServerMsg) => {},
+    connect: (msg: proto.Hello) => {},
+    message: (msg: proto.ServerMsg) => {},
   };
 
   private ws: WebSocket | null = null;
@@ -95,9 +94,16 @@ export class ServerConnection {
     }
   }
 
-  send(msg: pb.ClientMessage): boolean {
+  send(msg: proto.ClientMessage): boolean {
     if (!this.ws) return false;
-    this.ws.send(msg.serializeBinary());
+    // Write once with an empty buffer to measure, then a second time after
+    // creating the buffer.
+    const writer = new proto.Writer();
+    writer.writeClientMessage(msg);
+    writer.buf = new Uint8Array(writer.ofs);
+    writer.ofs = 0;
+    writer.writeClientMessage(msg);
+    this.ws.send(writer.buf);
     return true;
   }
 

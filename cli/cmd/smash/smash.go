@@ -2,6 +2,7 @@ package main
 
 import (
 	"bufio"
+	"bytes"
 	"fmt"
 	"io"
 	"log"
@@ -15,9 +16,8 @@ import (
 	"time"
 
 	"github.com/evmar/smash/bash"
-	pb "github.com/evmar/smash/proto"
+	"github.com/evmar/smash/proto"
 	"github.com/evmar/smash/vt100"
-	"github.com/golang/protobuf/proto"
 	"github.com/gorilla/websocket"
 	"github.com/kr/pty"
 )
@@ -36,14 +36,15 @@ type conn struct {
 	ws *websocket.Conn
 }
 
-func (c *conn) writeMsg(msg *pb.ServerMsg) error {
-	data, err := proto.Marshal(msg)
-	if err != nil {
+func (c *conn) writeMsg(msg proto.Msg) error {
+	m := &proto.ServerMsg{msg}
+	w := &bytes.Buffer{}
+	if err := m.Write(w); err != nil {
 		return err
 	}
 	c.Lock()
 	defer c.Unlock()
-	return c.ws.WriteMessage(websocket.BinaryMessage, data)
+	return c.ws.WriteMessage(websocket.BinaryMessage, w.Bytes())
 }
 
 // isPtyEOFError tests for a pty close error.
@@ -64,14 +65,14 @@ func isPtyEOFError(err error) bool {
 type command struct {
 	conn *conn
 	// req is the initial request that caused the command to be spawned.
-	req *pb.RunRequest
+	req *proto.RunRequest
 	cmd *exec.Cmd
 
 	// stdin accepts input keys and forwards them to the subprocess.
 	stdin chan []byte
 }
 
-func newCmd(conn *conn, req *pb.RunRequest) *command {
+func newCmd(conn *conn, req *proto.RunRequest) *command {
 	cmd := &exec.Cmd{Path: req.Argv[0], Args: req.Argv}
 	cmd.Dir = req.Cwd
 	return &command{
@@ -81,15 +82,15 @@ func newCmd(conn *conn, req *pb.RunRequest) *command {
 	}
 }
 
-func (cmd *command) send(out pb.IsOutput_Output) error {
-	return cmd.conn.writeMsg(&pb.ServerMsg{Msg: &pb.ServerMsg_Output{&pb.Output{
+func (cmd *command) send(msg proto.Msg) error {
+	return cmd.conn.writeMsg(&proto.CellOutput{
 		Cell:   cmd.req.Cell,
-		Output: out,
-	}}})
+		Output: proto.Output{msg},
+	})
 }
 
 func (cmd *command) sendError(msg string) error {
-	return cmd.send(&pb.Output_Error{msg})
+	return cmd.send(&proto.CmdError{msg})
 }
 
 func termLoop(tr *vt100.TermReader, r io.Reader) error {
@@ -159,11 +160,11 @@ func (cmd *command) run() (int, error) {
 	renderFromDirty := func() {
 		// Called with mu held.
 		allDirty := tr.Dirty.Lines[-1]
-		update := &pb.TermUpdate{}
+		update := &proto.TermUpdate{}
 		if tr.Dirty.Cursor {
-			update.Cursor = &pb.TermUpdate_Cursor{
-				Row:    int32(term.Row),
-				Col:    int32(term.Col),
+			update.Cursor = proto.Cursor{
+				Row:    uint16(term.Row),
+				Col:    uint16(term.Col),
 				Hidden: term.HideCursor,
 			}
 		}
@@ -171,17 +172,16 @@ func (cmd *command) run() (int, error) {
 			if !(allDirty || tr.Dirty.Lines[row]) {
 				continue
 			}
-			rowSpans := &pb.TermUpdate_RowSpans{
-				Row: int32(row),
+			rowSpans := proto.RowSpans{
+				Row: uint16(row),
 			}
-			update.Rows = append(update.Rows, rowSpans)
-			span := &pb.TermUpdate_Span{}
+			span := proto.Span{}
 			var attr vt100.Attr
 			for _, cell := range l {
 				if cell.Attr != attr {
 					attr = cell.Attr
 					rowSpans.Spans = append(rowSpans.Spans, span)
-					span = &pb.TermUpdate_Span{Attr: int32(attr)}
+					span = proto.Span{Attr: uint16(attr)}
 				}
 				// TODO: super inefficient.
 				span.Text += fmt.Sprintf("%c", cell.Ch)
@@ -189,9 +189,10 @@ func (cmd *command) run() (int, error) {
 			if len(span.Text) > 0 {
 				rowSpans.Spans = append(rowSpans.Spans, span)
 			}
+			update.Rows = append(update.Rows, rowSpans)
 		}
 
-		err := cmd.send(&pb.Output_TermUpdate{update})
+		err := cmd.send(update)
 		if err != nil {
 			done = err
 		}
@@ -268,7 +269,7 @@ func (cmd *command) runHandlingErrors() {
 		cmd.sendError(err.Error())
 		exitCode = 1
 	}
-	cmd.send(&pb.Output_ExitCode{int32(exitCode)})
+	cmd.send(&proto.Exit{uint16(exitCode)})
 }
 
 func getEnv() map[string]string {
@@ -281,6 +282,14 @@ func getEnv() map[string]string {
 		env[keyval[:eq]] = keyval[eq+1:]
 	}
 	return env
+}
+
+func mapPairs(m map[string]string) []proto.Pair {
+	pairs := []proto.Pair{}
+	for k, v := range m {
+		pairs = append(pairs, proto.Pair{k, v})
+	}
+	return pairs
 }
 
 func serveWS(w http.ResponseWriter, r *http.Request) error {
@@ -296,11 +305,11 @@ func serveWS(w http.ResponseWriter, r *http.Request) error {
 	if err != nil {
 		return err
 	}
-	err = conn.writeMsg(&pb.ServerMsg{Msg: &pb.ServerMsg_Hello{&pb.Hello{
-		Alias: aliases,
-		Env:   getEnv(),
-	}}})
-	if err != nil {
+	hello := &proto.Hello{
+		Alias: mapPairs(aliases),
+		Env:   mapPairs(getEnv()),
+	}
+	if err = conn.writeMsg(hello); err != nil {
 		return err
 	}
 
@@ -308,52 +317,52 @@ func serveWS(w http.ResponseWriter, r *http.Request) error {
 	for {
 		_, buf, err := conn.ws.ReadMessage()
 		if err != nil {
-			return err
+			return fmt.Errorf("reading client message: %s", err)
 		}
-		msg := pb.ClientMessage{}
-		if err := proto.Unmarshal(buf, &msg); err != nil {
-			return err
+		var msg proto.ClientMessage
+		if err := msg.Read(bufio.NewReader(bytes.NewBuffer(buf))); err != nil {
+			return fmt.Errorf("parsing client message: %s", err)
 		}
 
-		if run := msg.GetRun(); run != nil {
-			cmd := newCmd(conn, run)
-			commands[int(run.Cell)] = cmd
+		switch msg := msg.Alt.(type) {
+		case *proto.RunRequest:
+			cmd := newCmd(conn, msg)
+			commands[int(msg.Cell)] = cmd
 			go cmd.runHandlingErrors()
-		} else if key := msg.GetKey(); key != nil {
-			cmd := commands[int(key.Cell)]
+		case *proto.KeyEvent:
+			cmd := commands[int(msg.Cell)]
 			if cmd == nil {
-				log.Println("got key msg for unknown command", key.Cell)
+				log.Println("got key msg for unknown command", msg.Cell)
 				continue
 			}
 			// TODO: what if cmd failed?
 			// TODO: what if pipe is blocked?
-			cmd.stdin <- []byte(key.Keys)
-		} else if complete := msg.GetComplete(); complete != nil {
-			if complete.Cwd == "" {
+			cmd.stdin <- []byte(msg.Keys)
+		case *proto.CompleteRequest:
+			if msg.Cwd == "" {
 				panic("incomplete complete request")
 			}
 			go func() {
-				if err := completer.Chdir(complete.Cwd); err != nil {
+				if err := completer.Chdir(msg.Cwd); err != nil {
 					log.Println(err) // TODO
 				}
-				pos, completions, err := completer.Complete(complete.Input[0:complete.Pos])
+				pos, completions, err := completer.Complete(msg.Input[0:msg.Pos])
 				if err != nil {
 					log.Println(err) // TODO
 				}
-				err = conn.writeMsg(&pb.ServerMsg{Msg: &pb.ServerMsg_Complete{&pb.CompleteResponse{
-					Id:          complete.Id,
-					Pos:         int32(pos),
+				err = conn.writeMsg(&proto.CompleteResponse{
+					Id:          msg.Id,
+					Pos:         uint16(pos),
 					Completions: completions,
-				}}})
+				})
 				if err != nil {
 					log.Println(err) // TODO
 				}
 			}()
-		} else {
+		default:
 			log.Println("unhandled msg", msg)
 		}
 	}
-	return nil
 }
 
 func main() {
@@ -366,7 +375,7 @@ func main() {
 	http.Handle("/", http.FileServer(http.Dir("../web/dist")))
 	http.HandleFunc("/ws", func(w http.ResponseWriter, r *http.Request) {
 		if err := serveWS(w, r); err != nil {
-			log.Println(err)
+			log.Printf("error: %s", err)
 		}
 	})
 	addr := ":8080"
