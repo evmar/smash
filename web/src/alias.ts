@@ -7,10 +7,11 @@ export class AliasMap {
     this.aliases = aliases;
   }
 
-  expand(cmd: string[]): string[] {
-    const exp = this.aliases.get(cmd[0]);
+  expand(cmd: string): string {
+    const first = cmd.split(' ')[0];
+    let exp = this.aliases.get(first);
     if (!exp) return cmd;
-    return parseCmd(exp).concat(cmd.slice(1));
+    return exp + cmd.substring(first.length);
   }
 
   dump(): string {

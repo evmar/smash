@@ -104,9 +104,9 @@ export class Shell {
   }
 
   exec(cmd: string): ExecOutput {
-    let argv = parseCmd(cmd);
-    if (argv.length === 0) return strOutput('');
-    argv = this.aliases.expand(argv);
+    cmd = cmd.trim();
+    cmd = this.aliases.expand(cmd);
+    const argv = parseCmd(cmd);
     const out = this.handleBuiltin(argv);
     if (out) return out;
     return { kind: 'remote', cwd: this.cwd, cmd: ['/bin/sh', '-c', cmd] };
