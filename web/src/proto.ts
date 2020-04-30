@@ -1,5 +1,4 @@
 export type uint8 = number;
-export type uint16 = number;
 export class ClientMessage {
   constructor(public alt: CompleteRequest | RunRequest | KeyEvent) {}
 }
@@ -112,9 +111,15 @@ export class Reader {
     return this.view.getUint8(this.ofs++);
   }
 
-  private readUint16(): number {
-    const val = this.view.getUint16(this.ofs);
-    this.ofs += 2;
+  private readInt(): number {
+    let val = 0;
+    let shift = 0;
+    for (;;) {
+      const b = this.readUint8();
+      val |= (b & 0x7f) << shift;
+      if ((b & 0x80) === 0) break;
+      shift += 7;
+    }
     return val;
   }
 
@@ -123,7 +128,7 @@ export class Reader {
   }
 
   private readBytes(): DataView {
-    const len = this.readUint16();
+    const len = this.readInt();
     const slice = new DataView(this.view.buffer, this.ofs, len);
     this.ofs += len;
     return slice;
@@ -135,7 +140,7 @@ export class Reader {
   }
 
   private readArray<T>(elem: () => T): T[] {
-    const len = this.readUint8();
+    const len = this.readInt();
     const arr: T[] = [];
     for (let i = 0; i < len; i++) {
       arr.push(elem());
@@ -156,49 +161,49 @@ export class Reader {
   }
   readCompleteRequest(): CompleteRequest {
     return new CompleteRequest({
-      id: this.readUint16(),
+      id: this.readInt(),
       cwd: this.readString(),
       input: this.readString(),
-      pos: this.readUint16(),
+      pos: this.readInt(),
     });
   }
   readCompleteResponse(): CompleteResponse {
     return new CompleteResponse({
-      id: this.readUint16(),
+      id: this.readInt(),
       error: this.readString(),
-      pos: this.readUint16(),
+      pos: this.readInt(),
       completions: this.readArray(() => this.readString()),
     });
   }
   readRunRequest(): RunRequest {
     return new RunRequest({
-      cell: this.readUint16(),
+      cell: this.readInt(),
       cwd: this.readString(),
       argv: this.readArray(() => this.readString()),
     });
   }
   readKeyEvent(): KeyEvent {
     return new KeyEvent({
-      cell: this.readUint16(),
+      cell: this.readInt(),
       keys: this.readString(),
     });
   }
   readRowSpans(): RowSpans {
     return new RowSpans({
-      row: this.readUint16(),
+      row: this.readInt(),
       spans: this.readArray(() => this.readSpan()),
     });
   }
   readSpan(): Span {
     return new Span({
-      attr: this.readUint16(),
+      attr: this.readInt(),
       text: this.readString(),
     });
   }
   readCursor(): Cursor {
     return new Cursor({
-      row: this.readUint16(),
-      col: this.readUint16(),
+      row: this.readInt(),
+      col: this.readInt(),
       hidden: this.readBoolean(),
     });
   }
@@ -227,7 +232,7 @@ export class Reader {
   }
   readExit(): Exit {
     return new Exit({
-      exitCode: this.readUint16(),
+      exitCode: this.readInt(),
     });
   }
   readOutput(): Output {
@@ -244,7 +249,7 @@ export class Reader {
   }
   readCellOutput(): CellOutput {
     return new CellOutput({
-      cell: this.readUint16(),
+      cell: this.readInt(),
       output: this.readOutput(),
     });
   }
@@ -271,19 +276,26 @@ export class Writer {
     if (val > 0xff) throw new Error('overflow');
     this.buf[this.ofs++] = val;
   }
-  writeUint16(val: number) {
-    if (val > 0xffff) throw new Error('overflow');
-    this.buf[this.ofs++] = (val & 0xff00) >> 8;
-    this.buf[this.ofs++] = val & 0xff;
+  writeInt(val: number) {
+    if (val < 0) throw new Error('negative');
+    for (;;) {
+      const b = val & 0x7f;
+      val = val >> 7;
+      if (val === 0) {
+        this.writeUint8(b);
+        return;
+      }
+      this.writeUint8(b | 0x80);
+    }
   }
   writeString(str: string) {
-    this.writeUint16(str.length);
+    this.writeInt(str.length);
     for (let i = 0; i < str.length; i++) {
       this.buf[this.ofs++] = str.charCodeAt(i);
     }
   }
   writeArray<T>(arr: T[], f: (t: T) => void) {
-    this.writeUint16(arr.length);
+    this.writeInt(arr.length);
     for (const elem of arr) {
       f(elem);
     }
@@ -303,43 +315,43 @@ export class Writer {
     }
   }
   writeCompleteRequest(msg: CompleteRequest) {
-    this.writeUint16(msg.id);
+    this.writeInt(msg.id);
     this.writeString(msg.cwd);
     this.writeString(msg.input);
-    this.writeUint16(msg.pos);
+    this.writeInt(msg.pos);
   }
   writeCompleteResponse(msg: CompleteResponse) {
-    this.writeUint16(msg.id);
+    this.writeInt(msg.id);
     this.writeString(msg.error);
-    this.writeUint16(msg.pos);
+    this.writeInt(msg.pos);
     this.writeArray(msg.completions, (val) => {
       this.writeString(val);
     });
   }
   writeRunRequest(msg: RunRequest) {
-    this.writeUint16(msg.cell);
+    this.writeInt(msg.cell);
     this.writeString(msg.cwd);
     this.writeArray(msg.argv, (val) => {
       this.writeString(val);
     });
   }
   writeKeyEvent(msg: KeyEvent) {
-    this.writeUint16(msg.cell);
+    this.writeInt(msg.cell);
     this.writeString(msg.keys);
   }
   writeRowSpans(msg: RowSpans) {
-    this.writeUint16(msg.row);
+    this.writeInt(msg.row);
     this.writeArray(msg.spans, (val) => {
       this.writeSpan(val);
     });
   }
   writeSpan(msg: Span) {
-    this.writeUint16(msg.attr);
+    this.writeInt(msg.attr);
     this.writeString(msg.text);
   }
   writeCursor(msg: Cursor) {
-    this.writeUint16(msg.row);
-    this.writeUint16(msg.col);
+    this.writeInt(msg.row);
+    this.writeInt(msg.col);
     this.writeBoolean(msg.hidden);
   }
   writeTermUpdate(msg: TermUpdate) {
@@ -364,7 +376,7 @@ export class Writer {
     this.writeString(msg.error);
   }
   writeExit(msg: Exit) {
-    this.writeUint16(msg.exitCode);
+    this.writeInt(msg.exitCode);
   }
   writeOutput(msg: Output) {
     if (msg.alt instanceof CmdError) {
@@ -381,7 +393,7 @@ export class Writer {
     }
   }
   writeCellOutput(msg: CellOutput) {
-    this.writeUint16(msg.cell);
+    this.writeInt(msg.cell);
     this.writeOutput(msg.output);
   }
   writeServerMsg(msg: ServerMsg) {

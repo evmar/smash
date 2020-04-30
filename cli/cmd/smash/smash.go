@@ -163,8 +163,8 @@ func (cmd *command) run() (int, error) {
 		update := &proto.TermUpdate{}
 		if tr.Dirty.Cursor {
 			update.Cursor = proto.Cursor{
-				Row:    uint16(term.Row),
-				Col:    uint16(term.Col),
+				Row:    term.Row,
+				Col:    term.Col,
 				Hidden: term.HideCursor,
 			}
 		}
@@ -173,7 +173,7 @@ func (cmd *command) run() (int, error) {
 				continue
 			}
 			rowSpans := proto.RowSpans{
-				Row: uint16(row),
+				Row: row,
 			}
 			span := proto.Span{}
 			var attr vt100.Attr
@@ -181,7 +181,7 @@ func (cmd *command) run() (int, error) {
 				if cell.Attr != attr {
 					attr = cell.Attr
 					rowSpans.Spans = append(rowSpans.Spans, span)
-					span = proto.Span{Attr: uint16(attr)}
+					span = proto.Span{Attr: int(attr)}
 				}
 				// TODO: super inefficient.
 				span.Text += fmt.Sprintf("%c", cell.Ch)
@@ -269,7 +269,7 @@ func (cmd *command) runHandlingErrors() {
 		cmd.sendError(err.Error())
 		exitCode = 1
 	}
-	cmd.send(&proto.Exit{uint16(exitCode)})
+	cmd.send(&proto.Exit{exitCode})
 }
 
 func getEnv() map[string]string {
@@ -352,7 +352,7 @@ func serveWS(w http.ResponseWriter, r *http.Request) error {
 				}
 				err = conn.writeMsg(&proto.CompleteResponse{
 					Id:          msg.Id,
-					Pos:         uint16(pos),
+					Pos:         pos,
 					Completions: completions,
 				})
 				if err != nil {

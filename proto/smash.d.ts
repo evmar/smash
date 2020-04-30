@@ -1,49 +1,56 @@
+/**
+ * This file defines the smash client<->server protocol.
+ * Note that the types as written here are not actually used directly
+ * in smash, but rather more complex types are derived from them.
+ * See README.md.
+ */
+
+type int = number;
 type uint8 = number;
-type uint16 = number;
 
 /** Message from client to server. */
 type ClientMessage = CompleteRequest | RunRequest | KeyEvent;
 
 /** Request to complete a partial command-line input. */
 interface CompleteRequest {
-  id: uint16;
+  id: int;
   cwd: string;
   input: string;
-  pos: uint16;
+  pos: int;
 }
 
 /** Response to a CompleteRequest. */
 interface CompleteResponse {
-  id: uint16;
+  id: int;
   error: string;
-  pos: uint16;
+  pos: int;
   completions: string[];
 }
 
 /** Request to spawn a command. */
 interface RunRequest {
-  cell: uint16;
+  cell: int;
   cwd: string;
   argv: string[];
 }
 
 /** Keystroke sent to running command. */
 interface KeyEvent {
-  cell: uint16;
+  cell: int;
   keys: string;
 }
 
 interface RowSpans {
-  row: uint16;
+  row: int;
   spans: Span[];
 }
 interface Span {
-  attr: uint16;
+  attr: int;
   text: string;
 }
 interface Cursor {
-  row: uint16;
-  col: uint16;
+  row: int;
+  col: int;
   hidden: boolean;
 }
 
@@ -75,13 +82,13 @@ interface CmdError {
   error: string;
 }
 interface Exit {
-  exitCode: uint16;
+  exitCode: int;
 }
 type Output = CmdError | TermUpdate | Exit;
 
 /** Message from server to client about a running subprocess. */
 interface CellOutput {
-  cell: uint16;
+  cell: int;
   output: Output;
 }
 

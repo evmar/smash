@@ -23,20 +23,24 @@ func ReadUint8(r *bufio.Reader) (byte, error) {
 	return r.ReadByte()
 }
 
-func ReadUint16(r *bufio.Reader) (uint16, error) {
-	b1, err := r.ReadByte()
-	if err != nil {
-		return 0, err
+func ReadInt(r *bufio.Reader) (int, error) {
+	shift := 0
+	var val int
+	for {
+		b, err := r.ReadByte()
+		if err != nil {
+			return 0, err
+		}
+		val |= int(b&0b0111_1111) << shift
+		if (b & 0b1000_0000) == 0 {
+			return val, nil
+		}
+		shift = shift + 7
 	}
-	b2, err := r.ReadByte()
-	if err != nil {
-		return 0, err
-	}
-	return (uint16(b1) << 8) | uint16(b2), nil
 }
 
 func ReadString(r *bufio.Reader) (string, error) {
-	n, err := ReadUint16(r)
+	n, err := ReadInt(r)
 	if err != nil {
 		return "", err
 	}
@@ -48,7 +52,7 @@ func ReadString(r *bufio.Reader) (string, error) {
 	return string(buf), nil
 }
 
-func WriteBool(w io.Writer, val bool) error {
+func WriteBoolean(w io.Writer, val bool) error {
 	if val {
 		return WriteUint8(w, 1)
 	} else {
@@ -60,16 +64,27 @@ func WriteUint8(w io.Writer, val byte) error {
 	_, err := w.Write(buf[:])
 	return err
 }
-func WriteUint16(w io.Writer, val uint16) error {
-	buf := [2]byte{byte(val >> 8), byte(val & 0xFF)}
-	_, err := w.Write(buf[:])
-	return err
+func WriteInt(w io.Writer, val int) error {
+	if val < 0 {
+		panic("negative")
+	}
+	for {
+		b := byte(val & 0b0111_1111)
+		val = val >> 7
+		if val == 0 {
+			return WriteUint8(w, b)
+		} else {
+			if err := WriteUint8(w, b|0b1000_0000); err != nil {
+				return err
+			}
+		}
+	}
 }
 func WriteString(w io.Writer, str string) error {
 	if len(str) >= 1<<16 {
 		panic("overlong")
 	}
-	if err := WriteUint16(w, uint16(len(str))); err != nil {
+	if err := WriteInt(w, len(str)); err != nil {
 		return err
 	}
 	_, err := w.Write([]byte(str))
@@ -81,37 +96,37 @@ type ClientMessage struct {
 	Alt Msg
 }
 type CompleteRequest struct {
-	Id    uint16
+	Id    int
 	Cwd   string
 	Input string
-	Pos   uint16
+	Pos   int
 }
 type CompleteResponse struct {
-	Id          uint16
+	Id          int
 	Error       string
-	Pos         uint16
+	Pos         int
 	Completions []string
 }
 type RunRequest struct {
-	Cell uint16
+	Cell int
 	Cwd  string
 	Argv []string
 }
 type KeyEvent struct {
-	Cell uint16
+	Cell int
 	Keys string
 }
 type RowSpans struct {
-	Row   uint16
+	Row   int
 	Spans []Span
 }
 type Span struct {
-	Attr uint16
+	Attr int
 	Text string
 }
 type Cursor struct {
-	Row    uint16
-	Col    uint16
+	Row    int
+	Col    int
 	Hidden bool
 }
 type TermUpdate struct {
@@ -130,14 +145,14 @@ type CmdError struct {
 	Error string
 }
 type Exit struct {
-	ExitCode uint16
+	ExitCode int
 }
 type Output struct {
 	// CmdError, TermUpdate, Exit
 	Alt Msg
 }
 type CellOutput struct {
-	Cell   uint16
+	Cell   int
 	Output Output
 }
 type ServerMsg struct {
@@ -166,7 +181,7 @@ func (msg *ClientMessage) Write(w io.Writer) error {
 	panic("notimpl")
 }
 func (msg *CompleteRequest) Write(w io.Writer) error {
-	if err := WriteUint16(w, msg.Id); err != nil {
+	if err := WriteInt(w, msg.Id); err != nil {
 		return err
 	}
 	if err := WriteString(w, msg.Cwd); err != nil {
@@ -175,22 +190,22 @@ func (msg *CompleteRequest) Write(w io.Writer) error {
 	if err := WriteString(w, msg.Input); err != nil {
 		return err
 	}
-	if err := WriteUint16(w, msg.Pos); err != nil {
+	if err := WriteInt(w, msg.Pos); err != nil {
 		return err
 	}
 	return nil
 }
 func (msg *CompleteResponse) Write(w io.Writer) error {
-	if err := WriteUint16(w, msg.Id); err != nil {
+	if err := WriteInt(w, msg.Id); err != nil {
 		return err
 	}
 	if err := WriteString(w, msg.Error); err != nil {
 		return err
 	}
-	if err := WriteUint16(w, msg.Pos); err != nil {
+	if err := WriteInt(w, msg.Pos); err != nil {
 		return err
 	}
-	if err := WriteUint8(w, uint8(len(msg.Completions))); err != nil {
+	if err := WriteInt(w, len(msg.Completions)); err != nil {
 		return err
 	}
 	for _, val := range msg.Completions {
@@ -201,13 +216,13 @@ func (msg *CompleteResponse) Write(w io.Writer) error {
 	return nil
 }
 func (msg *RunRequest) Write(w io.Writer) error {
-	if err := WriteUint16(w, msg.Cell); err != nil {
+	if err := WriteInt(w, msg.Cell); err != nil {
 		return err
 	}
 	if err := WriteString(w, msg.Cwd); err != nil {
 		return err
 	}
-	if err := WriteUint8(w, uint8(len(msg.Argv))); err != nil {
+	if err := WriteInt(w, len(msg.Argv)); err != nil {
 		return err
 	}
 	for _, val := range msg.Argv {
@@ -218,7 +233,7 @@ func (msg *RunRequest) Write(w io.Writer) error {
 	return nil
 }
 func (msg *KeyEvent) Write(w io.Writer) error {
-	if err := WriteUint16(w, msg.Cell); err != nil {
+	if err := WriteInt(w, msg.Cell); err != nil {
 		return err
 	}
 	if err := WriteString(w, msg.Keys); err != nil {
@@ -227,10 +242,10 @@ func (msg *KeyEvent) Write(w io.Writer) error {
 	return nil
 }
 func (msg *RowSpans) Write(w io.Writer) error {
-	if err := WriteUint16(w, msg.Row); err != nil {
+	if err := WriteInt(w, msg.Row); err != nil {
 		return err
 	}
-	if err := WriteUint8(w, uint8(len(msg.Spans))); err != nil {
+	if err := WriteInt(w, len(msg.Spans)); err != nil {
 		return err
 	}
 	for _, val := range msg.Spans {
@@ -241,7 +256,7 @@ func (msg *RowSpans) Write(w io.Writer) error {
 	return nil
 }
 func (msg *Span) Write(w io.Writer) error {
-	if err := WriteUint16(w, msg.Attr); err != nil {
+	if err := WriteInt(w, msg.Attr); err != nil {
 		return err
 	}
 	if err := WriteString(w, msg.Text); err != nil {
@@ -250,19 +265,19 @@ func (msg *Span) Write(w io.Writer) error {
 	return nil
 }
 func (msg *Cursor) Write(w io.Writer) error {
-	if err := WriteUint16(w, msg.Row); err != nil {
+	if err := WriteInt(w, msg.Row); err != nil {
 		return err
 	}
-	if err := WriteUint16(w, msg.Col); err != nil {
+	if err := WriteInt(w, msg.Col); err != nil {
 		return err
 	}
-	if err := WriteBool(w, msg.Hidden); err != nil {
+	if err := WriteBoolean(w, msg.Hidden); err != nil {
 		return err
 	}
 	return nil
 }
 func (msg *TermUpdate) Write(w io.Writer) error {
-	if err := WriteUint8(w, uint8(len(msg.Rows))); err != nil {
+	if err := WriteInt(w, len(msg.Rows)); err != nil {
 		return err
 	}
 	for _, val := range msg.Rows {
@@ -285,7 +300,7 @@ func (msg *Pair) Write(w io.Writer) error {
 	return nil
 }
 func (msg *Hello) Write(w io.Writer) error {
-	if err := WriteUint8(w, uint8(len(msg.Alias))); err != nil {
+	if err := WriteInt(w, len(msg.Alias)); err != nil {
 		return err
 	}
 	for _, val := range msg.Alias {
@@ -293,7 +308,7 @@ func (msg *Hello) Write(w io.Writer) error {
 			return err
 		}
 	}
-	if err := WriteUint8(w, uint8(len(msg.Env))); err != nil {
+	if err := WriteInt(w, len(msg.Env)); err != nil {
 		return err
 	}
 	for _, val := range msg.Env {
@@ -310,7 +325,7 @@ func (msg *CmdError) Write(w io.Writer) error {
 	return nil
 }
 func (msg *Exit) Write(w io.Writer) error {
-	if err := WriteUint16(w, msg.ExitCode); err != nil {
+	if err := WriteInt(w, msg.ExitCode); err != nil {
 		return err
 	}
 	return nil
@@ -336,7 +351,7 @@ func (msg *Output) Write(w io.Writer) error {
 	panic("notimpl")
 }
 func (msg *CellOutput) Write(w io.Writer) error {
-	if err := WriteUint16(w, msg.Cell); err != nil {
+	if err := WriteInt(w, msg.Cell); err != nil {
 		return err
 	}
 	if err := msg.Output.Write(w); err != nil {
@@ -398,7 +413,7 @@ func (msg *ClientMessage) Read(r *bufio.Reader) error {
 func (msg *CompleteRequest) Read(r *bufio.Reader) error {
 	var err error
 	err = err
-	msg.Id, err = ReadUint16(r)
+	msg.Id, err = ReadInt(r)
 	if err != nil {
 		return err
 	}
@@ -410,7 +425,7 @@ func (msg *CompleteRequest) Read(r *bufio.Reader) error {
 	if err != nil {
 		return err
 	}
-	msg.Pos, err = ReadUint16(r)
+	msg.Pos, err = ReadInt(r)
 	if err != nil {
 		return err
 	}
@@ -419,7 +434,7 @@ func (msg *CompleteRequest) Read(r *bufio.Reader) error {
 func (msg *CompleteResponse) Read(r *bufio.Reader) error {
 	var err error
 	err = err
-	msg.Id, err = ReadUint16(r)
+	msg.Id, err = ReadInt(r)
 	if err != nil {
 		return err
 	}
@@ -427,17 +442,17 @@ func (msg *CompleteResponse) Read(r *bufio.Reader) error {
 	if err != nil {
 		return err
 	}
-	msg.Pos, err = ReadUint16(r)
+	msg.Pos, err = ReadInt(r)
 	if err != nil {
 		return err
 	}
 	{
-		n, err := ReadUint16(r)
+		n, err := ReadInt(r)
 		if err != nil {
 			return err
 		}
 		var val string
-		for i := 0; i < int(n); i++ {
+		for i := 0; i < n; i++ {
 			val, err = ReadString(r)
 			if err != nil {
 				return err
@@ -450,7 +465,7 @@ func (msg *CompleteResponse) Read(r *bufio.Reader) error {
 func (msg *RunRequest) Read(r *bufio.Reader) error {
 	var err error
 	err = err
-	msg.Cell, err = ReadUint16(r)
+	msg.Cell, err = ReadInt(r)
 	if err != nil {
 		return err
 	}
@@ -459,12 +474,12 @@ func (msg *RunRequest) Read(r *bufio.Reader) error {
 		return err
 	}
 	{
-		n, err := ReadUint16(r)
+		n, err := ReadInt(r)
 		if err != nil {
 			return err
 		}
 		var val string
-		for i := 0; i < int(n); i++ {
+		for i := 0; i < n; i++ {
 			val, err = ReadString(r)
 			if err != nil {
 				return err
@@ -477,7 +492,7 @@ func (msg *RunRequest) Read(r *bufio.Reader) error {
 func (msg *KeyEvent) Read(r *bufio.Reader) error {
 	var err error
 	err = err
-	msg.Cell, err = ReadUint16(r)
+	msg.Cell, err = ReadInt(r)
 	if err != nil {
 		return err
 	}
@@ -490,17 +505,17 @@ func (msg *KeyEvent) Read(r *bufio.Reader) error {
 func (msg *RowSpans) Read(r *bufio.Reader) error {
 	var err error
 	err = err
-	msg.Row, err = ReadUint16(r)
+	msg.Row, err = ReadInt(r)
 	if err != nil {
 		return err
 	}
 	{
-		n, err := ReadUint16(r)
+		n, err := ReadInt(r)
 		if err != nil {
 			return err
 		}
 		var val Span
-		for i := 0; i < int(n); i++ {
+		for i := 0; i < n; i++ {
 			if err := val.Read(r); err != nil {
 				return err
 			}
@@ -512,7 +527,7 @@ func (msg *RowSpans) Read(r *bufio.Reader) error {
 func (msg *Span) Read(r *bufio.Reader) error {
 	var err error
 	err = err
-	msg.Attr, err = ReadUint16(r)
+	msg.Attr, err = ReadInt(r)
 	if err != nil {
 		return err
 	}
@@ -525,11 +540,11 @@ func (msg *Span) Read(r *bufio.Reader) error {
 func (msg *Cursor) Read(r *bufio.Reader) error {
 	var err error
 	err = err
-	msg.Row, err = ReadUint16(r)
+	msg.Row, err = ReadInt(r)
 	if err != nil {
 		return err
 	}
-	msg.Col, err = ReadUint16(r)
+	msg.Col, err = ReadInt(r)
 	if err != nil {
 		return err
 	}
@@ -543,12 +558,12 @@ func (msg *TermUpdate) Read(r *bufio.Reader) error {
 	var err error
 	err = err
 	{
-		n, err := ReadUint16(r)
+		n, err := ReadInt(r)
 		if err != nil {
 			return err
 		}
 		var val RowSpans
-		for i := 0; i < int(n); i++ {
+		for i := 0; i < n; i++ {
 			if err := val.Read(r); err != nil {
 				return err
 			}
@@ -577,12 +592,12 @@ func (msg *Hello) Read(r *bufio.Reader) error {
 	var err error
 	err = err
 	{
-		n, err := ReadUint16(r)
+		n, err := ReadInt(r)
 		if err != nil {
 			return err
 		}
 		var val Pair
-		for i := 0; i < int(n); i++ {
+		for i := 0; i < n; i++ {
 			if err := val.Read(r); err != nil {
 				return err
 			}
@@ -590,12 +605,12 @@ func (msg *Hello) Read(r *bufio.Reader) error {
 		}
 	}
 	{
-		n, err := ReadUint16(r)
+		n, err := ReadInt(r)
 		if err != nil {
 			return err
 		}
 		var val Pair
-		for i := 0; i < int(n); i++ {
+		for i := 0; i < n; i++ {
 			if err := val.Read(r); err != nil {
 				return err
 			}
@@ -616,7 +631,7 @@ func (msg *CmdError) Read(r *bufio.Reader) error {
 func (msg *Exit) Read(r *bufio.Reader) error {
 	var err error
 	err = err
-	msg.ExitCode, err = ReadUint16(r)
+	msg.ExitCode, err = ReadInt(r)
 	if err != nil {
 		return err
 	}
@@ -656,7 +671,7 @@ func (msg *Output) Read(r *bufio.Reader) error {
 func (msg *CellOutput) Read(r *bufio.Reader) error {
 	var err error
 	err = err
-	msg.Cell, err = ReadUint16(r)
+	msg.Cell, err = ReadInt(r)
 	if err != nil {
 		return err
 	}

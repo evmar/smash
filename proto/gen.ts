@@ -51,16 +51,22 @@ func ReadUint8(r *bufio.Reader) (byte, error) {
   return r.ReadByte()
 }
 
-func ReadUint16(r *bufio.Reader) (uint16, error) {
-  b1, err := r.ReadByte()
-  if err != nil { return 0, err }
-  b2, err := r.ReadByte()
-  if err != nil { return 0, err }
-  return (uint16(b1)<<8)|uint16(b2), nil
+func ReadInt(r *bufio.Reader) (int, error) {
+  shift := 0
+  var val int
+  for {
+    b, err := r.ReadByte()
+    if err != nil { return 0, err }
+    val |= int(b & 0b0111_1111) << shift
+    if (b & 0b1000_0000) == 0 {
+      return val, nil
+    }
+    shift = shift + 7
+  }
 }
 
 func ReadString(r *bufio.Reader) (string, error) {
-  n, err := ReadUint16(r)
+  n, err := ReadInt(r)
   if err != nil { return "", err }
   buf := make([]byte, n)
   _, err = io.ReadFull(r, buf)
@@ -68,7 +74,7 @@ func ReadString(r *bufio.Reader) (string, error) {
   return string(buf), nil
 }
 
-func WriteBool(w io.Writer, val bool) error {
+func WriteBoolean(w io.Writer, val bool) error {
   if val {
     return WriteUint8(w, 1)
   } else {
@@ -80,16 +86,23 @@ func WriteUint8(w io.Writer, val byte) error {
   _, err := w.Write(buf[:])
   return err
 }
-func WriteUint16(w io.Writer, val uint16) error {
-  buf := [2]byte{byte(val >> 8), byte(val & 0xFF)}
-  _, err := w.Write(buf[:])
-  return err
+func WriteInt(w io.Writer, val int) error {
+  if val < 0 { panic("negative") }
+  for {
+    b := byte(val & 0b0111_1111)
+    val = val >> 7
+    if val == 0 {
+      return WriteUint8(w, b)
+    } else {
+      if err := WriteUint8(w, b | 0b1000_0000); err != nil { return err }
+    }
+  }
 }
 func WriteString(w io.Writer, str string) error {
   if len(str) >= 1<<16 {
     panic("overlong")
   }
-  if err := WriteUint16(w, uint16(len(str))); err != nil { return err }
+  if err := WriteInt(w, len(str)); err != nil { return err }
   _, err := w.Write([]byte(str))
   return err
 }
@@ -182,7 +195,7 @@ func WriteString(w io.Writer, str string) error {
         switch (type.type) {
           case 'boolean':
           case 'uint8':
-          case 'uint16':
+          case 'int':
           case 'string':
             write(`${name}, err = Read${cap(type.type)}(r)\n`);
             write(`if err != nil { return err }\n`)
@@ -191,10 +204,10 @@ func WriteString(w io.Writer, str string) error {
         break;
       case 'array':
         write(`{\n`);
-        write(`n, err := ReadUint16(r)\n`);
+        write(`n, err := ReadInt(r)\n`);
         write(`if err != nil { return err }\n`);
         write(`var val ${typeToGo(type.type)}\n`)
-        write(`for i := 0; i < int(n); i++ {\n`);
+        write(`for i := 0; i < n; i++ {\n`);
         readValue(type.type, 'val');
         write(`${name} = append(${name}, val)\n`)
         write(`}\n`);
@@ -210,9 +223,8 @@ func WriteString(w io.Writer, str string) error {
         let fn = `Write${cap(type.type)}`;
         switch (type.type) {
           case 'boolean':
-            fn = 'WriteBool';
           case 'uint8':
-          case 'uint16':
+          case 'int':
           case 'string':
             write(`if err := ${fn}(w, ${name}); err != nil { return err }\n`);
             return;
@@ -220,7 +232,7 @@ func WriteString(w io.Writer, str string) error {
         break;
       case 'array':
         write(
-          `if err := WriteUint8(w, uint8(len(${name}))); err != nil { return err }\n`
+          `if err := WriteInt(w, len(${name})); err != nil { return err }\n`
         );
         write(`for _, val := range ${name} {\n`);
         writeValue(type.type, 'val');
@@ -253,7 +265,6 @@ func WriteString(w io.Writer, str string) error {
 function genTS(decls: proto.Named[], write: (out: string) => void) {
   write(`
 export type uint8 = number;
-export type uint16 = number;
 `);
   for (const { name, type } of decls) {
     switch (type.kind) {
@@ -285,9 +296,15 @@ private readUint8(): number {
   return this.view.getUint8(this.ofs++);
 }
 
-private readUint16(): number {
-  const val = this.view.getUint16(this.ofs);
-  this.ofs += 2;
+private readInt(): number {
+  let val = 0;
+  let shift = 0;
+  for (;;) {
+    const b = this.readUint8();
+    val |= (b & 0x7f) << shift;
+    if ((b & 0x80) === 0) break;
+    shift += 7;
+  }
   return val;
 }
 
@@ -296,7 +313,7 @@ private readBoolean(): boolean {
 }
 
 private readBytes(): DataView {
-  const len = this.readUint16();
+  const len = this.readInt();
   const slice = new DataView(this.view.buffer, this.ofs, len);
   this.ofs += len;
   return slice;
@@ -308,7 +325,7 @@ private readString(): string {
 }
 
 private readArray<T>(elem: () => T): T[] {
-  const len = this.readUint8();
+  const len = this.readInt();
   const arr: T[] = [];
   for (let i = 0; i < len; i++) {
     arr.push(elem());
@@ -362,19 +379,26 @@ private readArray<T>(elem: () => T): T[] {
       if (val > 0xFF) throw new Error('overflow');
       this.buf[this.ofs++] = val;
     }
-    writeUint16(val: number) {
-      if (val > 0xFFFF) throw new Error('overflow');
-      this.buf[this.ofs++] = (val & 0xFF00) >> 8;
-      this.buf[this.ofs++] = val & 0xFF;
+    writeInt(val: number) {
+      if (val < 0) throw new Error('negative');
+      for (;;) {
+        const b = val & 0x7f;
+        val = val >> 7;
+        if (val === 0) {
+          this.writeUint8(b);
+          return;
+        }
+        this.writeUint8(b | 0x80);
+      }
     }
     writeString(str: string) {
-      this.writeUint16(str.length);
+      this.writeInt(str.length);
       for (let i = 0; i < str.length; i++) {
         this.buf[this.ofs++] = str.charCodeAt(i);
       }
     }
     writeArray<T>(arr: T[], f: (t: T) => void) {
-      this.writeUint16(arr.length);
+      this.writeInt(arr.length);
       for (const elem of arr) {
         f(elem);
       }
@@ -431,7 +455,7 @@ private readArray<T>(elem: () => T): T[] {
   function refStr(type: proto.Ref): string {
     switch (type.type) {
       case 'uint8':
-      case 'uint16':
+      case 'int':
         return 'number';
       case 'boolean':
       case 'string':
