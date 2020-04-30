@@ -12,7 +12,7 @@ web:
 	cd web && yarn run webpack $(arg)
 
 .PHONY: tsc
-tsc: web/src/proto.ts
+tsc:
 	cd web && yarn run tsc $(arg)
 
 # Build the proto generator from the TypeScript source.
