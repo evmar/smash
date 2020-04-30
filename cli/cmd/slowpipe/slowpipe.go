@@ -18,7 +18,7 @@ func run() error {
 			}
 			return err
 		}
-		_, err  = os.Stdout.Write([]byte{c})
+		_, err = os.Stdout.Write([]byte{c})
 		if err != nil {
 			return err
 		}
