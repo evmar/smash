@@ -8,7 +8,7 @@ cli/smash: cli/proto/smash.go
 	cd cli && go build github.com/evmar/smash/cmd/smash
 
 .PHONY: web
-web: tsc
+web:
 	cd web && yarn run webpack $(arg)
 
 .PHONY: tsc
