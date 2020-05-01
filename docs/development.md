@@ -1,11 +1,15 @@
 # smash: Development notes
 
-While developing, in three separate terminals:
+While developing, in one terminal:
 
 ```sh
-$ make tsc arg=-w  # run TypeScript compiler in watch mode
-$ make web arg=-w  # auto-update the JS
-$ make cli   # run the go server
+$ make watch  # watch frontend code and rebuild as necessary
+```
+
+And then in another:
+
+```sh
+$ make run   # run the go server, rerun as you edit code
 ```
 
 Now reloading the page reloads the content.
@@ -16,7 +20,7 @@ Now reloading the page reloads the content.
 $ make fmt
 ```
 
-To run prettier, which is checked on presubmit.
+To run prettier+gofmt, which is checked on presubmit.
 
 ## Protocol changes
 
@@ -24,7 +28,7 @@ To run prettier, which is checked on presubmit.
 $ make proto
 ```
 
-Regenerates the protobuf APIs.
+Regenerates the generated protocol code.
 
 ## Testing
 
