@@ -5,8 +5,14 @@ run: cli/smash
 cli/smash: cli/proto/smash.go web/dist/smash.bundle.js
 	cd cli && go build github.com/evmar/smash/cmd/smash
 
-web/dist/smash.bundle.js: web/src/*.ts
-	cd web && yarn run tsc
+webts=$(wildcard web/src/*.ts)
+webjs=$(patsubst web/src/%.ts,web/js/%.js,$(webts))
+
+web/js/stamp: web/tsconfig.json $(webts)
+	(cd web && yarn run tsc)
+	touch $@
+
+web/dist/smash.bundle.js: web/package.json web/webpack.config.js web/js/stamp
 	cd web && yarn run webpack -p
 
 # Build the proto generator from the TypeScript source.
