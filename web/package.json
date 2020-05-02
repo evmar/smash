@@ -14,12 +14,11 @@
     "puppeteer": "^3.0.0",
     "source-map-explorer": "^2.4.2",
     "source-map-loader": "^0.2.4",
-    "typescript": "^3.3.3333",
+    "typescript": "~3.8",
     "webpack": "^4.42.1",
     "webpack-cli": "^3.2.3"
   },
-  "dependencies": {
-  },
+  "dependencies": {},
   "scripts": {
     "browser-test": "mocha js/test.js",
     "local-test": "mocha js/path_test.js js/readline_test.js js/shell_test.js"
