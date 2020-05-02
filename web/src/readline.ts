@@ -162,6 +162,11 @@ export function backwardWordBoundary(text: string, pos: number): number {
   return pos;
 }
 
+export interface History {
+  add(cmd: string): void;
+  get(ofs: number): string | undefined;
+}
+
 export class ReadLine {
   dom = html('div', { className: 'readline' });
   prompt = html('div', { className: 'prompt' });
@@ -180,6 +185,9 @@ export class ReadLine {
   pendingComplete: Promise<CompleteResponse> | undefined;
   popup: CompletePopup | undefined;
 
+  /** Offset into the history: "we have gone N commands back". */
+  historyPosition = 0;
+
   /**
    * The selection span at time of last blur.
    * This is restored on focus, to defeat the browser behavior of
@@ -187,8 +195,7 @@ export class ReadLine {
    */
   selection: [number, number] = [0, 0];
 
-  constructor() {
-    this.prompt.innerText = '> ';
+  constructor(private history: History) {
     this.dom.appendChild(this.prompt);
 
     this.inputBox.appendChild(this.input);
@@ -220,6 +227,11 @@ export class ReadLine {
     this.prompt.innerText = `${text}$ `;
   }
 
+  setText(text: string, options: { fromHistory: boolean }) {
+    this.input.value = text;
+    if (!options.fromHistory) this.historyPosition = 0;
+  }
+
   focus() {
     this.input.focus();
   }
@@ -242,12 +254,15 @@ export class ReadLine {
 
         const pos = this.input.selectionStart || 0;
         const start = backwardWordBoundary(this.input.value, pos);
-        this.input.value =
+        this.setText(
           this.input.value.substring(0, start) +
-          this.input.value.substring(pos);
+            this.input.value.substring(pos),
+          { fromHistory: false }
+        );
         break;
       }
       case 'Enter':
+        this.history.add(this.input.value);
         this.delegates.oncommit(this.input.value);
         break;
       case 'Tab':
@@ -296,17 +311,28 @@ export class ReadLine {
           this.input.selectionStart! + 1;
         break;
       case 'C-k':
-        this.input.value = this.input.value.substr(
-          0,
-          this.input.selectionStart!
-        );
+        this.setText(this.input.value.substr(0, this.input.selectionStart!), {
+          fromHistory: false,
+        });
         break;
-      case 'C-n':
-      case 'C-p':
-        // TODO: implement history.  Swallow for now.
+      case 'C-n': {
+        if (this.historyPosition === 0) break;
+        this.historyPosition--;
+        const cmd = this.history.get(this.historyPosition) || '';
+        this.setText(cmd, { fromHistory: true });
         break;
+      }
+      case 'C-p': {
+        const cmd = this.history.get(this.historyPosition + 1);
+        if (!cmd) break;
+        this.historyPosition++;
+        this.setText(cmd, { fromHistory: true });
+        break;
+      }
       case 'C-u':
-        this.input.value = this.input.value.substr(this.input.selectionStart!);
+        this.setText(this.input.value.substr(this.input.selectionStart!), {
+          fromHistory: false,
+        });
         break;
       case 'C-x': // browser: cut
       case 'C-c': // browser: copy
@@ -317,6 +343,7 @@ export class ReadLine {
         // Allow default handling.
         return false;
       default:
+        this.historyPosition = 0;
         return false;
     }
     return true;
@@ -333,9 +360,11 @@ export class ReadLine {
     ) {
       overlap++;
     }
-    this.input.value =
+    this.setText(
       this.input.value.substring(0, pos) +
-      text +
-      this.input.value.substring(pos + overlap);
+        text +
+        this.input.value.substring(pos + overlap),
+      { fromHistory: false }
+    );
   }
 }

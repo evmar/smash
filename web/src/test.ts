@@ -1,3 +1,4 @@
+import * as readline from './readline';
 import { ReadLine } from './readline';
 import { expect } from 'chai';
 import * as http from 'http';
@@ -31,7 +32,13 @@ describe('readline', async function () {
     page = await browser.newPage();
     await page.goto(`http://localhost:${port}/test.html`);
     readline = await page.evaluateHandle(() => {
-      const readline = new smash.ReadLine();
+      const historyStub: readline.History = {
+        add() {},
+        get() {
+          return undefined;
+        },
+      };
+      const readline = new smash.ReadLine(historyStub);
       document.body.appendChild(readline.dom);
       readline.input.focus();
       return readline;

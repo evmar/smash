@@ -5,8 +5,10 @@ import * as readline from './readline';
 import { ReadLine } from './readline';
 import { Term } from './term';
 import { ServerConnection } from './connection';
+import { History } from './history';
 
 const shell = new sh.Shell();
+const history = new History();
 
 interface PendingComplete {
   id: number;
@@ -16,7 +18,7 @@ interface PendingComplete {
 
 class Cell {
   dom = html('div', { className: 'cell' });
-  readline = new ReadLine();
+  readline = new ReadLine(history);
   term = new Term();
   running: sh.ExecRemote | null = null;
 
