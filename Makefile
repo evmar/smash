@@ -1,5 +1,5 @@
 .PHONY: run
-run: cli/smash
+run:
 	cd cli && ./smash
 
 cli/smash: cli/proto/smash.go web/dist/smash.bundle.js
