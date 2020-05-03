@@ -5,6 +5,7 @@ export class History {
   private entries: string[] = [];
 
   add(cmd: string) {
+    if (cmd.trim() === '') return;
     this.entries.push(cmd);
   }
 
