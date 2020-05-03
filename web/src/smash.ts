@@ -72,25 +72,7 @@ class Cell {
             this.term.dom.innerText += exec.output;
             break;
           case 'table':
-            const table = html(
-              'table',
-              {},
-              html(
-                'tr',
-                {},
-                ...exec.headers.map((h) => html('th', {}, htext(h)))
-              ),
-              ...exec.rows.map((r) =>
-                html(
-                  'tr',
-                  {},
-                  ...r.map((t, i) =>
-                    html('td', { className: i > 0 ? 'value' : '' }, htext(t))
-                  )
-                )
-              )
-            );
-            this.term.dom = table;
+            this.term.dom = this.renderTable(exec);
             break;
           case 'remote':
             this.running = exec;
@@ -105,6 +87,23 @@ class Cell {
         }
       },
     };
+  }
+
+  private renderTable(exec: sh.TableOutput) {
+    return html(
+      'table',
+      {},
+      html('tr', {}, ...exec.headers.map((h) => html('th', {}, htext(h)))),
+      ...exec.rows.map((r) =>
+        html(
+          'tr',
+          {},
+          ...r.map((t, i) =>
+            html('td', { className: i > 0 ? 'value' : '' }, htext(t))
+          )
+        )
+      )
+    );
   }
 
   spawn(id: number, cmd: sh.ExecRemote): boolean {
