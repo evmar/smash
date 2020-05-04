@@ -5,7 +5,11 @@ export class History {
   private entries: string[] = [];
 
   add(cmd: string) {
-    if (cmd.trim() === '') return;
+    cmd = cmd.trim();
+    // Avoid empty entries.
+    if (cmd === '') return;
+    // Avoid duplicate entries.
+    if (this.entries.length > 0 && this.get(1) === cmd) return;
     this.entries.push(cmd);
   }
 
