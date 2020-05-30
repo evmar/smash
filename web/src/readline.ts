@@ -152,13 +152,14 @@ function longestSharedPrefixLength(strs: string[]): number {
 }
 
 export function backwardWordBoundary(text: string, pos: number): number {
+  // If at a word start already, skip preceding whitespace.
   for (; pos > 0; pos--) {
     if (text.charAt(pos - 1) !== ' ') break;
   }
+  // Skip to the beginning of the current word.
   for (; pos > 0; pos--) {
     if (text.charAt(pos - 1) === ' ') break;
   }
-
   return pos;
 }
 
@@ -301,6 +302,12 @@ export class ReadLine {
       case 'C-b':
         this.input.selectionStart = this.input.selectionEnd =
           this.input.selectionStart! - 1;
+        break;
+      case 'M-b':
+        this.input.selectionStart = this.input.selectionEnd = backwardWordBoundary(
+          this.input.value,
+          this.input.selectionStart!
+        );
         break;
       case 'C-e':
         const len = this.input.value.length;
