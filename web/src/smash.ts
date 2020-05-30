@@ -138,7 +138,7 @@ class Cell {
     // If the terminal was in focus, scroll to the bottom.
     // TODO: handle the case where the user has scrolled back.
     if (document.activeElement === this.term.dom) {
-      this.dom.scrollIntoView({
+      document.scrollingElement!.scrollIntoView({
         block: 'end',
       });
     }
