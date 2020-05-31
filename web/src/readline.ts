@@ -209,6 +209,7 @@ export function interpretKey(
       return true;
     }
     case 'C-a':
+    case 'Home':
       handler.setPos(0);
       return true;
     case 'C-b':
@@ -223,6 +224,7 @@ export function interpretKey(
       return true;
     }
     case 'C-e':
+    case 'End':
       handler.setPos(text.length);
       return true;
     case 'C-f':

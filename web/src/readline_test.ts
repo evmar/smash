@@ -88,6 +88,12 @@ describe('readline', () => {
       expect(fake.history).equal(1);
       fake.interpret('ArrowDown');
       expect(fake.history).equal(-1);
+
+      // Home/end don't reset history.
+      fake.interpret('Home');
+      expect(fake.history).equal(-1);
+      fake.interpret('End');
+      expect(fake.history).equal(-1);
     });
   });
 });
