@@ -163,6 +163,103 @@ export function backwardWordBoundary(text: string, pos: number): number {
   return pos;
 }
 
+function forwardWordBoundary(text: string, pos: number): number {
+  for (; pos < text.length; pos++) {
+    if (text.charAt(pos) === ' ') break;
+  }
+  for (; pos < text.length; pos++) {
+    if (text.charAt(pos) !== ' ') break;
+  }
+  return pos;
+}
+
+export interface InputState {
+  text: string;
+  start: number;
+  end: number;
+}
+
+export interface InputHandler {
+  onEnter(state: InputState): void;
+  tabComplete(state: InputState): void;
+  setText(text: string): void;
+  setPos(pos: number): void;
+  showHistory(delta: -1 | 0 | 1): void;
+}
+
+export function interpretKey(
+  state: InputState,
+  key: string,
+  handler: InputHandler
+): boolean {
+  const { text, start } = state;
+  switch (key) {
+    case 'Enter':
+      handler.onEnter(state);
+      return true;
+    case 'Tab':
+      handler.tabComplete(state);
+      return true;
+    case 'Delete': // At least on ChromeOS, this is M-Backspace.
+    case 'M-Backspace': {
+      // backward-kill-word
+      const wordStart = backwardWordBoundary(text, start);
+      handler.setPos(wordStart);
+      handler.setText(text.substring(0, wordStart) + text.substring(start));
+      return true;
+    }
+    case 'C-a':
+      handler.setPos(0);
+      return true;
+    case 'C-b':
+      handler.setPos(start - 1);
+      return true;
+    case 'M-b':
+      handler.setPos(backwardWordBoundary(text, start));
+      return true;
+    case 'M-d': {
+      const delEnd = forwardWordBoundary(text, start);
+      handler.setText(text.substring(0, start) + text.substring(delEnd));
+      return true;
+    }
+    case 'C-e':
+      handler.setPos(text.length);
+      return true;
+    case 'C-f':
+      handler.setPos(start + 1);
+      return true;
+    case 'M-f':
+      handler.setPos(forwardWordBoundary(text, start));
+      return true;
+    case 'C-k':
+      handler.setText(text.substr(0, start));
+      return true;
+    case 'C-n':
+    case 'ArrowDown':
+      handler.showHistory(-1);
+      return true;
+    case 'C-p':
+    case 'ArrowUp':
+      handler.showHistory(1);
+      return true;
+    case 'C-u':
+      handler.setText(text.substr(start));
+      return true;
+
+    case 'C-x': // browser: cut
+    case 'C-c': // browser: copy
+    case 'C-v': // browser: paste
+    case 'C-J': // browser: inspector
+    case 'C-l': // browser: location
+    case 'C-R': // browser: reload
+      // Allow default handling.
+      return false;
+    default:
+      handler.showHistory(0);
+      return false;
+  }
+}
+
 export interface History {
   add(cmd: string): void;
   get(ofs: number): string | undefined;
@@ -228,9 +325,36 @@ export class ReadLine {
     this.prompt.innerText = `${text}$ `;
   }
 
-  setText(text: string, options: { fromHistory: boolean }) {
+  setText(text: string) {
     this.input.value = text;
-    if (!options.fromHistory) this.historyPosition = 0;
+    this.historyPosition = 0;
+  }
+
+  setPos(pos: number) {
+    pos = Math.max(0, Math.min(this.input.value.length, pos));
+    this.input.selectionStart = this.input.selectionEnd = pos;
+  }
+
+  showHistory(delta: -1 | 0 | 1) {
+    switch (delta) {
+      case -1: {
+        if (this.historyPosition === 0) return;
+        this.historyPosition--;
+        const cmd = this.history.get(this.historyPosition) || '';
+        this.input.value = cmd;
+        return;
+      }
+      case 1: {
+        const cmd = this.history.get(this.historyPosition + 1);
+        if (!cmd) return;
+        this.historyPosition++;
+        this.input.value = cmd;
+        return;
+      }
+      case 0:
+        this.historyPosition = 0;
+        return;
+    }
   }
 
   focus() {
@@ -248,112 +372,41 @@ export class ReadLine {
     if (this.popup && this.popup.handleKey(key)) return true;
     if (this.pendingComplete) this.pendingComplete = undefined;
     this.hidePopup();
-    switch (key) {
-      case 'Delete': // At least on ChromeOS, this is M-Backspace.
-      case 'M-Backspace': {
-        // backward-kill-word
 
-        const pos = this.input.selectionStart || 0;
-        const start = backwardWordBoundary(this.input.value, pos);
-        this.setText(
-          this.input.value.substring(0, start) +
-            this.input.value.substring(pos),
-          { fromHistory: false }
-        );
-        break;
+    const state: InputState = {
+      text: this.input.value,
+      start: this.input.selectionStart ?? 0,
+      end: this.input.selectionEnd ?? 0,
+    };
+    return interpretKey(state, key, this);
+  }
+
+  tabComplete(state: InputState) {
+    const pos = state.start;
+    const req: CompleteRequest = { input: state.text, pos };
+    const pending = (this.pendingComplete = this.delegates.oncomplete(req));
+    pending.then((resp) => {
+      if (pending !== this.pendingComplete) return;
+      this.pendingComplete = undefined;
+      if (resp.completions.length === 0) return;
+      const len = longestSharedPrefixLength(resp.completions);
+      if (len > 0) {
+        this.applyCompletion(resp.completions[0].substring(0, len), resp.pos);
       }
-      case 'Enter':
-        this.history.add(this.input.value);
-        this.delegates.oncommit(this.input.value);
-        break;
-      case 'Tab':
-        const pos = this.input.selectionStart || 0;
-        const req: CompleteRequest = { input: this.input.value, pos };
-        const pending = (this.pendingComplete = this.delegates.oncomplete(req));
-        pending.then((resp) => {
-          if (pending !== this.pendingComplete) return;
-          this.pendingComplete = undefined;
-          if (resp.completions.length === 0) return;
-          const len = longestSharedPrefixLength(resp.completions);
-          if (len > 0) {
-            this.applyCompletion(
-              resp.completions[0].substring(0, len),
-              resp.pos
-            );
-          }
-          // If there was only one completion, it's already been applied, so
-          // there is nothing else to do.
-          if (resp.completions.length > 1) {
-            // Show a popup for the completions.
-            this.popup = new CompletePopup(req, resp);
-            this.popup.show(this.inputBox);
-            this.popup.delegates = {
-              oncommit: (text: string, pos: number) => {
-                this.applyCompletion(text, pos);
-                this.hidePopup();
-              },
-            };
-          }
-        });
-        break;
-      case 'C-a':
-        this.input.selectionStart = this.input.selectionEnd = 0;
-        break;
-      case 'C-b':
-        this.input.selectionStart = this.input.selectionEnd =
-          this.input.selectionStart! - 1;
-        break;
-      case 'M-b':
-        this.input.selectionStart = this.input.selectionEnd = backwardWordBoundary(
-          this.input.value,
-          this.input.selectionStart!
-        );
-        break;
-      case 'C-e':
-        const len = this.input.value.length;
-        this.input.selectionStart = this.input.selectionEnd = len;
-        break;
-      case 'C-f':
-        this.input.selectionStart = this.input.selectionEnd =
-          this.input.selectionStart! + 1;
-        break;
-      case 'C-k':
-        this.setText(this.input.value.substr(0, this.input.selectionStart!), {
-          fromHistory: false,
-        });
-        break;
-      case 'C-n': {
-        if (this.historyPosition === 0) break;
-        this.historyPosition--;
-        const cmd = this.history.get(this.historyPosition) || '';
-        this.setText(cmd, { fromHistory: true });
-        break;
+      // If there was only one completion, it's already been applied, so
+      // there is nothing else to do.
+      if (resp.completions.length > 1) {
+        // Show a popup for the completions.
+        this.popup = new CompletePopup(req, resp);
+        this.popup.show(this.inputBox);
+        this.popup.delegates = {
+          oncommit: (text: string, pos: number) => {
+            this.applyCompletion(text, pos);
+            this.hidePopup();
+          },
+        };
       }
-      case 'C-p': {
-        const cmd = this.history.get(this.historyPosition + 1);
-        if (!cmd) break;
-        this.historyPosition++;
-        this.setText(cmd, { fromHistory: true });
-        break;
-      }
-      case 'C-u':
-        this.setText(this.input.value.substr(this.input.selectionStart!), {
-          fromHistory: false,
-        });
-        break;
-      case 'C-x': // browser: cut
-      case 'C-c': // browser: copy
-      case 'C-v': // browser: paste
-      case 'C-J': // browser: inspector
-      case 'C-l': // browser: location
-      case 'C-R': // browser: reload
-        // Allow default handling.
-        return false;
-      default:
-        this.historyPosition = 0;
-        return false;
-    }
-    return true;
+    });
   }
 
   applyCompletion(text: string, pos: number) {
@@ -370,8 +423,13 @@ export class ReadLine {
     this.setText(
       this.input.value.substring(0, pos) +
         text +
-        this.input.value.substring(pos + overlap),
-      { fromHistory: false }
+        this.input.value.substring(pos + overlap)
     );
+  }
+
+  onEnter() {
+    const text = this.input.value;
+    this.history.add(text);
+    this.delegates.oncommit(text);
   }
 }
