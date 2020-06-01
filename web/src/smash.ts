@@ -134,14 +134,6 @@ class Cell {
       this.term.preventFocus();
       this.delegates.exit(this.id, exitCode);
     }
-
-    // If the terminal was in focus, scroll to the bottom.
-    // TODO: handle the case where the user has scrolled back.
-    if (document.activeElement === this.term.dom) {
-      document.scrollingElement!.scrollIntoView({
-        block: 'end',
-      });
-    }
   }
 
   onCompleteResponse(msg: proto.CompleteResponse) {
@@ -160,6 +152,12 @@ class Cell {
       this.readline.focus();
     }
   }
+}
+
+function scrollToBottom() {
+  document.scrollingElement!.scrollIntoView({
+    block: 'end',
+  });
 }
 
 class CellStack {
@@ -181,10 +179,12 @@ class CellStack {
     this.cells.push(cell);
     document.body.appendChild(cell.dom);
     cell.readline.input.focus();
+    scrollToBottom();
   }
 
   onOutput(msg: proto.CellOutput) {
     this.cells[msg.cell].onOutput(msg.output);
+    scrollToBottom();
   }
 
   onExit(id: number, exitCode: number) {
