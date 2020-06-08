@@ -29,9 +29,12 @@ class Fake implements readline.InputHandler {
     [this.text, this.pos] = cursor(state);
   }
 
-
   interpret(key: string) {
-    readline.interpretKey({text: this.text, start: this.pos, end: this.pos}, key, this);
+    readline.interpretKey(
+      { text: this.text, start: this.pos, end: this.pos },
+      key,
+      this
+    );
   }
   expect(newState: string) {
     const [etext, epos] = cursor(newState);
