@@ -1,6 +1,8 @@
 import { CellStack } from './cells';
 import { ServerConnection } from './connection';
 import * as proto from './proto';
+import { Tabs } from './tabs';
+import { Shell } from './shell';
 
 async function main() {
   // Register an unused service worker so 'add to homescreen' works.
@@ -8,36 +10,32 @@ async function main() {
   // await navigator.serviceWorker.register('worker.js');
 
   const conn = new ServerConnection();
-  const cellStack = new CellStack();
+  const tabs = new Tabs();
 
-  cellStack.delegates = {
+  tabs.delegates = {
     send: (msg) => conn.send(msg),
   };
 
   conn.delegates = {
     connect: (hello) => {
-      const shell = cellStack.shell;
+      const shell = new Shell();
       shell.aliases.setAliases(
         new Map<string, string>(hello.alias.map(({ key, val }) => [key, val]))
       );
       shell.env = new Map(hello.env.map(({ key, val }) => [key, val]));
       shell.init();
+      tabs.addCells(shell);
     },
 
     message: (msg) => {
-      if (msg.alt instanceof proto.CompleteResponse) {
-        cellStack.getLastCell().onCompleteResponse(msg.alt);
-      } else if (msg.alt instanceof proto.CellOutput) {
-        cellStack.onOutput(msg.alt);
-      } else {
-        console.error('unexpected message', msg);
-      }
+      if (tabs.handleMessage(msg)) return;
+      console.error('unexpected message', msg);
     },
   };
 
   await conn.connect();
 
-  cellStack.addNew();
+  document.body.appendChild(tabs.dom);
 
   // Clicking on the page, if it tries to focus the document body,
   // should redirect focus to the relevant place in the cell stack.
@@ -45,7 +43,7 @@ async function main() {
   // and couldn't get the desired behavior.
   document.addEventListener('click', () => {
     if (document.activeElement === document.body) {
-      cellStack.focus();
+      tabs.focus();
     }
   });
 }

@@ -160,24 +160,28 @@ function scrollToBottom() {
 }
 
 export class CellStack {
-  shell = new Shell();
+  dom = html('div', { className: 'cellstack' });
   cells: Cell[] = [];
   delegates = {
     send: (msg: proto.ClientMessage): boolean => false,
   };
+
+  constructor(readonly shell: Shell) {
+    this.addNew();
+  }
 
   addNew() {
     const id = this.cells.length;
     const cell = new Cell(id, this.shell);
     cell.readline.setPrompt(this.shell.cwdForPrompt());
     cell.delegates = {
-      send: this.delegates.send,
+      send: (msg) => this.delegates.send(msg),
       exit: (id: number, exitCode: number) => {
         this.onExit(id, exitCode);
       },
     };
     this.cells.push(cell);
-    document.body.appendChild(cell.dom);
+    this.dom.appendChild(cell.dom);
     cell.readline.input.focus();
     scrollToBottom();
   }
