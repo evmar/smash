@@ -1,8 +1,6 @@
-import { CellStack } from './cells';
 import { ServerConnection } from './connection';
-import * as proto from './proto';
-import { Tabs } from './tabs';
 import { Shell } from './shell';
+import { Tabs } from './tabs';
 
 async function main() {
   // Register an unused service worker so 'add to homescreen' works.

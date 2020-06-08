@@ -1,6 +1,6 @@
 import { CellStack } from './cells';
-import * as proto from './proto';
 import { html } from './html';
+import * as proto from './proto';
 import { Shell } from './shell';
 
 interface Tab {
