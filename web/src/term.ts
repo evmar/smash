@@ -54,6 +54,9 @@ export class Term {
     this.dom.onkeypress = (e) => this.onKeyPress(e);
     this.dom.appendChild(this.cursor);
     this.measure();
+    // Create initial empty line, for height.
+    // This will be replaced as soon as an update comes in.
+    this.dom.appendChild(html('div', {}, htext(' ')));
   }
 
   measure() {

@@ -19,6 +19,8 @@ class Cell {
   dom = html('div', { className: 'cell' });
   readline = new ReadLine(history);
   term = new Term();
+  /** Did the subprocess produce any output? */
+  didOutput = false;
   running: sh.ExecRemote | null = null;
 
   delegates = {
@@ -68,7 +70,7 @@ class Cell {
         const exec = shell.exec(cmd);
         switch (exec.kind) {
           case 'string':
-            this.term.dom.innerText += exec.output;
+            this.term.dom.innerText = exec.output;
             break;
           case 'table':
             this.term.dom = this.renderTable(exec);
@@ -120,6 +122,7 @@ class Cell {
       // error
       this.term.showError(msg.alt.error);
     } else if (msg.alt instanceof proto.TermUpdate) {
+      this.didOutput = true;
       this.term.onUpdate(msg.alt);
     } else {
       // exit code
@@ -131,6 +134,10 @@ class Cell {
       this.running = null;
       this.term.showCursor(false);
       this.term.preventFocus();
+      if (!this.didOutput) {
+        // Remove the vertical space of the terminal.
+        this.term.dom.innerText = '';
+      }
       this.delegates.exit(this.id, exitCode);
     }
   }
