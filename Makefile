@@ -1,8 +1,11 @@
 .PHONY: run
-run:
+run: cli/smash
 	cd cli && ./smash
 
-cli/smash: cli/proto/smash.go web/dist/smash.bundle.js
+.PHONY: all
+all: cli/smash web/dist/smash.bundle.js
+
+cli/smash: cli/cmd/smash/*.go cli/proto/smash.go
 	cd cli && go build github.com/evmar/smash/cmd/smash
 
 webts=$(wildcard web/src/*.ts)
