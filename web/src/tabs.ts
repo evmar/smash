@@ -11,9 +11,7 @@ export class Tabs {
   dom = html('div', { className: 'tabs' });
   tabs: Tab[] = [];
   delegates = {
-    send: (msg: proto.ClientMessage) => {
-      return false;
-    },
+    send: (msg: proto.ClientMessage) => {},
   };
 
   addCells(shell: Shell) {

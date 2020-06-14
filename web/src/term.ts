@@ -46,7 +46,7 @@ export class Term {
 
   delegates = {
     /** Sends a keyboard event to the terminal's subprocess. */
-    key: (msg: proto.KeyEvent): boolean => false,
+    key: (msg: proto.KeyEvent) => {},
   };
 
   constructor() {

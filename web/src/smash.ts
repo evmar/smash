@@ -1,37 +1,66 @@
 import { ServerConnection } from './connection';
 import { Shell } from './shell';
 import { Tabs } from './tabs';
+import { html, htext } from './html';
 
-async function main() {
-  // Register an unused service worker so 'add to homescreen' works.
-  // TODO: even when we do this, we still get a URL bar?!
-  // await navigator.serviceWorker.register('worker.js');
+const tabs = new Tabs();
 
+async function connect() {
   const conn = new ServerConnection();
-  const tabs = new Tabs();
+  const hello = await conn.connect();
+
+  const shell = new Shell();
+  shell.aliases.setAliases(
+    new Map<string, string>(hello.alias.map(({ key, val }) => [key, val]))
+  );
+  shell.env = new Map(hello.env.map(({ key, val }) => [key, val]));
+  shell.init();
+  tabs.addCells(shell);
 
   tabs.delegates = {
     send: (msg) => conn.send(msg),
   };
 
-  conn.delegates = {
-    connect: (hello) => {
-      const shell = new Shell();
-      shell.aliases.setAliases(
-        new Map<string, string>(hello.alias.map(({ key, val }) => [key, val]))
-      );
-      shell.env = new Map(hello.env.map(({ key, val }) => [key, val]));
-      shell.init();
-      tabs.addCells(shell);
-    },
+  return conn;
+}
 
-    message: (msg) => {
-      if (tabs.handleMessage(msg)) return;
-      console.error('unexpected message', msg);
-    },
-  };
+async function msgLoop(conn: ServerConnection) {
+  for (;;) {
+    const msg = await conn.read();
+    if (!tabs.handleMessage(msg)) {
+      throw new Error(`unexpected message: ${msg}`);
+    }
+  }
+}
 
-  await conn.connect();
+async function reconnectPrompt(message: string) {
+  console.error(message);
+  let dom!: HTMLElement;
+  await new Promise((res) => {
+    dom = html(
+      'div',
+      { className: 'error-popup' },
+      html('div', {}, htext(message)),
+      html('div', { style: { width: '1ex' } }),
+      html(
+        'button',
+        {
+          onclick: () => {
+            res();
+          },
+        },
+        htext('reconnect')
+      )
+    );
+    document.body.appendChild(dom);
+  });
+  document.body.removeChild(dom);
+}
+
+async function main() {
+  // Register an unused service worker so 'add to homescreen' works.
+  // TODO: even when we do this, we still get a URL bar?!
+  // await navigator.serviceWorker.register('worker.js');
 
   document.body.appendChild(tabs.dom);
 
@@ -44,6 +73,15 @@ async function main() {
       tabs.focus();
     }
   });
+
+  for (;;) {
+    try {
+      const conn = await connect();
+      await msgLoop(conn);
+    } catch (err) {
+      await reconnectPrompt(err);
+    }
+  }
 }
 
 main().catch((err) => {

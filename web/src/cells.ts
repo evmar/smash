@@ -28,7 +28,7 @@ class Cell {
     exit: (id: number, exitCode: number) => {},
 
     /** Sends a server message. */
-    send: (msg: proto.ClientMessage): boolean => false,
+    send: (msg: proto.ClientMessage) => {},
   };
 
   pendingComplete?: PendingComplete;
@@ -39,7 +39,7 @@ class Cell {
       key: (key) => {
         key.cell = this.id;
         const msg: proto.ClientMessage = new proto.ClientMessage(key);
-        return this.delegates.send(msg);
+        this.delegates.send(msg);
       },
     };
 
@@ -53,11 +53,7 @@ class Cell {
             pos: req.pos,
           });
           const msg = new proto.ClientMessage(reqPb);
-          if (!this.delegates.send(msg)) {
-            // TOOD
-            console.error('send failed');
-            reject();
-          }
+          this.delegates.send(msg);
           this.pendingComplete = {
             id: 0,
             resolve,
@@ -107,14 +103,14 @@ class Cell {
     );
   }
 
-  spawn(id: number, cmd: sh.ExecRemote): boolean {
+  spawn(id: number, cmd: sh.ExecRemote) {
     const run = new proto.RunRequest({
       cell: id,
       cwd: cmd.cwd,
       argv: cmd.cmd,
     });
     const msg = new proto.ClientMessage(run);
-    return this.delegates.send(msg);
+    this.delegates.send(msg);
   }
 
   onOutput(msg: proto.Output) {
@@ -170,7 +166,7 @@ export class CellStack {
   dom = html('div', { className: 'cellstack' });
   cells: Cell[] = [];
   delegates = {
-    send: (msg: proto.ClientMessage): boolean => false,
+    send: (msg: proto.ClientMessage) => {},
   };
 
   constructor(readonly shell: Shell) {
