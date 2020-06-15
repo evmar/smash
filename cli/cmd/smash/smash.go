@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"log"
+	"net"
 	"net/http"
 	"os"
 	"os/exec"
@@ -23,6 +24,8 @@ import (
 )
 
 var completer *bash.Bash
+var globalLastTermForCmd *vt100.Terminal
+var globalSockPathForEnv string
 
 var upgrader = websocket.Upgrader{
 	ReadBufferSize:    1024,
@@ -74,6 +77,9 @@ type command struct {
 
 func newCmd(conn *conn, req *proto.RunRequest) *command {
 	cmd := &exec.Cmd{Path: req.Argv[0], Args: req.Argv}
+	// TODO: accept environment from the client
+	cmd.Env = os.Environ()
+	cmd.Env = append(cmd.Env, "SMASH_SOCK="+globalSockPathForEnv)
 	cmd.Dir = req.Cwd
 	return &command{
 		conn: conn,
@@ -242,6 +248,7 @@ func (cmd *command) run() (int, error) {
 	}
 
 	mu.Lock()
+	globalLastTermForCmd = term
 
 	// done is the error reported by the terminal.
 	// We expect EOF in normal execution.
@@ -270,6 +277,16 @@ func (cmd *command) runHandlingErrors() {
 		exitCode = 1
 	}
 	cmd.send(&proto.Exit{exitCode})
+}
+
+var localCommands = map[string]func(w io.Writer) error{
+	"that": func(w io.Writer) error {
+		if globalLastTermForCmd == nil {
+			return nil
+		}
+		_, err := io.WriteString(w, globalLastTermForCmd.ToString())
+		return err
+	},
 }
 
 func getEnv() map[string]string {
@@ -305,9 +322,11 @@ func serveWS(w http.ResponseWriter, r *http.Request) error {
 	if err != nil {
 		return err
 	}
+	env := getEnv()
+	env["SMASH_SOCK"] = globalSockPathForEnv
 	hello := &proto.Hello{
 		Alias: mapPairs(aliases),
-		Env:   mapPairs(getEnv()),
+		Env:   mapPairs(env),
 	}
 	if err = conn.writeMsg(hello); err != nil {
 		return err
@@ -365,10 +384,21 @@ func serveWS(w http.ResponseWriter, r *http.Request) error {
 	}
 }
 
-func main() {
+func serve() error {
+	sockPath, localSock, err := setupLocalCommandSock()
+	if err != nil {
+		return err
+	}
+	go func() {
+		if err := readLocalCommands(localSock); err != nil {
+			fmt.Fprintf(os.Stderr, "local sock: %s\n", err)
+		}
+	}()
+	globalSockPathForEnv = sockPath
+
 	b, err := bash.StartBash()
 	if err != nil {
-		log.Fatal(err)
+		return err
 	}
 	completer = b
 
@@ -380,5 +410,50 @@ func main() {
 	})
 	addr := ":8080"
 	fmt.Printf("listening on %q\n", addr)
-	log.Fatal(http.ListenAndServe(addr, nil))
+	return http.ListenAndServe(addr, nil)
+}
+
+func localCommand(cmd string) error {
+	sockPath := os.Getenv("SMASH_SOCK")
+	if sockPath == "" {
+		return fmt.Errorf("no $SMASH_SOCK; are you running under smash?")
+	}
+
+	conn, err := net.Dial("unix", sockPath)
+	if err != nil {
+		return err
+	}
+	defer conn.Close()
+	if _, err = fmt.Fprintf(conn, "%s\n", cmd); err != nil {
+		return err
+	}
+	if _, err = io.Copy(os.Stdout, conn); err != nil {
+		return err
+	}
+	return nil
+}
+
+func main() {
+	var cmd = "serve"
+	if len(os.Args) > 1 {
+		cmd = os.Args[1]
+	}
+
+	var err error
+	if _, isLocal := localCommands[cmd]; isLocal {
+		err = localCommand(cmd)
+	} else {
+		switch cmd {
+		case "serve":
+			err = serve()
+		case "help":
+		default:
+			fmt.Println("TODO: usage")
+		}
+	}
+
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "ERROR: %s\n", err)
+		os.Exit(1)
+	}
 }
