@@ -16,6 +16,7 @@ async function connect() {
   shell.env = new Map(hello.env.map(({ key, val }) => [key, val]));
   shell.init();
   tabs.addCells(shell);
+  tabs.focus();
 
   tabs.delegates = {
     send: (msg) => conn.send(msg),
