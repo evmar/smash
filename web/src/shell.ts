@@ -39,6 +39,7 @@ export class Shell {
 
   init() {
     this.cwd = this.env.get('HOME') || '/';
+    this.aliases.set('that', `${this.env.get('SMASH')} that`);
   }
 
   cwdForPrompt() {

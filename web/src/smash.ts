@@ -10,7 +10,7 @@ async function connect() {
   const hello = await conn.connect();
 
   const shell = new Shell();
-  shell.aliases.setAliases(
+  shell.aliases.replaceAll(
     new Map<string, string>(hello.alias.map(({ key, val }) => [key, val]))
   );
   shell.env = new Map(hello.env.map(({ key, val }) => [key, val]));

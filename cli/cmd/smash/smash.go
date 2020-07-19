@@ -318,11 +318,17 @@ func serveWS(w http.ResponseWriter, r *http.Request) error {
 		ws: wsConn,
 	}
 
+	smashPath, err := os.Readlink("/proc/self/exe")
+	if err != nil {
+		return err
+	}
+
 	aliases, err := bash.GetAliases()
 	if err != nil {
 		return err
 	}
 	env := getEnv()
+	env["SMASH"] = smashPath
 	env["SMASH_SOCK"] = globalSockPathForEnv
 	hello := &proto.Hello{
 		Alias: mapPairs(aliases),

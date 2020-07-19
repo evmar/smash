@@ -3,8 +3,12 @@ import { parseCmd } from './shell';
 export class AliasMap {
   aliases = new Map<string, string>();
 
-  setAliases(aliases: Map<string, string>) {
+  replaceAll(aliases: Map<string, string>) {
     this.aliases = aliases;
+  }
+
+  set(alias: string, expansion: string) {
+    this.aliases.set(alias, expansion);
   }
 
   expand(cmd: string): string {
