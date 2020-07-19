@@ -1,5 +1,5 @@
 body {
-  font-family: sans-serif;
+  font-family: 'segoe ui', sans-serif;
   font-size: 15px;
 }
 pre {
@@ -32,8 +32,8 @@ table .value {
   background: #eee;
 }
 .readline input {
-  font-weight: bold;
   font: inherit;
+  font-weight: bold;
   width: 100%;
   border: 0;
   outline: none;
