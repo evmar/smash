@@ -9,14 +9,13 @@
     "@types/node": "^13.13.0",
     "@types/puppeteer": "^2.0.1",
     "chai": "^4.2.0",
+    "esbuild-linux-64": "^0.6.3",
     "mocha": "^7.1.1",
     "prettier": "^2.0.4",
     "puppeteer": "^3.0.0",
     "source-map-explorer": "^2.4.2",
     "source-map-loader": "^0.2.4",
-    "typescript": "~3.8",
-    "webpack": "^4.42.1",
-    "webpack-cli": "^3.2.3"
+    "typescript": "~3.8"
   },
   "dependencies": {},
   "scripts": {

@@ -1,9 +1,9 @@
 .PHONY: run
-run: cli/smash
+run: all
 	cd cli && ./smash
 
 .PHONY: all
-all: cli/smash web/dist/smash.bundle.js
+all: cli/smash web/dist/smash.js
 
 cli/smash: cli/cmd/smash/*.go cli/proto/smash.go
 	cd cli && go build github.com/evmar/smash/cmd/smash
@@ -11,12 +11,8 @@ cli/smash: cli/cmd/smash/*.go cli/proto/smash.go
 webts=$(wildcard web/src/*.ts)
 webjs=$(patsubst web/src/%.ts,web/js/%.js,$(webts))
 
-web/js/stamp: web/tsconfig.json $(webts)
-	(cd web && yarn run tsc)
-	touch $@
-
-web/dist/smash.bundle.js: web/package.json web/webpack.config.js web/js/stamp
-	cd web && yarn run webpack -p
+web/dist/smash.js: web/package.json $(webts)
+	web/node_modules/.bin/esbuild --target=es2019 --bundle --outfile=$@ web/src/smash.ts
 
 # Build the proto generator from the TypeScript source.
 proto/gen.js: proto/*.ts
@@ -32,7 +28,6 @@ cli/proto/smash.go: proto/gen.js proto/smash.d.ts
 watch:
 	(cd proto && yarn run tsc --preserveWatchOutput -w & \
 	cd web && yarn run tsc --preserveWatchOutput -w & \
-	cd web && yarn run webpack -w & \
 	wait)
 
 # Target to manually run proto generation.
