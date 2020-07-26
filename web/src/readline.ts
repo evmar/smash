@@ -14,6 +14,7 @@ function translateKey(ev: KeyboardEvent): string {
   let name = '';
   if (ev.altKey) name += 'M-';
   if (ev.ctrlKey) name += 'C-';
+  if (ev.shiftKey && ev.key.length > 1) name += 'S-';
   name += ev.key;
   return name;
 }
@@ -31,6 +32,7 @@ export interface CompleteResponse {
 class CompletePopup {
   dom = html('div', { className: 'popup', style: { overflow: 'hidden' } });
   textSize!: { width: number; height: number };
+  selection = -1;
 
   delegates = {
     oncommit: (text: string, pos: number): void => {},
@@ -44,9 +46,19 @@ class CompletePopup {
       this.req.input.substring(0, this.resp.pos) + '\u200b'
     );
 
-    this.dom.innerText = this.resp.completions.join('\n');
+    for (const comp of this.resp.completions) {
+      const dom = html('div', { className: 'completion' }, htext(comp));
+      // Listen to mousedown because if we listen to click, the click causes
+      // the input field to lose focus.
+      dom.addEventListener('mousedown', (event) => {
+        this.delegates.oncommit(comp, this.resp.pos);
+        event.preventDefault();
+      });
+      this.dom.appendChild(dom);
+    }
     parent.appendChild(this.dom);
     this.position();
+    this.dom.focus();
   }
 
   /** Measures the size of the given text as if it were contained in the parent. */
@@ -122,20 +134,44 @@ class CompletePopup {
     this.dom.parentNode!.removeChild(this.dom);
   }
 
+  private selectCompletion(index: number) {
+    if (this.selection !== -1) {
+      this.dom.children[this.selection].classList.remove('selected');
+    }
+    this.selection =
+      (index + this.resp.completions.length) % this.resp.completions.length;
+    this.dom.children[this.selection].classList.add('selected');
+  }
+
   /** @param key The key name as produced by translateKey(). */
   handleKey(key: string): boolean {
     switch (key) {
+      case 'ArrowDown':
       case 'Tab':
-        // Don't allow additional popups.
+      case 'C-n':
+        this.selectCompletion(this.selection + 1);
+        return true;
+      case 'ArrowUp':
+      case 'S-Tab':
+      case 'C-p':
+        this.selectCompletion(this.selection - 1);
         return true;
       case 'Enter':
-        this.delegates.oncommit(this.resp.completions[0], this.resp.pos);
+        if (this.selection >= 0) {
+          this.delegates.oncommit(
+            this.resp.completions[this.selection],
+            this.resp.pos
+          );
+        } else {
+          // User hit enter without picking anything.
+          this.delegates.oncommit('', this.req.pos);
+        }
         return true;
       case 'Escape':
         this.delegates.oncommit('', this.resp.pos);
         return true;
     }
-    return false;
+    return false; // Pop down on any other key.
   }
 }
 
