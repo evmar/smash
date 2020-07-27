@@ -9,7 +9,7 @@ $ make watch  # watch frontend code and rebuild as necessary
 And then in another:
 
 ```sh
-$ make cli run   # build and run the go server; ctl-c and run again when needed
+$ ./watch   # build and run the go server; restarts on changes
 ```
 
 Now reloading the page reloads the content.

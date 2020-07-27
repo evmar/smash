@@ -1,7 +1,3 @@
-.PHONY: run
-run: all
-	cd cli && ./smash
-
 .PHONY: all
 all: cli/smash web/dist/smash.js
 
@@ -9,7 +5,6 @@ cli/smash: cli/cmd/smash/*.go cli/proto/smash.go
 	cd cli && go build github.com/evmar/smash/cmd/smash
 
 webts=$(wildcard web/src/*.ts)
-webjs=$(patsubst web/src/%.ts,web/js/%.js,$(webts))
 
 web/dist/smash.js: web/package.json $(webts)
 	web/node_modules/.bin/esbuild --target=es2019 --bundle --outfile=$@ web/src/smash.ts
@@ -29,10 +24,6 @@ watch:
 	(cd proto && yarn run tsc --preserveWatchOutput -w & \
 	cd web && yarn run tsc --preserveWatchOutput -w & \
 	wait)
-
-# Target to manually run proto generation.
-.PHONY: proto
-proto: web/src/proto.ts cli/proto/smash.go
 
 .PHONY: fmt
 fmt:
