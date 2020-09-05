@@ -8,12 +8,11 @@ const TRACE_MESSAGES = true;
 
 /** Prints a proto-encoded message. */
 function printMessage(prefix: string, msg: any) {
-  if ('alt' in msg) {
-    const alt = msg.alt;
-    printMessage(`${prefix}${msg.constructor.name}:`, alt);
+  if ('tag' in msg) {
+    printMessage(`${prefix}tag(${msg.tag}):`, msg.val);
     return;
   }
-  console.groupCollapsed(`${prefix}${msg.constructor.name}`);
+  console.groupCollapsed(`${prefix}`);
   for (const field in msg) {
     const val = msg[field];
     if (typeof val === 'object' && !Array.isArray(val)) {
@@ -90,12 +89,12 @@ export class ServerConnection {
 
   async read(): Promise<proto.ServerMsg> {
     const msg = await read(this.ws);
-    if (TRACE_MESSAGES) printMessage('<', msg);
+    if (TRACE_MESSAGES) printMessage('read: ', msg);
     return msg;
   }
 
   send(msg: proto.ClientMessage) {
-    if (TRACE_MESSAGES) printMessage('>', msg);
+    if (TRACE_MESSAGES) printMessage('send: ', msg);
 
     // Write once with an empty buffer to measure, then a second time after
     // creating the buffer.
