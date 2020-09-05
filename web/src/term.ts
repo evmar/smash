@@ -122,8 +122,7 @@ export class Term {
   }
 
   sendKeys(keys: string) {
-    const msg = new proto.KeyEvent({ cell: 0, keys });
-    return this.delegates.key(msg);
+    return this.delegates.key({ cell: 0, keys });
   }
 
   onKeyDown(ev: KeyboardEvent) {

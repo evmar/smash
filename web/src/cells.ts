@@ -38,21 +38,23 @@ class Cell {
     this.term.delegates = {
       key: (key) => {
         key.cell = this.id;
-        const msg: proto.ClientMessage = new proto.ClientMessage(key);
-        this.delegates.send(msg);
+        this.delegates.send({ tag: 'KeyEvent', val: key });
       },
     };
 
     this.readline.delegates = {
       oncomplete: async (req) => {
         return new Promise((resolve, reject) => {
-          const reqPb = new proto.CompleteRequest({
+          const reqProto: proto.CompleteRequest = {
             id: 0,
             cwd: shell.cwd,
             input: req.input,
             pos: req.pos,
-          });
-          const msg = new proto.ClientMessage(reqPb);
+          };
+          const msg: proto.ClientMessage = {
+            tag: 'CompleteRequest',
+            val: reqProto,
+          };
           this.delegates.send(msg);
           this.pendingComplete = {
             id: 0,
@@ -104,37 +106,39 @@ class Cell {
   }
 
   spawn(id: number, cmd: sh.ExecRemote) {
-    const run = new proto.RunRequest({
+    const run: proto.RunRequest = {
       cell: id,
       cwd: cmd.cwd,
       argv: cmd.cmd,
-    });
-    const msg = new proto.ClientMessage(run);
-    this.delegates.send(msg);
+    };
+    this.delegates.send({ tag: 'RunRequest', val: run });
   }
 
   onOutput(msg: proto.Output) {
-    if (msg.alt instanceof proto.CmdError) {
-      // error; exit code will come later.
-      this.dom.appendChild(html('div', {}, htext(msg.alt.error)));
-    } else if (msg.alt instanceof proto.TermUpdate) {
-      this.didOutput = true;
-      this.term.onUpdate(msg.alt);
-    } else {
-      // exit code
-      // Command completed.
-      const exitCode = msg.alt.exitCode;
-      if (this.running && this.running.onComplete) {
-        this.running.onComplete(exitCode);
-      }
-      this.running = null;
-      this.term.showCursor(false);
-      this.term.preventFocus();
-      if (!this.didOutput) {
-        // Remove the vertical space of the terminal.
-        this.term.dom.innerText = '';
-      }
-      this.delegates.exit(this.id, exitCode);
+    switch (msg.tag) {
+      case 'CmdError':
+        // error; exit code will come later.
+        this.dom.appendChild(html('div', {}, htext(msg.val.error)));
+        break;
+      case 'TermUpdate':
+        this.didOutput = true;
+        this.term.onUpdate(msg.val);
+        break;
+      case 'Exit':
+        // exit code
+        // Command completed.
+        const exitCode = msg.val.exitCode;
+        if (this.running && this.running.onComplete) {
+          this.running.onComplete(exitCode);
+        }
+        this.running = null;
+        this.term.showCursor(false);
+        this.term.preventFocus();
+        if (!this.didOutput) {
+          // Remove the vertical space of the terminal.
+          this.term.dom.innerText = '';
+        }
+        this.delegates.exit(this.id, exitCode);
     }
   }
 

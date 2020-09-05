@@ -82,10 +82,10 @@ export class ServerConnection {
     this.ws = ws;
 
     const msg = await read(ws);
-    if (!(msg.alt instanceof proto.Hello)) {
+    if (msg.tag !== 'Hello') {
       throw new Error(`expected hello message, got ${msg}`);
     }
-    return msg.alt;
+    return msg.val;
   }
 
   async read(): Promise<proto.ServerMsg> {

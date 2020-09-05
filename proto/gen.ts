@@ -269,18 +269,13 @@ export type uint8 = number;
   for (const { name, type } of decls) {
     switch (type.kind) {
       case 'union':
-        write(`export class ${name} {\n`);
-        write(` constructor(public alt: ${typeStr(type)}) {}\n`);
-        write(`}\n`);
+        write(`export type ${name} = ${typeStr(type)};\n`);
         break;
       case 'struct':
-        write(`export class ${name} {\n`);
+        write(`export interface ${name} {\n`);
         for (const { name, type: fType } of type.fields) {
-          write(`${name}!: ${typeStr(fType)};\n`);
+          write(`${name}: ${typeStr(fType)};\n`);
         }
-        write(
-          `constructor(fields: ${name}) { Object.assign(this, fields); }\n`
-        );
         write(`}\n`);
         break;
       default:
@@ -339,13 +334,13 @@ private readArray<T>(elem: () => T): T[] {
       case 'union':
         write(`switch (this.readUint8()) {\n`);
         type.types.forEach((t, i) => {
-          write(`case ${i + 1}: return new ${name}(${readRef(t)});\n`);
+          write(`case ${i + 1}: return {tag:'${typeStr(t)}', val:${readRef(t)}};\n`);
         });
         write(`default: throw new Error('parse error');`);
         write(`}\n`);
         break;
       case 'struct':
-        write(`return new ${name}({\n`);
+        write(`return {\n`);
         for (const field of type.fields) {
           write(`${field.name}: `);
           switch (field.type.kind) {
@@ -360,7 +355,7 @@ private readArray<T>(elem: () => T): T[] {
           }
           write(`,\n`);
         }
-        write(`});\n`);
+        write(`};\n`);
         break;
       default:
         throw new Error(`todo: ${JSON.stringify(type)}`);
@@ -408,15 +403,15 @@ private readArray<T>(elem: () => T): T[] {
     write(`write${name}(msg: ${name}) {\n`);
     switch (type.kind) {
       case 'union':
+        write(`switch (msg.tag) {\n`);
         type.types.forEach((t, i) => {
-          if (i > 0) write(`else `);
-          write(`if (msg.alt instanceof ${t.type}) {\n`);
+          write(`case '${typeStr(t)}':\n`);
           i;
           write(`this.writeUint8(${i + 1});\n`);
-          write(`this.write${t.type}(msg.alt);\n`);
-          write(`}\n`);
+          write(`this.write${t.type}(msg.val);\n`);
+          write(`break;\n`);
         });
-        write(`else { throw new Error('unhandled case'); }\n`);
+        write(`}\n`);
         break;
       case 'struct':
         for (const field of type.fields) {
@@ -471,7 +466,10 @@ private readArray<T>(elem: () => T): T[] {
       case 'array':
         return `${refStr(type.type)}[]`;
       case 'union':
-        return `${type.types.map(refStr).join('|')}`;
+        return type.types.map(t => {
+          const name = refStr(t);
+          return `{tag:'${name}',val:${name}}`;
+        }).join('|');
       default:
         throw new Error(`disallowed: ${JSON.stringify(type)}`);
     }

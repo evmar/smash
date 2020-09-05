@@ -1,108 +1,72 @@
 export type uint8 = number;
-export class ClientMessage {
-  constructor(public alt: CompleteRequest | RunRequest | KeyEvent) {}
+export type ClientMessage =
+  | { tag: 'CompleteRequest'; val: CompleteRequest }
+  | { tag: 'RunRequest'; val: RunRequest }
+  | { tag: 'KeyEvent'; val: KeyEvent };
+export interface CompleteRequest {
+  id: number;
+  cwd: string;
+  input: string;
+  pos: number;
 }
-export class CompleteRequest {
-  id!: number;
-  cwd!: string;
-  input!: string;
-  pos!: number;
-  constructor(fields: CompleteRequest) {
-    Object.assign(this, fields);
-  }
+export interface CompleteResponse {
+  id: number;
+  error: string;
+  pos: number;
+  completions: string[];
 }
-export class CompleteResponse {
-  id!: number;
-  error!: string;
-  pos!: number;
-  completions!: string[];
-  constructor(fields: CompleteResponse) {
-    Object.assign(this, fields);
-  }
+export interface RunRequest {
+  cell: number;
+  cwd: string;
+  argv: string[];
 }
-export class RunRequest {
-  cell!: number;
-  cwd!: string;
-  argv!: string[];
-  constructor(fields: RunRequest) {
-    Object.assign(this, fields);
-  }
+export interface KeyEvent {
+  cell: number;
+  keys: string;
 }
-export class KeyEvent {
-  cell!: number;
-  keys!: string;
-  constructor(fields: KeyEvent) {
-    Object.assign(this, fields);
-  }
+export interface RowSpans {
+  row: number;
+  spans: Span[];
 }
-export class RowSpans {
-  row!: number;
-  spans!: Span[];
-  constructor(fields: RowSpans) {
-    Object.assign(this, fields);
-  }
+export interface Span {
+  attr: number;
+  text: string;
 }
-export class Span {
-  attr!: number;
-  text!: string;
-  constructor(fields: Span) {
-    Object.assign(this, fields);
-  }
+export interface Cursor {
+  row: number;
+  col: number;
+  hidden: boolean;
 }
-export class Cursor {
-  row!: number;
-  col!: number;
-  hidden!: boolean;
-  constructor(fields: Cursor) {
-    Object.assign(this, fields);
-  }
+export interface TermUpdate {
+  rows: RowSpans[];
+  cursor: Cursor;
 }
-export class TermUpdate {
-  rows!: RowSpans[];
-  cursor!: Cursor;
-  constructor(fields: TermUpdate) {
-    Object.assign(this, fields);
-  }
+export interface Pair {
+  key: string;
+  val: string;
 }
-export class Pair {
-  key!: string;
-  val!: string;
-  constructor(fields: Pair) {
-    Object.assign(this, fields);
-  }
+export interface Hello {
+  alias: Pair[];
+  env: Pair[];
 }
-export class Hello {
-  alias!: Pair[];
-  env!: Pair[];
-  constructor(fields: Hello) {
-    Object.assign(this, fields);
-  }
+export interface CmdError {
+  error: string;
 }
-export class CmdError {
-  error!: string;
-  constructor(fields: CmdError) {
-    Object.assign(this, fields);
-  }
+export interface Exit {
+  exitCode: number;
 }
-export class Exit {
-  exitCode!: number;
-  constructor(fields: Exit) {
-    Object.assign(this, fields);
-  }
+export type Output =
+  | { tag: 'CmdError'; val: CmdError }
+  | { tag: 'TermUpdate'; val: TermUpdate }
+  | { tag: 'Exit'; val: Exit };
+export interface CellOutput {
+  cell: number;
+  output: Output;
 }
-export class Output {
-  constructor(public alt: CmdError | TermUpdate | Exit) {}
-}
-export class CellOutput {
-  cell!: number;
-  output!: Output;
-  constructor(fields: CellOutput) {
-    Object.assign(this, fields);
-  }
-}
-export class ServerMsg {
-  constructor(public alt: Hello | CompleteResponse | CellOutput) {}
-}
+export type ServerMsg =
+  | { tag: 'Hello'; val: Hello }
+  | { tag: 'CompleteResponse'; val: CompleteResponse }
+  | { tag: 'CellOutput'; val: CellOutput };
 export class Reader {
   private ofs = 0;
   constructor(readonly view: DataView) {}
@@ -150,117 +114,117 @@ export class Reader {
   readClientMessage(): ClientMessage {
     switch (this.readUint8()) {
       case 1:
-        return new ClientMessage(this.readCompleteRequest());
+        return { tag: 'CompleteRequest', val: this.readCompleteRequest() };
       case 2:
-        return new ClientMessage(this.readRunRequest());
+        return { tag: 'RunRequest', val: this.readRunRequest() };
       case 3:
-        return new ClientMessage(this.readKeyEvent());
+        return { tag: 'KeyEvent', val: this.readKeyEvent() };
       default:
         throw new Error('parse error');
     }
   }
   readCompleteRequest(): CompleteRequest {
-    return new CompleteRequest({
+    return {
       id: this.readInt(),
       cwd: this.readString(),
       input: this.readString(),
       pos: this.readInt(),
-    });
+    };
   }
   readCompleteResponse(): CompleteResponse {
-    return new CompleteResponse({
+    return {
       id: this.readInt(),
       error: this.readString(),
       pos: this.readInt(),
       completions: this.readArray(() => this.readString()),
-    });
+    };
   }
   readRunRequest(): RunRequest {
-    return new RunRequest({
+    return {
       cell: this.readInt(),
       cwd: this.readString(),
       argv: this.readArray(() => this.readString()),
-    });
+    };
   }
   readKeyEvent(): KeyEvent {
-    return new KeyEvent({
+    return {
       cell: this.readInt(),
       keys: this.readString(),
-    });
+    };
   }
   readRowSpans(): RowSpans {
-    return new RowSpans({
+    return {
       row: this.readInt(),
       spans: this.readArray(() => this.readSpan()),
-    });
+    };
   }
   readSpan(): Span {
-    return new Span({
+    return {
       attr: this.readInt(),
       text: this.readString(),
-    });
+    };
   }
   readCursor(): Cursor {
-    return new Cursor({
+    return {
       row: this.readInt(),
       col: this.readInt(),
       hidden: this.readBoolean(),
-    });
+    };
   }
   readTermUpdate(): TermUpdate {
-    return new TermUpdate({
+    return {
       rows: this.readArray(() => this.readRowSpans()),
       cursor: this.readCursor(),
-    });
+    };
   }
   readPair(): Pair {
-    return new Pair({
+    return {
       key: this.readString(),
       val: this.readString(),
-    });
+    };
   }
   readHello(): Hello {
-    return new Hello({
+    return {
       alias: this.readArray(() => this.readPair()),
       env: this.readArray(() => this.readPair()),
-    });
+    };
   }
   readCmdError(): CmdError {
-    return new CmdError({
+    return {
       error: this.readString(),
-    });
+    };
   }
   readExit(): Exit {
-    return new Exit({
+    return {
       exitCode: this.readInt(),
-    });
+    };
   }
   readOutput(): Output {
     switch (this.readUint8()) {
       case 1:
-        return new Output(this.readCmdError());
+        return { tag: 'CmdError', val: this.readCmdError() };
       case 2:
-        return new Output(this.readTermUpdate());
+        return { tag: 'TermUpdate', val: this.readTermUpdate() };
       case 3:
-        return new Output(this.readExit());
+        return { tag: 'Exit', val: this.readExit() };
       default:
         throw new Error('parse error');
     }
   }
   readCellOutput(): CellOutput {
-    return new CellOutput({
+    return {
       cell: this.readInt(),
       output: this.readOutput(),
-    });
+    };
   }
   readServerMsg(): ServerMsg {
     switch (this.readUint8()) {
       case 1:
-        return new ServerMsg(this.readHello());
+        return { tag: 'Hello', val: this.readHello() };
       case 2:
-        return new ServerMsg(this.readCompleteResponse());
+        return { tag: 'CompleteResponse', val: this.readCompleteResponse() };
       case 3:
-        return new ServerMsg(this.readCellOutput());
+        return { tag: 'CellOutput', val: this.readCellOutput() };
       default:
         throw new Error('parse error');
     }
@@ -301,17 +265,19 @@ export class Writer {
     }
   }
   writeClientMessage(msg: ClientMessage) {
-    if (msg.alt instanceof CompleteRequest) {
-      this.writeUint8(1);
-      this.writeCompleteRequest(msg.alt);
-    } else if (msg.alt instanceof RunRequest) {
-      this.writeUint8(2);
-      this.writeRunRequest(msg.alt);
-    } else if (msg.alt instanceof KeyEvent) {
-      this.writeUint8(3);
-      this.writeKeyEvent(msg.alt);
-    } else {
-      throw new Error('unhandled case');
+    switch (msg.tag) {
+      case 'CompleteRequest':
+        this.writeUint8(1);
+        this.writeCompleteRequest(msg.val);
+        break;
+      case 'RunRequest':
+        this.writeUint8(2);
+        this.writeRunRequest(msg.val);
+        break;
+      case 'KeyEvent':
+        this.writeUint8(3);
+        this.writeKeyEvent(msg.val);
+        break;
     }
   }
   writeCompleteRequest(msg: CompleteRequest) {
@@ -379,17 +345,19 @@ export class Writer {
     this.writeInt(msg.exitCode);
   }
   writeOutput(msg: Output) {
-    if (msg.alt instanceof CmdError) {
-      this.writeUint8(1);
-      this.writeCmdError(msg.alt);
-    } else if (msg.alt instanceof TermUpdate) {
-      this.writeUint8(2);
-      this.writeTermUpdate(msg.alt);
-    } else if (msg.alt instanceof Exit) {
-      this.writeUint8(3);
-      this.writeExit(msg.alt);
-    } else {
-      throw new Error('unhandled case');
+    switch (msg.tag) {
+      case 'CmdError':
+        this.writeUint8(1);
+        this.writeCmdError(msg.val);
+        break;
+      case 'TermUpdate':
+        this.writeUint8(2);
+        this.writeTermUpdate(msg.val);
+        break;
+      case 'Exit':
+        this.writeUint8(3);
+        this.writeExit(msg.val);
+        break;
     }
   }
   writeCellOutput(msg: CellOutput) {
@@ -397,17 +365,19 @@ export class Writer {
     this.writeOutput(msg.output);
   }
   writeServerMsg(msg: ServerMsg) {
-    if (msg.alt instanceof Hello) {
-      this.writeUint8(1);
-      this.writeHello(msg.alt);
-    } else if (msg.alt instanceof CompleteResponse) {
-      this.writeUint8(2);
-      this.writeCompleteResponse(msg.alt);
-    } else if (msg.alt instanceof CellOutput) {
-      this.writeUint8(3);
-      this.writeCellOutput(msg.alt);
-    } else {
-      throw new Error('unhandled case');
+    switch (msg.tag) {
+      case 'Hello':
+        this.writeUint8(1);
+        this.writeHello(msg.val);
+        break;
+      case 'CompleteResponse':
+        this.writeUint8(2);
+        this.writeCompleteResponse(msg.val);
+        break;
+      case 'CellOutput':
+        this.writeUint8(3);
+        this.writeCellOutput(msg.val);
+        break;
     }
   }
 }

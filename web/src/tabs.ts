@@ -31,12 +31,13 @@ export class Tabs {
 
   handleMessage(msg: proto.ServerMsg): boolean {
     const cellStack = this.tabs[0].cellStack;
-    if (msg.alt instanceof proto.CompleteResponse) {
-      cellStack.getLastCell().onCompleteResponse(msg.alt);
-      return true;
-    } else if (msg.alt instanceof proto.CellOutput) {
-      cellStack.onOutput(msg.alt);
-      return true;
+    switch (msg.tag) {
+      case 'CompleteResponse':
+        cellStack.getLastCell().onCompleteResponse(msg.val);
+        return true;
+      case 'CellOutput':
+        cellStack.onOutput(msg.val);
+        return true;
     }
     return false;
   }
