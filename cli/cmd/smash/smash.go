@@ -279,6 +279,9 @@ func (cmd *command) runHandlingErrors() {
 		cmd.sendError(err.Error())
 		exitCode = 1
 	}
+	if exitCode < 0 {
+		exitCode = 1 // TODO: negative exit codes from signals
+	}
 	cmd.send(&proto.Exit{exitCode})
 }
 

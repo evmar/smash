@@ -1,6 +1,6 @@
 import { html, htext } from './html';
 
-function translateKey(ev: KeyboardEvent): string {
+export function translateKey(ev: KeyboardEvent): string {
   switch (ev.key) {
     case 'Alt':
     case 'Control':

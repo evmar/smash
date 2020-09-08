@@ -1,5 +1,6 @@
 import { html, htext } from './html';
 import * as proto from './proto';
+import { translateKey } from './readline';
 
 interface Attr {
   fg: number;
@@ -21,16 +22,13 @@ const termKeyMap: { [key: string]: string } = {
   ArrowRight: '\x1b[C',
   ArrowLeft: '\x1b[D',
 
+  'C-c': '\x03',
+
   Backspace: '\x08',
   Tab: '\x09',
   Enter: '\x0d',
+  'C-[': '\x1b',
   Escape: '\x1b',
-
-  // Add these keys to the map because we warn on any key
-  // not in the map.
-  Alt: '',
-  Control: '',
-  Shift: '',
 };
 
 /**
@@ -132,20 +130,9 @@ export class Term {
   }
 
   onKeyDown(ev: KeyboardEvent) {
-    let key = ev.key;
-    switch (key) {
-      case 'BracketLeft':
-        if (ev.ctrlKey) key = 'Escape';
-        break;
-    }
-
-    if (key.length === 1) return;
-
+    let key = translateKey(ev);
     const send = termKeyMap[key];
-    if (!send) {
-      if (send === undefined) console.log('term: unknown key:', key);
-      return;
-    }
+    if (!send) return;
     this.sendKeys(send);
     ev.preventDefault();
   }
