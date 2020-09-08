@@ -23,6 +23,7 @@ const termKeyMap: { [key: string]: string } = {
   ArrowLeft: '\x1b[D',
 
   'C-c': '\x03',
+  'C-d': '\x04',
 
   Backspace: '\x08',
   Tab: '\x09',
