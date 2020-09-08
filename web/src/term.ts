@@ -22,9 +22,6 @@ const termKeyMap: { [key: string]: string } = {
   ArrowRight: '\x1b[C',
   ArrowLeft: '\x1b[D',
 
-  'C-c': '\x03',
-  'C-d': '\x04',
-
   Backspace: '\x08',
   Tab: '\x09',
   Enter: '\x0d',
@@ -131,8 +128,17 @@ export class Term {
   }
 
   onKeyDown(ev: KeyboardEvent) {
-    let key = translateKey(ev);
-    const send = termKeyMap[key];
+    let send: string | undefined;
+    if (!ev.altKey && !ev.metaKey && ev.ctrlKey && ev.key.length === 1) {
+      const code = ev.key.charCodeAt(0) - 'a'.charCodeAt(0);
+      if (code >= 0 && code < 26) {
+        // Control+letter => send the letter as a 0-based byte.
+        send = String.fromCharCode(code + 1);
+      }
+    }
+    if (!send) {
+      send = termKeyMap[translateKey(ev)];
+    }
     if (!send) return;
     this.sendKeys(send);
     ev.preventDefault();
