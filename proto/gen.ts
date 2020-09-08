@@ -326,9 +326,9 @@ private readString(): string {
 
 private readArray<T>(elem: () => T): T[] {
   const len = this.readInt();
-  const arr: T[] = [];
+  const arr: T[] = new Array(len);
   for (let i = 0; i < len; i++) {
-    arr.push(elem());
+    arr[i] = elem();
   }
   return arr;
 }

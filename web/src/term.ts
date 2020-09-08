@@ -80,17 +80,16 @@ export class Term {
   }
 
   onUpdate(msg: proto.TermUpdate) {
-    const children = this.dom.children;
+    let childIdx = 0;
+    let child = this.dom.children[1] as HTMLElement; // avoid this.cursor
     for (const rowSpans of msg.rows) {
-      const row = rowSpans.row + 1; // +1 to avoid this.cursor
-      for (
-        var childCount = children.length;
-        childCount < row + 1;
-        childCount++
-      ) {
-        this.dom.appendChild(html('div', {}, htext(' ')));
+      const row = rowSpans.row;
+      for (; childIdx < row; childIdx++) {
+        if (!child.nextSibling) {
+          this.dom.appendChild(html('div', {}, htext(' ')));
+        }
+        child = child.nextSibling! as HTMLElement;
       }
-      const child = children[row] as HTMLElement;
       const spans = rowSpans.spans;
       if (spans.length === 0) {
         // Empty line. Set text to something non-empty so the div isn't
