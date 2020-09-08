@@ -7,7 +7,7 @@ cli/smash: cli/cmd/smash/*.go cli/proto/smash.go
 webts=$(wildcard web/src/*.ts)
 
 web/dist/smash.js: web/package.json $(webts)
-	web/node_modules/.bin/esbuild --target=es2019 --bundle --outfile=$@ web/src/smash.ts
+	web/node_modules/.bin/esbuild --target=es2019 --sourcemap --bundle --outfile=$@ web/src/smash.ts
 
 # Build the proto generator from the TypeScript source.
 proto/gen.js: proto/*.ts
