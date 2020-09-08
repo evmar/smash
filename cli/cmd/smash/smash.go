@@ -237,9 +237,12 @@ func (cmd *command) run() (int, error) {
 			mu.Lock()
 		}
 
-		renderFromDirty()
-		tr.Dirty.Reset()
-		drawPending = false
+		if drawPending { // There can be no draw pending if done != nil.
+			renderFromDirty()
+			tr.Dirty.Reset()
+			drawPending = false
+		}
+
 		mu.Unlock()
 
 		if done != nil {
