@@ -4,13 +4,30 @@
 
 import * as proto from './proto';
 
-const TRACE_MESSAGES = false;
+const TRACE_MESSAGES = true;
+
+/** Prints a proto-encoded message. */
+function printMessage(prefix: string, msg: any) {
+  if ('alt' in msg) {
+    const alt = msg.alt;
+    printMessage(`${prefix}${msg.constructor.name}:`, alt);
+    return;
+  }
+  console.groupCollapsed(`${prefix}${msg.constructor.name}`);
+  for (const field in msg) {
+    const val = msg[field];
+    if (typeof val === 'object' && !Array.isArray(val)) {
+      printMessage(`${field}: `, val);
+    } else {
+      console.info(`${field}:`, val);
+    }
+  }
+  console.groupEnd();
+}
 
 /** Parses a WebSocket MessageEvent as a server-sent message. */
 function parseMessage(event: MessageEvent): proto.ServerMsg {
-  const msg = new proto.Reader(new DataView(event.data)).readServerMsg();
-  if (TRACE_MESSAGES) console.log('<', msg);
-  return msg;
+  return new proto.Reader(new DataView(event.data)).readServerMsg();
 }
 
 /** Promisifies WebSocket connection. */
@@ -71,14 +88,14 @@ export class ServerConnection {
     return msg.alt;
   }
 
-  read(): Promise<proto.ServerMsg> {
-    const msg = read(this.ws);
-    if (TRACE_MESSAGES) console.log('<', msg);
+  async read(): Promise<proto.ServerMsg> {
+    const msg = await read(this.ws);
+    if (TRACE_MESSAGES) printMessage('<', msg);
     return msg;
   }
 
   send(msg: proto.ClientMessage) {
-    if (TRACE_MESSAGES) console.log('>', msg);
+    if (TRACE_MESSAGES) printMessage('>', msg);
 
     // Write once with an empty buffer to measure, then a second time after
     // creating the buffer.

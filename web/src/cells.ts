@@ -115,8 +115,8 @@ class Cell {
 
   onOutput(msg: proto.Output) {
     if (msg.alt instanceof proto.CmdError) {
-      // error
-      this.term.showError(msg.alt.error);
+      // error; exit code will come later.
+      this.dom.appendChild(html('div', {}, htext(msg.alt.error)));
     } else if (msg.alt instanceof proto.TermUpdate) {
       this.didOutput = true;
       this.term.onUpdate(msg.alt);
