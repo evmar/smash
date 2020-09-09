@@ -1,7 +1,21 @@
+html {
+  width: 100%;
+  height: 100%;
+
+  display: flex;
+  flex-direction: column;
+}
 body {
   font-family: 'segoe ui', sans-serif;
   font-size: 15px;
+  margin: 0;
+  flex: 1;
+  min-height: 0;
+
+  display: flex;
+  flex-direction: column;
 }
+
 pre {
   font-family: WebKitWorkaround, monospace;
   margin: 0;
@@ -23,6 +37,30 @@ table .value {
   left: 4ex;
   bottom: 2ex;
 }
+
+.tabs {
+  flex: 1;
+  min-height: 0;
+
+  display: flex;
+  flex-direction: column;
+}
+
+.tabstrip {
+  padding: 4px;
+  padding-bottom: 0;
+}
+
+.tab {
+  cursor: default;
+  user-select: none;
+  box-shadow: 0 0 2px #aaa;
+  display: inline-block;
+  min-width: 10ex;
+  padding: 4px;
+  background: white;
+}
+
 .readline {
   display: flex;
   align-items: baseline;
@@ -34,7 +72,7 @@ table .value {
 .readline input {
   font: inherit;
   font-weight: bold;
-  width: 100%;
+  flex: 1;
   border: 0;
   outline: none;
   background: transparent;
@@ -47,6 +85,7 @@ table .value {
 .input-box {
   flex: 1;
   position: relative;
+  display: flex;
 }
 .popup {
   position: absolute;
@@ -65,6 +104,13 @@ table .value {
 .measure {
   position: absolute;
   visibility: hidden;
+}
+
+.cellstack {
+  flex: 1;
+  box-shadow: 0 -1px 1px #777;
+  padding: 4px;
+  overflow-y: auto;
 }
 
 .bright {
