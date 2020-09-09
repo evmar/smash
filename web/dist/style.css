@@ -6,7 +6,7 @@ html {
   flex-direction: column;
 }
 body {
-  font-family: 'segoe ui', sans-serif;
+  font-family: 'segoe ui', 'roboto', sans-serif;
   font-size: 15px;
   margin: 0;
   flex: 1;

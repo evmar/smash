@@ -1,5 +1,6 @@
 import { html, htext } from './html';
 import * as proto from './proto';
+import { translateKey } from './readline';
 
 interface Attr {
   fg: number;
@@ -24,13 +25,8 @@ const termKeyMap: { [key: string]: string } = {
   Backspace: '\x08',
   Tab: '\x09',
   Enter: '\x0d',
+  'C-[': '\x1b',
   Escape: '\x1b',
-
-  // Add these keys to the map because we warn on any key
-  // not in the map.
-  Alt: '',
-  Control: '',
-  Shift: '',
 };
 
 /**
@@ -80,17 +76,16 @@ export class Term {
   }
 
   onUpdate(msg: proto.TermUpdate) {
-    const children = this.dom.children;
+    let childIdx = 0;
+    let child = this.dom.children[1] as HTMLElement; // avoid this.cursor
     for (const rowSpans of msg.rows) {
-      const row = rowSpans.row + 1; // +1 to avoid this.cursor
-      for (
-        var childCount = children.length;
-        childCount < row + 1;
-        childCount++
-      ) {
-        this.dom.appendChild(html('div', {}, htext(' ')));
+      const row = rowSpans.row;
+      for (; childIdx < row; childIdx++) {
+        if (!child.nextSibling) {
+          this.dom.appendChild(html('div', {}, htext(' ')));
+        }
+        child = child.nextSibling! as HTMLElement;
       }
-      const child = children[row] as HTMLElement;
       const spans = rowSpans.spans;
       if (spans.length === 0) {
         // Empty line. Set text to something non-empty so the div isn't
@@ -126,20 +121,18 @@ export class Term {
   }
 
   onKeyDown(ev: KeyboardEvent) {
-    let key = ev.key;
-    switch (key) {
-      case 'BracketLeft':
-        if (ev.ctrlKey) key = 'Escape';
-        break;
+    let send: string | undefined;
+    if (!ev.altKey && !ev.metaKey && ev.ctrlKey && ev.key.length === 1) {
+      const code = ev.key.charCodeAt(0) - 'a'.charCodeAt(0);
+      if (code >= 0 && code < 26) {
+        // Control+letter => send the letter as a 0-based byte.
+        send = String.fromCharCode(code + 1);
+      }
     }
-
-    if (key.length === 1) return;
-
-    const send = termKeyMap[key];
     if (!send) {
-      if (send === undefined) console.log('term: unknown key:', key);
-      return;
+      send = termKeyMap[translateKey(ev)];
     }
+    if (!send) return;
     this.sendKeys(send);
     ev.preventDefault();
   }

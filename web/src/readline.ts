@@ -1,6 +1,6 @@
 import { html, htext } from './html';
 
-function translateKey(ev: KeyboardEvent): string {
+export function translateKey(ev: KeyboardEvent): string {
   switch (ev.key) {
     case 'Alt':
     case 'Control':
@@ -58,6 +58,7 @@ class CompletePopup {
     }
     parent.appendChild(this.dom);
     this.position();
+    this.selectCompletion(0);
     this.dom.focus();
   }
 
@@ -157,15 +158,10 @@ class CompletePopup {
         this.selectCompletion(this.selection - 1);
         return true;
       case 'Enter':
-        if (this.selection >= 0) {
-          this.delegates.oncommit(
-            this.resp.completions[this.selection],
-            this.resp.pos
-          );
-        } else {
-          // User hit enter without picking anything.
-          this.delegates.oncommit('', this.req.pos);
-        }
+        this.delegates.oncommit(
+          this.resp.completions[this.selection],
+          this.resp.pos
+        );
         return true;
       case 'Escape':
         this.delegates.oncommit('', this.resp.pos);

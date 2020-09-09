@@ -237,9 +237,12 @@ func (cmd *command) run() (int, error) {
 			mu.Lock()
 		}
 
-		renderFromDirty()
-		tr.Dirty.Reset()
-		drawPending = false
+		if drawPending { // There can be no draw pending if done != nil.
+			renderFromDirty()
+			tr.Dirty.Reset()
+			drawPending = false
+		}
+
 		mu.Unlock()
 
 		if done != nil {
@@ -275,6 +278,9 @@ func (cmd *command) runHandlingErrors() {
 	if err != nil {
 		cmd.sendError(err.Error())
 		exitCode = 1
+	}
+	if exitCode < 0 {
+		exitCode = 1 // TODO: negative exit codes from signals
 	}
 	cmd.send(&proto.Exit{exitCode})
 }
