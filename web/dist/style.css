@@ -47,18 +47,16 @@ table .value {
 }
 
 .tabstrip {
-  padding: 4px;
-  padding-bottom: 0;
+  display: flex;
 }
 
 .tab {
   cursor: default;
   user-select: none;
-  box-shadow: 0 0 2px #aaa;
-  display: inline-block;
-  min-width: 10ex;
+  min-width: 20ex;
   padding: 4px;
   background: white;
+  border-right: solid 1px #777;
 }
 
 .readline {
@@ -108,7 +106,7 @@ table .value {
 
 .cellstack {
   flex: 1;
-  box-shadow: 0 -1px 1px #777;
+  box-shadow: 0 -1px 2px #777;
   padding: 4px;
   overflow-y: auto;
 }
