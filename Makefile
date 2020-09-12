@@ -1,5 +1,8 @@
-.PHONY: all
+.PHONY: all run
 all: cli/smash web/dist/smash.js
+
+run: all
+	cd cli && ./smash
 
 cli/smash: cli/cmd/smash/*.go cli/proto/smash.go
 	cd cli && go build github.com/evmar/smash/cmd/smash
