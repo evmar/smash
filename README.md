@@ -8,7 +8,7 @@ seems we ought be able to improve on the interface while keeping the
 fundamental idea.
 
 Smash is an attempt to improve the textual user interface while
-preserving the the good parts. Reasonable people can disagree over
+preserving the good parts. Reasonable people can disagree over
 what exactly that means. If this whole idea makes you upset please
 see the first question in the [FAQ](docs/faq.md).
 
