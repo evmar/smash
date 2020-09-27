@@ -1,6 +1,7 @@
 # smash: Install
 
-Still a work in progress, so you must build from source and there is no install step.
+Still a work in progress, so you must build from source and there is no install
+step.
 
 See also [development notes](development.md).
 

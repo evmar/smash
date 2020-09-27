@@ -54,15 +54,16 @@ and visit `http://localhost:9001/local.html`.
 
 ## Chrome PWA
 
-PWAs only work on https or localhost. For one of these on ChromeOS,
-the best option seems to be connection forwarding using [Connection
-Forwarder](https://chrome.google.com/webstore/detail/connection-forwarder/ahaijnonphgkgnkbklchdhclailflinn) to forward localhost into the crostini IP.
+PWAs only work on https or localhost. For one of these on ChromeOS, the best
+option seems to be connection forwarding using
+[Connection Forwarder](https://chrome.google.com/webstore/detail/connection-forwarder/ahaijnonphgkgnkbklchdhclailflinn)
+to forward localhost into the crostini IP.
 
 Update: digging in the Chrome source suggests that on ChromeOS specifically,
-Chrome also treats penguin.linux.test as a trusted domain. However, I've
-never been able to make the Chrome PWA bits work on ChromeOS (localhost
-or penguin.linux.test) so I'll leave the previous paragraph here until
-I'm confident of the resolution.
+Chrome also treats penguin.linux.test as a trusted domain. However, I've never
+been able to make the Chrome PWA bits work on ChromeOS (localhost or
+penguin.linux.test) so I'll leave the previous paragraph here until I'm
+confident of the resolution.
 
 ## The icon
 
