@@ -1,15 +1,15 @@
-# smash: Development notes
+# Development notes
 
 While developing, in one terminal:
 
 ```sh
-$ make watch  # watch frontend code and rebuild as necessary
+$ make watch  # watch frontend code and print errors
 ```
 
 And then in another:
 
 ```sh
-$ ./watch   # build and run the go server; restarts on changes
+$ ./watch   # build in a loop; restarts on changes
 ```
 
 Now reloading the page reloads the content.
@@ -44,7 +44,7 @@ Go tests use the Go test runner:
 $ cd cli; go test ./...
 ```
 
-To bring up a page to poke in a browser:
+To bring up a test page to poke in a browser:
 
 ```sh
 $ make serve
@@ -81,6 +81,6 @@ Run `infocmp -L` to understand what the terminal outputs mean.
 
 To experiment with the bash completion support, run:
 
-```
+```sh
 $ cd cli && go run ./bash/demo
 ```

@@ -1,4 +1,4 @@
-# smash: Related work
+# Related work
 
 The purpose of smash is to explore new ideas in shells/terminals, and many
 others have explored these ideas as well. Over the years I've tinkered on smash
