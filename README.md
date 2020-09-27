@@ -13,8 +13,9 @@ this whole idea makes you upset please see the first question in the
 
 Next, read:
 
-- [Project goals and related work](docs/goals.md)
+- [Project design](docs/design.md)
 - [FAQ](docs/faq.md)
+- [Related work](docs/related.md)
 
 - [Install instructions](docs/install.md)
 - [Development notes](docs/development.md)
