@@ -160,8 +160,8 @@ class Cell {
   }
 }
 
-function scrollToBottom() {
-  document.scrollingElement!.scrollIntoView({
+function scrollToBottom(el: HTMLElement) {
+  el.scrollIntoView({
     block: 'end',
   });
 }
@@ -190,12 +190,15 @@ export class CellStack {
     this.cells.push(cell);
     this.dom.appendChild(cell.dom);
     cell.readline.input.focus();
-    scrollToBottom();
+    scrollToBottom(cell.dom);
   }
 
   onOutput(msg: proto.CellOutput) {
-    this.cells[msg.cell].onOutput(msg.output);
-    scrollToBottom();
+    const cell = this.cells[msg.cell];
+    cell.onOutput(msg.output);
+    if (msg.cell === this.cells.length - 1) {
+      scrollToBottom(cell.dom);
+    }
   }
 
   onExit(id: number, exitCode: number) {
