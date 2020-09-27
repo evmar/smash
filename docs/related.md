@@ -25,8 +25,7 @@ I've attempted to break these into categories, but many of them span categories.
   emulator with stuff like inline image display
 - [iTerm2](https://www.iterm2.com/), OSX only, v3 does some clever stuff to
   integrate with the underlying shell
-- [HyperTerm](https://hyperterm.org/), JS-based, seems to mostly be JS styling
-  around a plain terminal emulator (?)
+- [Hyper](https://hyper.is/)
 - https://github.com/jwilm/alacritty
 - https://github.com/kovidgoyal/kitty
 - https://www.gnu.org/software/screen/screen.html
