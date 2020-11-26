@@ -743,7 +743,14 @@ L:
 			}
 		})
 	case c == 't': // window manipulation
-		tr.TODOs.Add("window manip %v", args)
+		cmd := 0
+		readArgs(args, &cmd)
+		switch cmd {
+		case 22, 23:
+			// Icon/title push/pop.  Ignore.
+		default:
+			tr.TODOs.Add("window manip %v", args)
+		}
 	default:
 		log.Printf("term: unknown CSI %v %s", args, showChar(c))
 	}
