@@ -144,6 +144,9 @@ type Terminal struct {
 
 	// The 0-based position of the cursor.
 	Row, Col int
+
+	// Saved versions of Row/Col for the control sequence that saves/restores position.
+	SaveRow, SaveCol int
 }
 
 func NewTerminal() *Terminal {
@@ -415,6 +418,17 @@ func (tr *TermReader) readEscape(r io.ByteScanner) error {
 		})
 	case c == 'P': // device control string
 		return tr.readDCS(r)
+	case c == '7': // save cursor
+		tr.WithTerm(func(t *Terminal) {
+			t.SaveRow = t.Row
+			t.SaveCol = t.Col
+		})
+	case c == '8': // restore cursor
+		tr.WithTerm(func(t *Terminal) {
+			t.Row = t.SaveRow
+			t.Col = t.SaveCol
+		})
+		tr.Dirty.Cursor = true
 	default:
 		log.Printf("term: unknown escape %s", showChar(c))
 	}
