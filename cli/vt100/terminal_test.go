@@ -313,3 +313,14 @@ func TestAllColors(t *testing.T) {
 	assert.Equal(t, x20, term.ToString())
 	assert.Nil(t, term.Validate())
 }
+
+func TestNoScrollback(t *testing.T) {
+	term, tr := newTestTerminal()
+	term.Height = 3
+	term.CanScroll = false
+	mustRun(t, tr, "a\nb\nc\n")
+	// The third line caused the terminal to scroll, but due to no scrollback that means the
+	// lines are lost.
+	assert.Equal(t, term.Top, 0)
+	assert.Equal(t, "b\nc\n", term.ToString())
+}

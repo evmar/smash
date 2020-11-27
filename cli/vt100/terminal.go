@@ -133,6 +133,11 @@ type Terminal struct {
 	Height     int
 	HideCursor bool
 
+	// CanScroll is true when accumulating scrollback is allowed,
+	// false when using the "alternative screen" where scrolling off the bottom
+	// should erase lines from the top.
+	CanScroll bool
+
 	// Index of first displayed line; greater than 0 when content has
 	// scrolled off the top of the terminal.
 	Top int
@@ -143,17 +148,25 @@ type Terminal struct {
 
 func NewTerminal() *Terminal {
 	return &Terminal{
-		Lines:  make([][]Cell, 1),
-		Width:  80,
-		Height: 24,
+		Lines:     make([][]Cell, 1),
+		Width:     80,
+		Height:    24,
+		CanScroll: true,
 	}
 }
 
 // fixPosition ensures that terminal offsets (Top/Row/Height) always
 // refer to valid places within the Terminal Lines array.
-func (t *Terminal) fixPosition() {
+func (t *Terminal) fixPosition(dirty *TermDirty) {
 	if t.Row >= t.Top+t.Height {
-		t.Top++
+		if t.CanScroll {
+			t.Top++
+		} else {
+			scroll := t.Row - t.Height + 1
+			t.Lines = t.Lines[scroll:]
+			t.Row -= scroll
+			dirty.Lines[-1] = true // Rerender all lines.
+		}
 	}
 	for t.Row >= len(t.Lines) {
 		t.Lines = append(t.Lines, make([]Cell, 0))
@@ -228,13 +241,13 @@ func (tr *TermReader) Read(r *bufio.Reader) error {
 		tr.WithTerm(func(t *Terminal) {
 			t.Col = 0
 			t.Row++
-			t.fixPosition()
+			t.fixPosition(&tr.Dirty)
 			tr.Dirty.Cursor = true
 		})
 	case c == '\t':
 		tr.WithTerm(func(t *Terminal) {
 			t.Col += 8 - (t.Col % 8)
-			t.fixPosition()
+			t.fixPosition(&tr.Dirty)
 			tr.Dirty.Cursor = true
 		})
 	case c >= ' ' && c <= '~':
@@ -263,21 +276,21 @@ func (tr *TermReader) Read(r *bufio.Reader) error {
 	return nil
 }
 
-func (t *Terminal) writeRune(r rune, attr Attr) {
+func (t *Terminal) writeRune(dirty *TermDirty, r rune, attr Attr) {
 	if t.Col == t.Width {
 		t.Row++
 		t.Col = 0
 	}
 	t.Col++
-	t.fixPosition()
+	t.fixPosition(dirty)
 	t.Lines[t.Row][t.Col-1] = Cell{r, attr}
+	dirty.Lines[t.Row] = true
 }
 
 func (tr *TermReader) writeRunes(rs []rune, attr Attr) {
 	tr.WithTerm(func(t *Terminal) {
 		for _, r := range rs {
-			t.writeRune(r, attr)
-			tr.Dirty.Lines[t.Row] = true
+			t.writeRune(&tr.Dirty, r, attr)
 		}
 		tr.Dirty.Cursor = true
 	})
@@ -384,7 +397,9 @@ func (tr *TermReader) readEscape(r io.ByteScanner) error {
 		tr.WithTerm(func(t *Terminal) {
 			if t.Row == 0 {
 				// Insert line above.
-				t.Lines = append(t.Lines, nil)
+				if t.CanScroll {
+					t.Lines = append(t.Lines, nil) // Extra space for line shifted down.
+				}
 				copy(t.Lines[1:], t.Lines)
 				t.Lines[0] = make([]Cell, 0)
 			} else {
@@ -499,7 +514,7 @@ L:
 				log.Printf("term: cursor up off top of screen?")
 				t.Row = 0
 			}
-			t.fixPosition()
+			t.fixPosition(&tr.Dirty)
 			tr.Dirty.Cursor = true
 		})
 	case c == 'C': // cursor forward
@@ -507,7 +522,7 @@ L:
 		readArgs(args, &dx)
 		tr.WithTerm(func(t *Terminal) {
 			t.Col += dx
-			t.fixPosition()
+			t.fixPosition(&tr.Dirty)
 			tr.Dirty.Cursor = true
 		})
 	case c == 'D': // cursor back
@@ -515,7 +530,7 @@ L:
 		readArgs(args, &dx)
 		tr.WithTerm(func(t *Terminal) {
 			t.Col -= dx
-			t.fixPosition()
+			t.fixPosition(&tr.Dirty)
 			tr.Dirty.Cursor = true
 		})
 	case c == 'G': // cursor character absolute
@@ -523,7 +538,7 @@ L:
 		readArgs(args, &x)
 		tr.WithTerm(func(t *Terminal) {
 			t.Col = x - 1
-			t.fixPosition()
+			t.fixPosition(&tr.Dirty)
 			tr.Dirty.Cursor = true
 		})
 	case c == 'H': // move to position
@@ -539,7 +554,7 @@ L:
 		tr.WithTerm(func(t *Terminal) {
 			t.Row = t.Top + row - 1
 			t.Col = col - 1
-			t.fixPosition()
+			t.fixPosition(&tr.Dirty)
 			tr.Dirty.Cursor = true
 		})
 	case c == 'J': // erase in display
@@ -554,7 +569,7 @@ L:
 				t.Lines = t.Lines[:0]
 				t.Row = 0
 				t.Col = 0
-				t.fixPosition()
+				t.fixPosition(&tr.Dirty)
 			default:
 				log.Printf("term: unknown erase in display %v", args)
 			}
@@ -626,7 +641,7 @@ L:
 		readArgs(args, &arg)
 		tr.WithTerm(func(t *Terminal) {
 			t.Row = arg - 1
-			t.fixPosition()
+			t.fixPosition(&tr.Dirty)
 			tr.Dirty.Cursor = true
 		})
 	case !qflag && (c == 'h' || c == 'l'): // reset mode
@@ -656,13 +671,18 @@ L:
 			case 1000, 1001, 1002: // mouse
 				tr.TODOs.Add("mouse handling")
 			case 1049: // alternate screen buffer
-				tr.TODOs.Add("alternate screen buffer %v", set)
+				// Rather than implementing an alternate screen, instead just clobber the content.
+				// This is because we don't anticipate running a series of programs within a given term,
+				// but rather just one.
+				t.Lines = make([][]Cell, t.Height)
+				t.Top = 0
+				t.CanScroll = false
+				tr.Dirty.Lines[-1] = true
 			case 2004: // bracketed paste
 				tr.TODOs.Add("bracketed paste")
 			default:
 				log.Printf("term: unknown dec private mode %v %v", args, set)
 			}
-			// TODO: tr.Dirty
 		})
 	case c == 'm': // character attributes
 		if len(args) == 0 {

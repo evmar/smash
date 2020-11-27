@@ -175,6 +175,7 @@ func (cmd *command) run() (int, error) {
 			}
 		}
 		for row, l := range term.Lines {
+			// TODO: iterate tr.Dirty, not all lines.
 			if !(allDirty || tr.Dirty.Lines[row]) {
 				continue
 			}
