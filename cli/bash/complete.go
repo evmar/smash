@@ -28,10 +28,13 @@ type Bash struct {
 // Magic string indicating a ready prompt.
 const promptMagic = "***READY>"
 
-// inputrc file contents, used to make completion always display and
-// disable the pager.
+// inputrc file contents, used to
+// - make completion always display
+// - disable the pager
+// - disable bracketed paste (which causes special xterm escapes in the output)
 const inputrc = `set completion-query-items 0
 set page-completions off
+set enable-bracketed-paste off
 `
 
 // StartBash starts up a new bash subprocess for use in completions.
