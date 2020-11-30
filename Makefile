@@ -4,7 +4,7 @@ all: cli/smash web/dist/smash.js
 run: all
 	cd cli && ./smash
 
-cli/smash: cli/cmd/smash/*.go cli/proto/smash.go cli/vt100/terminal.go
+cli/smash: cli/cmd/smash/*.go cli/proto/smash.go cli/vt100/terminal.go cli/bash/aliases.go cli/bash/complete.go
 	cd cli && go build github.com/evmar/smash/cmd/smash
 
 webts=$(wildcard web/src/*.ts)
