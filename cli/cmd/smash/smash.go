@@ -421,7 +421,7 @@ func serve() error {
 			log.Printf("error: %s", err)
 		}
 	})
-	addr := ":8080"
+	addr := "localhost:8080"
 	fmt.Printf("listening on %q\n", addr)
 	return http.ListenAndServe(addr, nil)
 }
