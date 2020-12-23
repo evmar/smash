@@ -40,6 +40,8 @@ I've attempted to break these into categories, but many of them span categories.
 - https://github.com/nushell/nushell
 - https://elvish.io/
 - https://github.com/ergonomica/ergonomica
+- https://fishshell.com/
+- https://en.wikipedia.org/wiki/PowerShell
 
 ## Better network
 
