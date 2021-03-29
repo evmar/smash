@@ -31,7 +31,7 @@ watch:
 .PHONY: fmt
 fmt:
 	./fmt.sh --write
-	go fmt ./cli/...
+	(cd cli && go fmt ./...)
 
 .PHONY: serve
 serve:
