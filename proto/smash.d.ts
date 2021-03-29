@@ -58,8 +58,10 @@ interface Cursor {
 interface TermUpdate {
   /** Updates to specific rows of output. */
   rows: RowSpans[];
-  /** Cursor position. */
+  /** Cursor status. */
   cursor: Cursor;
+  /** Total count of lines in the terminal, may go down on scrolling up. */
+  rowCount: int;
 }
 
 interface Pair {

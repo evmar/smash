@@ -110,6 +110,9 @@ export class Term {
       this.cursor.style.left = cursor.col * this.cellSize.width + 'px';
       this.cursor.style.top = cursor.row * this.cellSize.height + 'px';
     }
+    while (this.dom.childElementCount > msg.rowCount + 1) {
+      this.dom.removeChild(this.dom.lastChild!);
+    }
   }
 
   showCursor(show: boolean) {

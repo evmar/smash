@@ -40,6 +40,7 @@ export interface Cursor {
 export interface TermUpdate {
   rows: RowSpans[];
   cursor: Cursor;
+  rowCount: number;
 }
 export interface Pair {
   key: string;
@@ -175,6 +176,7 @@ export class Reader {
     return {
       rows: this.readArray(() => this.readRowSpans()),
       cursor: this.readCursor(),
+      rowCount: this.readInt(),
     };
   }
   readPair(): Pair {
@@ -325,6 +327,7 @@ export class Writer {
       this.writeRowSpans(val);
     });
     this.writeCursor(msg.cursor);
+    this.writeInt(msg.rowCount);
   }
   writePair(msg: Pair) {
     this.writeString(msg.key);

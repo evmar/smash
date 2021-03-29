@@ -198,6 +198,7 @@ func (cmd *command) run() (int, error) {
 			}
 			update.Rows = append(update.Rows, rowSpans)
 		}
+		update.RowCount = len(term.Lines)
 
 		err := cmd.send(update)
 		if err != nil {

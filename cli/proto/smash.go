@@ -130,8 +130,9 @@ type Cursor struct {
 	Hidden bool
 }
 type TermUpdate struct {
-	Rows   []RowSpans
-	Cursor Cursor
+	Rows     []RowSpans
+	Cursor   Cursor
+	RowCount int
 }
 type Pair struct {
 	Key string
@@ -286,6 +287,9 @@ func (msg *TermUpdate) Write(w io.Writer) error {
 		}
 	}
 	if err := msg.Cursor.Write(w); err != nil {
+		return err
+	}
+	if err := WriteInt(w, msg.RowCount); err != nil {
 		return err
 	}
 	return nil
@@ -571,6 +575,10 @@ func (msg *TermUpdate) Read(r *bufio.Reader) error {
 		}
 	}
 	if err := msg.Cursor.Read(r); err != nil {
+		return err
+	}
+	msg.RowCount, err = ReadInt(r)
+	if err != nil {
 		return err
 	}
 	return nil
