@@ -577,6 +577,9 @@ L:
 		tr.WithTerm(func(t *Terminal) {
 			switch arg {
 			case 0: // erase to end
+				for i := t.Row; i < len(t.Lines); i++ {
+					tr.Dirty.Lines[i] = true
+				}
 				t.Lines = t.Lines[:t.Row+1]
 				t.Lines[t.Row] = t.Lines[t.Row][:t.Col]
 			case 2: // erase all
@@ -584,10 +587,10 @@ L:
 				t.Row = 0
 				t.Col = 0
 				t.fixPosition(&tr.Dirty)
+				tr.Dirty.Lines[-1] = true
 			default:
 				log.Printf("term: unknown erase in display %v", args)
 			}
-			tr.Dirty.Lines[-1] = true
 		})
 	case c == 'K': // erase in line
 		arg := 0
@@ -759,7 +762,7 @@ L:
 		case 6:
 			var pos string
 			tr.WithTerm(func(t *Terminal) {
-				pos = fmt.Sprintf("\x1b[%d;%dR", t.Row+1, t.Col+1)
+				pos = fmt.Sprintf("\x1b[%d;%dR", (t.Row-t.Top)+1, t.Col+1)
 			})
 			_, err := tr.Input.Write([]byte(pos))
 			return err
