@@ -61,7 +61,8 @@ I've attempted to break these into categories, but many of them span categories.
 - https://github.com/liljencrantz/crush
 - https://www.marceltheshell.org/
 - https://github.com/iondodon/manter
-- 
+- https://github.com/lmorg/murex
+
 ## Design
 
 - [Terminal benchmarking](https://danluu.com/term-latency)
