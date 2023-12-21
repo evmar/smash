@@ -62,6 +62,7 @@ I've attempted to break these into categories, but many of them span categories.
 - https://www.marceltheshell.org/
 - https://github.com/iondodon/manter
 - https://github.com/lmorg/murex
+- https://huckridge.notion.site/Hucksh-overview-2fdcaf7d639145c0b192d0e19d7c25e4
 
 ## Design
 
